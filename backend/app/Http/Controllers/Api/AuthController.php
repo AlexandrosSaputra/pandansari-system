@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Resources\AuthenticatedUserResource;
 use App\Models\User;
+use App\Services\ActivityLogger;
 use App\Support\OperationalUnitAccess;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
-    public function login(LoginRequest $request, OperationalUnitAccess $access): AuthenticatedUserResource|JsonResponse
+    public function login(LoginRequest $request, OperationalUnitAccess $access, ActivityLogger $logger): AuthenticatedUserResource|JsonResponse
     {
         if (! Auth::guard('web')->attempt($request->validated())) {
             return response()->json(['message' => 'The provided credentials are invalid.'], 401);
@@ -30,6 +31,7 @@ class AuthController extends Controller
         }
 
         $request->session()->regenerate();
+        $logger->log($user, 'AUTH_LOGIN_SUCCESS', $user);
 
         return $this->userResource($user);
     }
@@ -43,10 +45,12 @@ class AuthController extends Controller
         return $this->userResource($user);
     }
 
-    public function logout(Request $request): JsonResponse
+    public function logout(Request $request, ActivityLogger $logger): JsonResponse
     {
         abort_unless(Auth::guard('web')->check(), 401, 'Unauthenticated.');
 
+        $user = Auth::guard('web')->user();
+        $logger->log($user, 'AUTH_LOGOUT', $user);
         Auth::guard('web')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
