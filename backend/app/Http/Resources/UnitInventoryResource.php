@@ -1,0 +1,48 @@
+<?php
+
+namespace App\Http\Resources;
+
+use Carbon\CarbonImmutable;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class UnitInventoryResource extends JsonResource
+{
+    /**
+     * Transform the resource into an array.
+     *
+     * @return array<string, mixed>
+     */
+    public function toArray(Request $request): array
+    {
+        $item = $this->resource->item;
+        $unit = $this->resource->operationalUnit;
+        $quantityOnHand = (int) ($this->quantity_on_hand ?? 0);
+        $quantityReserved = (int) ($this->quantity_reserved ?? 0);
+
+        return [
+            'unit' => [
+                'id' => $unit->id,
+                'code' => $unit->code,
+                'name' => $unit->name,
+            ],
+            'item' => [
+                'id' => $item->id,
+                'item_code' => $item->item_code,
+                'barcode' => $item->barcode,
+                'name' => $item->name,
+                'type' => $item->type->value,
+                'uom' => $item->uom,
+            ],
+            'selling_price' => $this->selling_price,
+            'minimum_stock' => $this->minimum_stock,
+            'quantity_on_hand' => $quantityOnHand,
+            'quantity_reserved' => $quantityReserved,
+            'available_quantity' => $quantityOnHand - $quantityReserved,
+            'low_stock' => $quantityOnHand <= $this->minimum_stock,
+            'updated_at' => $this->balance_updated_at
+                ? CarbonImmutable::parse($this->balance_updated_at)->toIso8601String()
+                : null,
+        ];
+    }
+}

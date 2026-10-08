@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class StockTransfer extends Model
 {
+    public const MOVEMENT_REFERENCE_TYPE = 'stock_transfer';
+
     protected $fillable = [
         'transfer_number',
         'source_location_id',

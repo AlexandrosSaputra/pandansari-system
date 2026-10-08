@@ -99,7 +99,7 @@ class OperationalUnitApiTest extends TestCase
         ])->assertConflict()->assertExactJson(['message' => 'A record with these values already exists.']);
 
         $this->assertDatabaseCount('operational_units', 0);
-        $this->assertDatabaseCount('inventory_locations', 1);
+        $this->assertDatabaseCount('inventory_locations', 2);
         $this->assertDatabaseMissing('activity_logs', ['action' => 'OPERATIONAL_UNIT_CREATED']);
     }
 }

@@ -78,6 +78,6 @@ class ActivityLogApiTest extends TestCase
         ])->assertInternalServerError()->assertExactJson(['message' => 'Server Error.']);
 
         $this->assertSame(0, OperationalUnit::count());
-        $this->assertSame(0, InventoryLocation::count());
+        $this->assertSame(1, InventoryLocation::count());
     }
 }

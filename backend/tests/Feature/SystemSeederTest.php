@@ -103,7 +103,15 @@ class SystemSeederTest extends TestCase
         $this->assertDatabaseCount('users', 0);
         $this->assertDatabaseCount('operational_units', 0);
         $this->assertDatabaseCount('items', 0);
-        $this->assertDatabaseCount('inventory_locations', 0);
+        $this->assertDatabaseCount('inventory_locations', 1);
+        $this->assertDatabaseHas('inventory_locations', [
+            'code' => 'WH-MAIN',
+            'name' => 'Gudang Utama',
+            'type' => 'WAREHOUSE',
+            'operational_unit_id' => null,
+            'is_active' => true,
+        ]);
+        $this->assertDatabaseCount('inventory_balances', 0);
         $this->assertDatabaseCount('transactions', 0);
         $this->assertDatabaseCount('stock_movements', 0);
     }

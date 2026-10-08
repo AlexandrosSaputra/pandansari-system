@@ -3,11 +3,13 @@
 use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\HealthController;
+use App\Http\Controllers\Api\InventoryController;
 use App\Http\Controllers\Api\ItemController;
 use App\Http\Controllers\Api\OperationalUnitController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\RolePermissionController;
+use App\Http\Controllers\Api\StockTransferController;
 use App\Http\Controllers\Api\UnitItemController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
@@ -50,4 +52,16 @@ Route::middleware('auth:sanctum')->name('api.')->group(function (): void {
     Route::put('roles/{role}/permissions', [RolePermissionController::class, 'update'])->middleware(['permission:rbac.manage', 'superadmin'])->name('roles.permissions.update');
     Route::get('permissions', [PermissionController::class, 'index'])->middleware('permission:rbac.view')->name('permissions.index');
     Route::get('activity-logs', [ActivityLogController::class, 'index'])->middleware('permission:audit.view')->name('activity-logs.index');
+
+    Route::get('inventory/warehouse', [InventoryController::class, 'warehouse'])->middleware('permission:inventory.view')->name('inventory.warehouse');
+    Route::post('inventory/warehouse/stock-in', [InventoryController::class, 'stockIn'])->middleware('permission:inventory.stock-in')->name('inventory.warehouse.stock-in');
+    Route::post('inventory/warehouse/stock-out', [InventoryController::class, 'stockOut'])->middleware('permission:inventory.stock-out')->name('inventory.warehouse.stock-out');
+    Route::get('operational-units/{operationalUnit}/inventory', [InventoryController::class, 'unit'])->middleware('permission:inventory.view')->name('inventory.unit');
+    Route::get('inventory/movements', [InventoryController::class, 'movements'])->middleware('permission:inventory.view')->name('inventory.movements');
+
+    Route::get('stock-transfers', [StockTransferController::class, 'index'])->middleware('permission:transfer.view')->name('stock-transfers.index');
+    Route::post('stock-transfers', [StockTransferController::class, 'store'])->middleware('permission:transfer.create')->name('stock-transfers.store');
+    Route::get('stock-transfers/{stockTransfer}', [StockTransferController::class, 'show'])->middleware('permission:transfer.view')->name('stock-transfers.show');
+    Route::post('stock-transfers/{stockTransfer}/accept', [StockTransferController::class, 'accept'])->middleware('permission:transfer.respond')->name('stock-transfers.accept');
+    Route::post('stock-transfers/{stockTransfer}/reject', [StockTransferController::class, 'reject'])->middleware('permission:transfer.respond')->name('stock-transfers.reject');
 });
