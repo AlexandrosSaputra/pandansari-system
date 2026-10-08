@@ -82,6 +82,21 @@ class User extends Authenticatable
         return $this->hasMany(ActivityLog::class, 'actor_id');
     }
 
+    public function hasPermission(string $permission): bool
+    {
+        $role = $this->role;
+
+        if (! $this->is_active || ! $role?->is_active) {
+            return false;
+        }
+
+        if ($role->relationLoaded('permissions')) {
+            return $role->permissions->contains('slug', $permission);
+        }
+
+        return $role->permissions()->where('slug', $permission)->exists();
+    }
+
     #[Scope]
     protected function active(Builder $query): Builder
     {

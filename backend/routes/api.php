@@ -1,11 +1,16 @@
 <?php
 
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\HealthController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', HealthController::class)->name('api.health');
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+Route::prefix('auth')->name('api.auth.')->group(function (): void {
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:auth-login')->name('login');
+
+    Route::middleware('auth:sanctum')->group(function (): void {
+        Route::get('/me', [AuthController::class, 'me'])->name('me');
+        Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    });
+});
