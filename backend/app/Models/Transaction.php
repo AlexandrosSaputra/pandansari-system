@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Transaction extends Model
 {
+    public const MOVEMENT_REFERENCE_TYPE = 'transaction';
+
     protected $fillable = [
         'transaction_number',
         'operational_unit_id',
