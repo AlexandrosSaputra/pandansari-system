@@ -1,32 +1,33 @@
-import { AnimatePresence, LazyMotion, domAnimation, m } from 'motion/react'
+import { useState } from 'react'
+import { m } from 'motion/react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { Sidebar } from '../components/common/Sidebar'
 import { Topbar } from '../components/common/Topbar'
-
+import { Drawer } from '../components/ui'
 export function AppLayout() {
-  const location = useLocation()
-
+  const { pathname } = useLocation()
+  const [drawer, setDrawer] = useState(false)
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-950">
-      <Sidebar />
-
+    <div className="min-h-screen">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-slate-200 bg-white lg:block">
+        <Sidebar />
+      </aside>
+      {drawer && (
+        <Drawer title="Navigasi" onClose={() => setDrawer(false)}>
+          <Sidebar onNavigate={() => setDrawer(false)} />
+        </Drawer>
+      )}
       <div className="min-h-screen lg:pl-64">
-        <Topbar />
-
-        <LazyMotion features={domAnimation}>
-          <AnimatePresence initial={false} mode="wait">
-            <m.main
-              key={location.pathname}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="mx-auto w-full max-w-7xl p-4 sm:p-6 lg:p-8"
-            >
-              <Outlet />
-            </m.main>
-          </AnimatePresence>
-        </LazyMotion>
+        <Topbar onMenu={() => setDrawer(true)} />
+        <m.main
+          key={pathname}
+          initial={{ opacity: 0, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.18 }}
+          className="mx-auto max-w-[1600px] p-4 sm:p-6 lg:p-8"
+        >
+          <Outlet />
+        </m.main>
       </div>
     </div>
   )

@@ -1,0 +1,174 @@
+import { useState } from 'react'
+import {
+  Badge,
+  Button,
+  EmptyState,
+  ListContent,
+  Notice,
+  PageHeader,
+  type Column,
+} from '../../components/ui'
+import { FilterBar } from '../../components/ui/Filters'
+import { useFilters } from '../../hooks/useFilters'
+import { useList } from '../../lib/queries'
+import type { InventoryBalance, OperationalUnit } from '../../types/api'
+import {
+  formatCurrency,
+  formatDateTime,
+  formatNumber,
+} from '../../utils/format'
+import { useAuth } from '../auth/useAuth'
+import { StockForm } from './StockForm'
+import { UnitSelector } from './UnitSelector'
+export function InventoryPage() {
+  const auth = useAuth()
+  const filters = useFilters()
+  const [tab, setTab] = useState(auth.canWarehouse ? 'warehouse' : 'unit')
+  const [unit, setUnit] = useState<OperationalUnit>()
+  const unitId =
+    auth.user?.role?.slug === 'admin'
+      ? auth.user.operational_unit?.id
+      : unit?.id
+  const path =
+    tab === 'warehouse'
+      ? '/inventory/warehouse'
+      : `/operational-units/${unitId}/inventory`
+  const query = useList<InventoryBalance>(
+    path,
+    {
+      search: filters.params.search,
+      page: filters.params.page,
+      per_page: filters.params.per_page,
+    },
+    tab === 'warehouse' || !!unitId,
+  )
+  const [stock, setStock] = useState<'in' | 'out' | null>(null)
+  const [saved, setSaved] = useState(false)
+  const columns: Column<InventoryBalance>[] = [
+    { title: 'Kode', render: (row) => row.item.item_code },
+    { title: 'Item', render: (row) => <strong>{row.item.name}</strong> },
+  ]
+  if (tab === 'unit')
+    columns.push(
+      {
+        title: 'Harga jual',
+        render: (row) => formatCurrency(row.selling_price),
+      },
+      {
+        title: 'Stok minimum',
+        render: (row) => formatNumber(row.minimum_stock),
+      },
+    )
+  columns.push(
+    {
+      title: 'Stok fisik',
+      render: (row) => formatNumber(row.quantity_on_hand),
+    },
+    {
+      title: 'Direservasi',
+      render: (row) => formatNumber(row.quantity_reserved),
+    },
+    {
+      title: 'Tersedia',
+      render: (row) => <strong>{formatNumber(row.available_quantity)}</strong>,
+    },
+  )
+  if (tab === 'unit')
+    columns.push({
+      title: 'Status stok',
+      render: (row) => (
+        <Badge value={row.low_stock ? 'Stok Rendah' : 'Normal'} />
+      ),
+    })
+  columns.push({
+    title: 'Diperbarui',
+    render: (row) => formatDateTime(row.updated_at),
+  })
+  return (
+    <>
+      <PageHeader
+        title="Inventori"
+        description={
+          tab === 'warehouse'
+            ? 'Gudang Utama · Saldo stok produk terkini.'
+            : `${auth.user?.operational_unit?.name ?? unit?.name ?? 'Unit operasional'} · Inventori produk aktif.`
+        }
+        actions={
+          auth.canWarehouse &&
+          tab === 'warehouse' && (
+            <>
+              {auth.hasPermission('inventory.stock-in') && (
+                <Button onClick={() => setStock('in')}>+ Stok Masuk</Button>
+              )}
+              {auth.hasPermission('inventory.stock-out') && (
+                <Button variant="secondary" onClick={() => setStock('out')}>
+                  Stok Keluar
+                </Button>
+              )}
+            </>
+          )
+        }
+      />
+      {auth.canWarehouse && (
+        <div className="tabs">
+          <Button
+            variant={tab === 'warehouse' ? 'primary' : 'secondary'}
+            onClick={() => {
+              setTab('warehouse')
+              filters.set('page', '1')
+            }}
+          >
+            Gudang
+          </Button>
+          <Button
+            variant={tab === 'unit' ? 'primary' : 'secondary'}
+            onClick={() => {
+              setTab('unit')
+              filters.set('page', '1')
+            }}
+          >
+            Unit Operasional
+          </Button>
+        </div>
+      )}
+      {tab === 'unit' && auth.canWarehouse && (
+        <div className="max-w-md">
+          <UnitSelector
+            value={unit?.id}
+            name={unit?.name}
+            onChange={(value) => {
+              setUnit(value)
+              filters.set('page', '1')
+            }}
+          />
+        </div>
+      )}
+      {saved && <Notice>Perubahan stok berhasil dicatat.</Notice>}
+      {tab === 'unit' && !unitId ? (
+        <EmptyState message="Pilih unit untuk melihat inventori" />
+      ) : (
+        <>
+          <FilterBar filters={filters} />
+          <ListContent
+            query={query}
+            columns={columns}
+            rowKey={(row) => row.item.id}
+            empty="Belum ada stok produk"
+            onPage={(p) => filters.set('page', String(p))}
+            onSize={(size) => filters.set('per_page', size)}
+          />
+        </>
+      )}
+      {stock && (
+        <StockForm
+          direction={stock}
+          onClose={() => setStock(null)}
+          onSaved={() => {
+            setStock(null)
+            setSaved(true)
+          }}
+        />
+      )}
+    </>
+  )
+}

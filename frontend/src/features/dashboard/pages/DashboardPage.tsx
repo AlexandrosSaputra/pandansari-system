@@ -1,21 +1,132 @@
+import { SummaryCard } from '../components/SummaryCard'
+import { RecentActivity } from '../components/RecentActivity'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Button, Card, Notice, PageHeader } from '../../../components/ui'
+import { navigation } from '../../../components/common/navigation'
+import { useList } from '../../../lib/queries'
+import type {
+  InventoryBalance,
+  StockTransfer,
+  Transaction,
+} from '../../../types/api'
+import { useAuth } from '../../auth/useAuth'
+import { StockForm } from '../../inventory/StockForm'
 import { HealthStatusCard } from '../components/HealthStatusCard'
-
 export function DashboardPage() {
+  const auth = useAuth()
+  const unit = auth.user?.operational_unit
+  const canTransact = ['admin', 'superadmin'].includes(
+    auth.user?.role?.slug ?? '',
+  )
+  const inventory = useList<InventoryBalance>(
+    auth.canWarehouse
+      ? '/inventory/warehouse'
+      : `/operational-units/${unit?.id}/inventory`,
+    { per_page: 1 },
+    auth.hasPermission('inventory.view') && (auth.canWarehouse || !!unit),
+  )
+  const transfers = useList<StockTransfer>(
+    '/stock-transfers',
+    { status: 'PENDING', per_page: 5 },
+    auth.hasPermission('transfer.view'),
+  )
+  const transactions = useList<Transaction>(
+    '/transactions',
+    { status: 'PAID', per_page: 5 },
+    canTransact && auth.hasPermission('transaction.view'),
+  )
+  const [stock, setStock] = useState<'in' | 'out' | null>(null)
+  const [saved, setSaved] = useState(false)
+  const title = auth.isSuperadmin
+    ? 'Ringkasan Operasional'
+    : auth.canWarehouse
+      ? 'Gudang Utama'
+      : (unit?.name ?? 'Dashboard')
+  const shortcuts = navigation.filter(
+    (item) =>
+      item.to !== '/dashboard' &&
+      auth.hasPermission(item.permission) &&
+      (!item.transaction || canTransact),
+  )
   return (
-    <div className="grid gap-6">
-      <div>
-        <p className="text-sm font-semibold text-emerald-700">Foundation</p>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
-          Dashboard
-        </h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-          Fondasi aplikasi siap digunakan untuk pengembangan modul berikutnya.
-        </p>
+    <>
+      <PageHeader
+        title={title}
+        description={`Selamat datang, ${auth.user?.name}. Pantau aktivitas dan lanjutkan pekerjaan Anda.`}
+        actions={
+          <>
+            {canTransact && auth.hasPermission('transaction.create') && (
+              <Link className="btn btn-primary" to="/pos">
+                Buka POS / Ticketing ↗
+              </Link>
+            )}
+            {auth.canWarehouse && auth.hasPermission('inventory.stock-in') && (
+              <Button onClick={() => setStock('in')}>+ Stok Masuk</Button>
+            )}
+            {auth.canWarehouse && auth.hasPermission('inventory.stock-out') && (
+              <Button variant="secondary" onClick={() => setStock('out')}>
+                Stok Keluar
+              </Button>
+            )}
+          </>
+        }
+      />
+      {saved && <Notice>Perubahan stok berhasil dicatat.</Notice>}
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {auth.hasPermission('inventory.view') && (
+          <SummaryCard title="Jenis produk dalam inventori" query={inventory}>
+            {auth.canWarehouse ? 'Gudang Utama' : unit?.name}
+          </SummaryCard>
+        )}
+        {auth.hasPermission('transfer.view') && (
+          <SummaryCard title="Transfer menunggu respons" query={transfers}>
+            <Link className="link" to="/stock-transfers?status=PENDING">
+              Lihat transfer
+            </Link>
+          </SummaryCard>
+        )}
+        {canTransact && auth.hasPermission('transaction.view') && (
+          <SummaryCard title="Transaksi dibayar" query={transactions}>
+            Seluruh periode ? sesuai lingkup akses
+          </SummaryCard>
+        )}
       </div>
-
-      <div className="max-w-xl">
-        <HealthStatusCard />
-      </div>
-    </div>
+      <Card className="mb-6 p-5">
+        <h2 className="mb-4">Akses Cepat</h2>
+        <div className="flex flex-wrap gap-2">
+          {shortcuts.map((item) => (
+            <Link className="btn btn-secondary" to={item.to} key={item.to}>
+              <span aria-hidden="true">{item.icon}</span>
+              {item.label}
+            </Link>
+          ))}
+        </div>
+      </Card>
+      <RecentActivity
+        transfers={transfers}
+        transactions={transactions}
+        showTransfers={auth.hasPermission('transfer.view')}
+        showTransactions={canTransact && auth.hasPermission('transaction.view')}
+      />
+      {import.meta.env.DEV && (
+        <details className="mt-8 max-w-xl text-xs text-slate-400">
+          <summary className="mb-3 cursor-pointer">
+            Status koneksi pengembangan
+          </summary>
+          <HealthStatusCard />
+        </details>
+      )}
+      {stock && (
+        <StockForm
+          direction={stock}
+          onClose={() => setStock(null)}
+          onSaved={() => {
+            setStock(null)
+            setSaved(true)
+          }}
+        />
+      )}
+    </>
   )
 }

@@ -1,47 +1,54 @@
 import { NavLink } from 'react-router-dom'
-
-const navigationItems = [{ label: 'Dashboard', to: '/dashboard' }]
-
-export function Sidebar() {
+import { useAuth } from '../../features/auth/useAuth'
+import { navigation } from './navigation'
+export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
+  const auth = useAuth()
+  const items = navigation.filter(
+    (item) =>
+      auth.hasPermission(item.permission) &&
+      (!item.transaction ||
+        ['admin', 'superadmin'].includes(auth.user?.role?.slug ?? '')),
+  )
   return (
-    <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-slate-200 bg-white lg:flex">
-      <div className="flex h-16 items-center gap-3 border-b border-slate-200 px-6">
-        <div className="grid size-9 place-items-center rounded-xl bg-emerald-600 text-sm font-bold text-white shadow-sm">
-          PS
-        </div>
+    <div className="sidebar-content">
+      <div className="sidebar-brand">
+        <span className="brand-mark">PS</span>
         <div>
-          <p className="text-sm font-semibold text-slate-900">Pandansari System</p>
-          <p className="text-xs text-slate-500">Application foundation</p>
+          <p className="font-semibold">Pandansari</p>
+          <p className="text-xs text-slate-400">Sistem Operasional</p>
         </div>
       </div>
-
-      <nav aria-label="Navigasi utama" className="flex-1 px-4 py-6">
-        <p className="px-3 text-xs font-semibold tracking-wider text-slate-400 uppercase">
-          Menu
-        </p>
-        <div className="mt-3 grid gap-1">
-          {navigationItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                [
-                  'rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
-                  isActive
-                    ? 'bg-emerald-50 text-emerald-700'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900',
-                ].join(' ')
-              }
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </div>
+      <nav
+        aria-label="Navigasi utama"
+        className="flex-1 overflow-auto px-3 py-5"
+      >
+        {[...new Set(items.map((item) => item.group))].map((group) => (
+          <div className="mb-5" key={group}>
+            <p className="nav-group">{group}</p>
+            {items
+              .filter((item) => item.group === group)
+              .map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.to === '/inventory'}
+                  onClick={onNavigate}
+                  className={({ isActive }) =>
+                    `nav-item ${isActive ? 'active' : ''}`
+                  }
+                >
+                  <span aria-hidden="true" className="nav-icon">
+                    {item.icon}
+                  </span>
+                  {item.label}
+                </NavLink>
+              ))}
+          </div>
+        ))}
       </nav>
-
-      <div className="border-t border-slate-200 px-6 py-4 text-xs text-slate-500">
-        Foundation environment
+      <div className="border-t border-slate-100 p-5 text-xs text-slate-400">
+        Pandansari System <span className="float-right">Operasional</span>
       </div>
-    </aside>
+    </div>
   )
 }

@@ -1,0 +1,496 @@
+import assert from 'node:assert/strict'
+import { createServer } from 'vite'
+import { createElement as h } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { QueryClientProvider, QueryObserver } from '@tanstack/react-query'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { LazyMotion, domAnimation } from 'motion/react'
+
+// In-memory fixtures only. This suite neither calls nor modifies the backend.
+const server = await createServer({
+  server: { middlewareMode: true, hmr: false },
+  appType: 'custom',
+})
+let checks = 0
+try {
+  const { queryClient } = await server.ssrLoadModule('/src/lib/queryClient.ts')
+  const { keys } = await server.ssrLoadModule('/src/lib/queries.ts')
+  const { apiError } = await server.ssrLoadModule('/src/lib/errors.ts')
+  const { PermissionGuard } = await server.ssrLoadModule(
+    '/src/features/auth/RouteGuard.tsx',
+  )
+  const { Sidebar } = await server.ssrLoadModule(
+    '/src/components/common/Sidebar.tsx',
+  )
+  const { ErrorState, ListContent } = await server.ssrLoadModule(
+    '/src/components/ui/index.tsx',
+  )
+  const { formatCurrency } = await server.ssrLoadModule('/src/utils/format.ts')
+  const unit = {
+    id: 7,
+    code: 'TEST',
+    name: 'Unit Fixture',
+    type: 'TICKETING',
+    scanner_enabled: false,
+  }
+  const user = {
+    id: 1,
+    name: 'Fixture',
+    email: 'fixture@example.test',
+    is_active: true,
+    role: { id: 1, name: 'Admin', slug: 'admin' },
+    operational_unit: unit,
+    permissions: [],
+  }
+  function session(role, permissions) {
+    queryClient.clear()
+    queryClient.setQueryData(keys.auth, {
+      ...user,
+      role: { ...user.role, slug: role },
+      operational_unit: role === 'admin' ? unit : null,
+      permissions,
+    })
+  }
+  function render(element) {
+    return renderToStaticMarkup(
+      h(
+        QueryClientProvider,
+        { client: queryClient },
+        h(
+          LazyMotion,
+          { features: domAnimation },
+          h(MemoryRouter, null, element),
+        ),
+      ),
+    )
+  }
+  function check(name, assertion) {
+    assertion()
+    checks += 1
+    console.log(`PASS ${name}`)
+  }
+  function guard(permission, transaction = false) {
+    return render(
+      h(
+        Routes,
+        null,
+        h(
+          Route,
+          { element: h(PermissionGuard, { permission, transaction }) },
+          h(Route, { path: '/', element: h('p', null, 'AUTHORIZED_CONTENT') }),
+        ),
+      ),
+    )
+  }
+  session('admin', ['dashboard.view'])
+  check('Permission guard denies missing permission', () =>
+    assert.match(guard('user.view'), /Akses tidak diizinkan/),
+  )
+  check('Permission guard renders authorized route', () =>
+    assert.match(guard('dashboard.view'), /AUTHORIZED_CONTENT/),
+  )
+  check('Sidebar hides inaccessible master and POS links', () => {
+    const html = render(h(Sidebar))
+    assert.match(html, /Dashboard/)
+    assert.doesNotMatch(html, /href="\/users"|href="\/pos"/)
+  })
+  session('warehouse', ['transaction.create'])
+  check('Warehouse cannot enter POS even with a mapped permission', () =>
+    assert.match(guard('transaction.create', true), /Akses tidak diizinkan/),
+  )
+  const serverError = {
+    isAxiosError: true,
+    response: {
+      status: 500,
+      data: {
+        message: 'INTERNAL_STACK_SECRET',
+        exception: 'INTERNAL_STACK_SECRET',
+      },
+    },
+  }
+  check('Server errors never expose stack or internal message', () =>
+    assert.doesNotMatch(
+      render(h(ErrorState, { error: serverError })),
+      /INTERNAL_STACK_SECRET/,
+    ),
+  )
+  check('Validation fields are preserved', () =>
+    assert.equal(
+      apiError({
+        isAxiosError: true,
+        response: {
+          status: 422,
+          data: { errors: { name: ['Nama wajib diisi.'] } },
+        },
+      }).fields.name[0],
+      'Nama wajib diisi.',
+    ),
+  )
+  check('Forbidden refetch hides previously cached table rows', () => {
+    const html = render(
+      h(ListContent, {
+        query: {
+          data: { data: [{ id: 1, secret: 'CACHED_PRIVATE_ROW' }] },
+          isPending: false,
+          isFetching: false,
+          isPlaceholderData: false,
+          error: { isAxiosError: true, response: { status: 403 } },
+          refetch() {},
+        },
+        columns: [{ title: 'Data', render: (row) => row.secret }],
+        rowKey: (row) => row.id,
+        onPage() {},
+      }),
+    )
+    assert.doesNotMatch(html, /CACHED_PRIVATE_ROW/)
+    assert.match(html, /tidak memiliki izin/)
+  })
+  check('Rupiah formatting uses the API amount', () =>
+    assert.match(formatCurrency('12500.50'), /12\.500,50/),
+  )
+  session('superadmin', [
+    'user.view',
+    'user.manage',
+    'rbac.view',
+    'operational-unit.view',
+    'item.view',
+    'inventory.view',
+  ])
+  const page = (data) => ({
+    data,
+    meta: {
+      current_page: 1,
+      last_page: 1,
+      per_page: 100,
+      total: data.length,
+      from: 1,
+      to: data.length,
+    },
+    links: {},
+  })
+  queryClient.setQueryData(
+    keys.list('/roles', { per_page: 100 }),
+    page([
+      { id: 1, name: 'Admin', slug: 'admin', is_active: true, permissions: [] },
+    ]),
+  )
+  for (const [path, name, props, expected] of [
+    ['items/ItemForm', 'ItemForm', {}, 'Tambah Item'],
+    [
+      'operational-units/UnitForm',
+      'UnitForm',
+      { unit: { ...unit, is_active: true } },
+      'Edit Unit Operasional',
+    ],
+    [
+      'operational-units/UnitItemForm',
+      'UnitItemForm',
+      {
+        unitId: 7,
+        item: {
+          id: 9,
+          item: {
+            id: 2,
+            item_code: 'HISTORICAL',
+            name: 'Existing item',
+            type: 'SERVICE',
+          },
+          selling_price: '12500.00',
+          minimum_stock: 0,
+          is_active: true,
+        },
+      },
+      'Existing item',
+    ],
+    ['users/UserForm', 'UserForm', { user }, 'Kata sandi baru (opsional)'],
+    ['inventory/StockForm', 'StockForm', { direction: 'out' }, 'Stok Keluar'],
+    ['transfers/TransferForm', 'TransferForm', {}, 'Buat Transfer Stok'],
+  ]) {
+    const module = await server.ssrLoadModule(`/src/features/${path}.tsx`)
+    check(`${name} renders with its required providers`, () =>
+      assert.ok(
+        render(
+          h(module[name], { ...props, onClose() {}, onSaved() {} }),
+        ).includes(expected),
+      ),
+    )
+  }
+  const { TransactionDetail } = await server.ssrLoadModule(
+    '/src/features/transactions/TransactionDetail.tsx',
+  )
+  queryClient.setQueryData(keys.detail('/transactions/99'), {
+    id: 99,
+    transaction_number: 'TEST-HISTORY',
+    operational_unit: unit,
+    status: 'PAID',
+    creator: user,
+    payer: user,
+    subtotal: '12345.67',
+    total: '12345.67',
+    visitor_count: 3,
+    created_at: null,
+    paid_at: null,
+    items: [
+      {
+        id: 1,
+        item: { name: 'Historical item' },
+        quantity: 1,
+        unit_price: '12345.67',
+        subtotal: '12345.67',
+        input_method: 'MANUAL',
+      },
+    ],
+  })
+  check(
+    'Transaction detail renders historical server amounts and visitor count',
+    () => {
+      const html = render(h(TransactionDetail, { id: 99, onClose() {} }))
+      assert.match(html, /12\.345,67/)
+      assert.match(html, /TEST-HISTORY/)
+      assert.match(html, /<dd>3<\/dd>/)
+    },
+  )
+  const { DashboardPage } = await server.ssrLoadModule(
+    '/src/features/dashboard/pages/DashboardPage.tsx',
+  )
+  for (const role of ['admin', 'warehouse', 'superadmin']) {
+    session(role, ['dashboard.view'])
+    check(`Dashboard renders role ${role} without invented totals`, () => {
+      const html = render(h(DashboardPage))
+      assert.match(html, /Selamat datang/)
+      assert.doesNotMatch(html, /NaN|undefined|Rp/)
+    })
+  }
+  const { api, sessionApi } = await server.ssrLoadModule('/src/lib/api.ts')
+  const { usePosCart } = await server.ssrLoadModule(
+    '/src/features/transactions/usePosCart.ts',
+  )
+  const originalAdapter = api.defaults.adapter
+  const requests = []
+  const cart = {
+    id: 88,
+    status: 'CART',
+    transaction_number: 'TEST-CART',
+    operational_unit: unit,
+    creator: user,
+    payer: null,
+    subtotal: '7000.00',
+    total: '7000.00',
+    visitor_count: 4,
+    items: [
+      {
+        id: 6,
+        item: { id: 2, name: 'Fixture item' },
+        quantity: 2,
+        unit_price: '3500.00',
+        subtotal: '7000.00',
+        input_method: 'MANUAL',
+      },
+    ],
+  }
+  let responseCart = cart
+  let conflict = false
+  api.defaults.adapter = async (config) => {
+    requests.push({
+      method: config.method,
+      url: config.url,
+      data: config.data ? JSON.parse(config.data) : undefined,
+    })
+    if (conflict && config.url.endsWith('/checkout'))
+      throw {
+        isAxiosError: true,
+        response: {
+          status: 409,
+          data: { message: 'Insufficient available stock.' },
+        },
+      }
+    return {
+      data: { data: responseCart },
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config,
+    }
+  }
+  function captureCart() {
+    let captured
+    function Probe() {
+      // eslint-disable-next-line react/globals -- SSR-only hook harness; no mounted UI or shared production state.
+      captured = usePosCart(unit.id)
+      return null
+    }
+    render(h(Probe))
+    return captured
+  }
+  try {
+    session('admin', ['transaction.create', 'transaction.view'])
+    queryClient.setQueryData(keys.cart(user.id, unit.id), cart)
+    const pos = captureCart()
+    await pos.newCart.mutateAsync()
+    check('Admin cart resolution omits prohibited operational_unit_id', () =>
+      assert.deepEqual(requests.at(-1).data, {}),
+    )
+    await pos.action.mutateAsync({ type: 'add', item_id: 2 })
+    check('Manual input uses the backend MANUAL payload', () =>
+      assert.deepEqual(requests.at(-1).data, {
+        input_method: 'MANUAL',
+        item_id: 2,
+        quantity: 1,
+      }),
+    )
+    await pos.action.mutateAsync({ type: 'scan', barcode: 'TEST-BARCODE' })
+    check('Scanner input sends barcode without item_id', () =>
+      assert.deepEqual(requests.at(-1).data, {
+        input_method: 'SCANNER',
+        barcode: 'TEST-BARCODE',
+        quantity: 1,
+      }),
+    )
+    await pos.action.mutateAsync({ type: 'quantity', id: 6, quantity: 3 })
+    check('Quantity updates target the transaction item with PATCH', () =>
+      assert.deepEqual(requests.at(-1), {
+        method: 'patch',
+        url: '/transactions/88/items/6',
+        data: { quantity: 3 },
+      }),
+    )
+    await pos.action.mutateAsync({ type: 'remove', id: 6 })
+    check('Remove targets the transaction item with DELETE', () =>
+      assert.equal(requests.at(-1).method, 'delete'),
+    )
+    conflict = true
+    await assert.rejects(pos.action.mutateAsync({ type: 'checkout' }))
+    check('Checkout conflict preserves cart identity and lines', () =>
+      assert.deepEqual(
+        queryClient.getQueryData(keys.cart(user.id, unit.id)),
+        cart,
+      ),
+    )
+    conflict = false
+    responseCart = {
+      ...cart,
+      status: 'PAID',
+      total: '9000.00',
+      visitor_count: 8,
+    }
+    await pos.action.mutateAsync({ type: 'checkout' })
+    check(
+      'Checkout uses the final server status, amount, and visitor count',
+      () =>
+        assert.deepEqual(
+          queryClient.getQueryData(keys.cart(user.id, unit.id)),
+          responseCart,
+        ),
+    )
+    const count = requests.length
+    await assert.rejects(pos.action.mutateAsync({ type: 'add', item_id: 2 }))
+    check('Paid cart cannot issue item mutations', () =>
+      assert.equal(requests.length, count),
+    )
+    session('superadmin', ['transaction.create', 'transaction.view'])
+    responseCart = cart
+    const superadminPos = captureCart()
+    await superadminPos.newCart.mutateAsync()
+    check(
+      'Superadmin cart resolution includes the selected operational unit',
+      () =>
+        assert.deepEqual(requests.at(-1).data, {
+          operational_unit_id: unit.id,
+        }),
+    )
+  } finally {
+    api.defaults.adapter = originalAdapter
+  }
+  const { useAuth } = await server.ssrLoadModule(
+    '/src/features/auth/useAuth.ts',
+  )
+  const originalSessionAdapter = sessionApi.defaults.adapter
+  const authRequests = []
+  const authResponse = { ...user, permissions: ['dashboard.view'] }
+  sessionApi.defaults.adapter = async (config) => {
+    authRequests.push(config.url)
+    return {
+      data: null,
+      status: 204,
+      statusText: 'No Content',
+      headers: {},
+      config,
+    }
+  }
+  api.defaults.adapter = async (config) => {
+    authRequests.push(config.url)
+    return {
+      data: { data: authResponse },
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config,
+    }
+  }
+  queryClient.setQueryData(keys.auth, null)
+  queryClient.setQueryData(['/users', 'private'], { confidential: true })
+  const authObserver = new QueryObserver(queryClient, {
+    queryKey: keys.auth,
+    enabled: false,
+  })
+  const unsubscribe = authObserver.subscribe(() => {})
+  let authActions
+  function AuthProbe() {
+    // eslint-disable-next-line react/globals -- SSR-only harness for mutation callbacks.
+    authActions = useAuth()
+    return null
+  }
+  render(h(AuthProbe))
+  try {
+    await authActions.login({
+      email: user.email,
+      password: 'FixturePassword123',
+    })
+    check(
+      'Login follows CSRF, login, then current-user requests in order',
+      () =>
+        assert.deepEqual(authRequests, [
+          '/sanctum/csrf-cookie',
+          '/auth/login',
+          '/auth/me',
+        ]),
+    )
+    check(
+      'Login notifies existing auth observers and removes previous private cache',
+      () => {
+        assert.deepEqual(authObserver.getCurrentResult().data, authResponse)
+        assert.equal(queryClient.getQueryData(['/users', 'private']), undefined)
+      },
+    )
+    await authActions.logout()
+    check('Logout notifies mounted guards with an unauthenticated state', () =>
+      assert.equal(authObserver.getCurrentResult().data, null),
+    )
+    queryClient.setQueryData(keys.auth, authResponse)
+    queryClient.setQueryData(['/users', 'private'], { confidential: true })
+    api.defaults.adapter = async () => {
+      throw {
+        isAxiosError: true,
+        response: { status: 401, data: { message: 'Unauthenticated.' } },
+      }
+    }
+    await assert.rejects(api.get('/inventory/warehouse'))
+    check(
+      'Authenticated 401 clears private data and notifies auth guards',
+      () => {
+        assert.equal(authObserver.getCurrentResult().data, null)
+        assert.equal(queryClient.getQueryData(['/users', 'private']), undefined)
+      },
+    )
+  } finally {
+    unsubscribe()
+    api.defaults.adapter = originalAdapter
+    sessionApi.defaults.adapter = originalSessionAdapter
+  }
+  queryClient.clear()
+  console.log(
+    `${checks} checks passed. SSR checks only; no browser interaction was performed.`,
+  )
+} finally {
+  await server.close()
+}
