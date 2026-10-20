@@ -68,10 +68,20 @@ export function UsersPage() {
         columns={[
           { title: 'Nama', render: (row) => <strong>{row.name}</strong> },
           { title: 'Email', render: (row) => row.email },
-          { title: 'Role', render: (row) => row.role?.name ?? '—' },
+          {
+            title: 'Role',
+            render: (row) => row.assignments?.length
+              ? row.assignments.map((assignment) => assignment.role.name).join(', ')
+              : row.role?.name ?? '—',
+          },
           {
             title: 'Unit operasional',
-            render: (row) => row.operational_unit?.name ?? '—',
+            render: (row) => {
+              const units = (row.assignments ?? [])
+                .map((assignment) => assignment.operational_unit?.name)
+                .filter(Boolean)
+              return units.length ? units.join(', ') : '—'
+            },
           },
           { title: 'Status', render: (row) => <Badge value={row.is_active} /> },
           {

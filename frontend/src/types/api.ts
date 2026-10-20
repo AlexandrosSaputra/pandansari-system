@@ -27,14 +27,22 @@ export interface Permission {
   slug: string
   description: string | null
 }
+export interface RoleAssignment {
+  id: number
+  is_active: boolean
+  role: Pick<Role, 'id' | 'name' | 'slug'>
+  operational_unit: UnitSummary | null
+}
 export interface User extends Person {
   is_active: boolean
+  assignments: RoleAssignment[]
   role: Pick<Role, 'id' | 'name' | 'slug'> | null
   operational_unit: UnitSummary | null
   created_at: string | null
   updated_at: string | null
 }
 export interface AuthUser extends Omit<User, 'created_at' | 'updated_at'> {
+  active_assignment: RoleAssignment | null
   permissions: string[]
 }
 export interface InventoryLocation {

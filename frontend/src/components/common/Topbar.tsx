@@ -31,6 +31,28 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
           {auth.user?.operational_unit?.name ??
             (auth.canWarehouse ? 'Gudang Utama' : '')}
         </span>
+        {(auth.user?.assignments.length ?? 0) > 1 && (
+          <label className="block max-w-48 text-xs text-slate-500">
+            <span className="sr-only">Ruang kerja aktif</span>
+            <select
+              className="input py-2 text-sm"
+              value={auth.user?.active_assignment?.id ?? ''}
+              disabled={auth.assignmentMutation.isPending}
+              onChange={(event) => {
+                void auth.selectAssignment(Number(event.target.value))
+              }}
+            >
+              {auth.user?.assignments.map((assignment) => (
+                <option key={assignment.id} value={assignment.id}>
+                  {assignment.role.name}
+                  {assignment.operational_unit
+                    ? ` — ${assignment.operational_unit.name}`
+                    : ''}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <details className="relative">
           <summary className="flex cursor-pointer list-none items-center gap-3 rounded-lg p-1">
             <span className="grid size-9 place-items-center rounded-full bg-emerald-50 font-semibold text-emerald-800">

@@ -447,12 +447,11 @@ try {
       password: 'FixturePassword123',
     })
     check(
-      'Login follows CSRF, login, then current-user requests in order',
+      'Login uses the CSRF cookie followed by the login request',
       () =>
         assert.deepEqual(authRequests, [
           '/sanctum/csrf-cookie',
           '/auth/login',
-          '/auth/me',
         ]),
     )
     check(

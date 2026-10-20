@@ -34,60 +34,102 @@ export function LoginPage() {
 
   return (
     <div className="login-shell">
-      <section className="login-showcase" aria-label="Pandansari System">
-        <LoginScene />
-        <div className="login-showcase-copy">
-          <div className="login-brand-mark" aria-hidden="true">PS</div>
-          <div>
-            <p className="login-brand-name">Pandansari System</p>
-            <p>Kelola operasional dan persediaan dalam satu ruang kerja.</p>
+      <div className="login-stage">
+        <section className="login-showcase" aria-label="Pandansari System">
+          <LoginScene />
+          <div className="login-showcase-copy">
+            <div className="login-brand-mark" aria-hidden="true">PS</div>
+            <div>
+              <p className="login-brand-name">Pandansari System</p>
+              <p>Kelola operasional dan persediaan dalam satu ruang kerja.</p>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <main className="login-card" aria-labelledby="login-heading">
-        <div className="login-card-brand">
-          <div className="login-brand-mark">PS</div>
-          <p className="eyebrow">PANDANSARI SYSTEM</p>
-        </div>
-        <h1 id="login-heading">Selamat datang kembali</h1>
-        <p className="login-subtitle">Masuk untuk mengelola operasional Anda.</p>
-        <form
-          className="login-form"
-          onSubmit={form.handleSubmit(async (values) => {
-            try {
-              await auth.login(values)
-              form.reset()
-            } catch (error) {
-              setFormErrors(error, form.setError)
-            }
-          })}
-        >
-          <FormField label="Email" error={form.formState.errors.email?.message}>
-            <span className="login-input-wrap">
-              <Input type="email" autoComplete="username" placeholder="Masukkan alamat email" {...form.register('email')} />
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
-                <rect x="3" y="5" width="18" height="14" rx="2" />
-                <path d="m3 7 9 6 9-6" />
-              </svg>
-            </span>
-          </FormField>
-          <FormField label="Kata sandi" error={form.formState.errors.password?.message}>
-            <span className="login-input-wrap">
-              <Input type="password" autoComplete="current-password" placeholder="Masukkan kata sandi" {...form.register('password')} />
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
-                <rect x="4" y="10" width="16" height="10" rx="2" />
-                <path d="M8 10V7a4 4 0 0 1 8 0v3" />
-              </svg>
-            </span>
-          </FormField>
-          {auth.loginMutation.error && <ErrorState error={auth.loginMutation.error} />}
-          <Button type="submit" className="login-submit" busy={auth.loginMutation.isPending}>
-            Masuk
-          </Button>
-        </form>
-        <p className="login-footer">Ruang kerja operasional Pandansari</p>
-      </main>
+        <main className="login-card" aria-labelledby="login-heading">
+          <div className="login-card-brand">
+            <div className="login-brand-mark">PS</div>
+            <p className="eyebrow">PANDANSARI SYSTEM</p>
+          </div>
+          <h1 id="login-heading">
+            {auth.isAwaitingAssignment ? 'Pilih ruang kerja' : 'Selamat datang kembali'}
+          </h1>
+          <p className="login-subtitle">
+            {auth.isAwaitingAssignment
+              ? 'Pilih peran dan unit yang ingin digunakan pada sesi ini.'
+              : 'Masuk untuk mengelola operasional Anda.'}
+          </p>
+          {auth.isAwaitingAssignment ? (
+            <div className="login-form" aria-label="Pilihan ruang kerja">
+              {auth.user?.assignments.map((assignment) => (
+                <Button
+                  key={assignment.id}
+                  variant="secondary"
+                  className="w-full justify-start text-left"
+                  busy={auth.assignmentMutation.isPending}
+                  onClick={() => {
+                    void auth.selectAssignment(assignment.id)
+                  }}
+                >
+                  <span>
+                    <strong className="block">{assignment.role.name}</strong>
+                    <small className="text-slate-500">
+                      {assignment.operational_unit?.name ?? 'Seluruh area sesuai peran'}
+                    </small>
+                  </span>
+                </Button>
+              ))}
+              {auth.assignmentMutation.error && (
+                <ErrorState error={auth.assignmentMutation.error} />
+              )}
+              <Button
+                variant="ghost"
+                className="w-full"
+                busy={auth.logoutMutation.isPending}
+                onClick={() => void auth.logout().catch(() => undefined)}
+              >
+                Kembali ke login
+              </Button>
+            </div>
+          ) : (
+          <form
+            className="login-form"
+            onSubmit={form.handleSubmit(async (values) => {
+              try {
+                await auth.login(values)
+                form.reset()
+              } catch (error) {
+                setFormErrors(error, form.setError)
+              }
+            })}
+          >
+            <FormField label="Email" error={form.formState.errors.email?.message}>
+              <span className="login-input-wrap">
+                <Input type="email" autoComplete="username" placeholder="Masukkan alamat email" {...form.register('email')} />
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
+                  <rect x="3" y="5" width="18" height="14" rx="2" />
+                  <path d="m3 7 9 6 9-6" />
+                </svg>
+              </span>
+            </FormField>
+            <FormField label="Kata sandi" error={form.formState.errors.password?.message}>
+              <span className="login-input-wrap">
+                <Input type="password" autoComplete="current-password" placeholder="Masukkan kata sandi" {...form.register('password')} />
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
+                  <rect x="4" y="10" width="16" height="10" rx="2" />
+                  <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+                </svg>
+              </span>
+            </FormField>
+            {auth.loginMutation.error && <ErrorState error={auth.loginMutation.error} />}
+            <Button type="submit" className="login-submit" busy={auth.loginMutation.isPending}>
+              Masuk
+            </Button>
+          </form>
+          )}
+          <p className="login-footer">Ruang kerja operasional Pandansari</p>
+        </main>
+      </div>
     </div>
   )
 }

@@ -118,28 +118,58 @@ export function LoginScene() {
     topParcel.position.set(0, 0.57, -0.04)
     topParcel.rotation.y = -0.1
 
-    const topBody = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), cartonLight)
-    topBody.castShadow = true
-    topBody.receiveShadow = true
-    topParcel.add(topBody)
+    // A parcel needs four actual walls. A solid cube with a dark plane on top
+    // leaves the flaps visually detached whenever they rotate away from it.
+    const wallThickness = 0.045
+    const half = size / 2
+    const innerWall = new THREE.MeshStandardMaterial({
+      color: 0x548bcf,
+      roughness: 0.72,
+      side: THREE.DoubleSide,
+    })
+    const addWall = (
+      width: number,
+      depth: number,
+      x: number,
+      z: number,
+      innerFace: number,
+    ) => {
+      const wallMaterials = Array<THREE.Material>(6).fill(cartonLight)
+      wallMaterials[innerFace] = innerWall
+      const wall = new THREE.Mesh(
+        new THREE.BoxGeometry(width, size, depth),
+        wallMaterials,
+      )
+      wall.position.set(x, 0, z)
+      wall.castShadow = true
+      wall.receiveShadow = true
+      topParcel.add(wall)
+    }
+    addWall(size, wallThickness, 0, half - wallThickness / 2, 5)
+    addWall(size, wallThickness, 0, -half + wallThickness / 2, 4)
+    addWall(wallThickness, size - 2 * wallThickness, -half + wallThickness / 2, 0, 0)
+    addWall(wallThickness, size - 2 * wallThickness, half - wallThickness / 2, 0, 1)
 
     addParcelLabel(topParcel, size)
 
-    const opening = new THREE.Mesh(
-      new THREE.PlaneGeometry(size * 0.9, size * 0.9),
-      new THREE.MeshStandardMaterial({ color: 0x102f5f, roughness: 0.9 }),
+    const interior = new THREE.Mesh(
+      new THREE.BoxGeometry(size - 2 * wallThickness, wallThickness, size - 2 * wallThickness),
+      new THREE.MeshStandardMaterial({ color: 0x173b73, roughness: 0.85 }),
     )
-    opening.rotation.x = -Math.PI / 2
-    opening.position.y = size / 2 + 0.006
-    topParcel.add(opening)
+    interior.position.y = half - 0.27
+    interior.receiveShadow = true
+    topParcel.add(interior)
 
     const glow = new THREE.PointLight(0xa9ccff, 0, 4)
     glow.position.set(0, size / 2 + 0.34, 0)
     topParcel.add(glow)
 
-    const flapThickness = 0.035
-    const flapClearance = 0.012
-    const flapHeight = size / 2 + flapThickness / 2 + flapClearance
+    const flapThickness = 0.028
+    // The first closing pair sits inside the second, like a folded cardboard box.
+    // Both pivot centers overlap the top edge of their wall, so no background
+    // can show through at the fold as the flap moves.
+    const innerFlapHeight = half - 0.022
+    const outerFlapHeight = half + 0.002
     const flapMaterial = new THREE.MeshStandardMaterial({ color: 0x69a2ec, roughness: 0.52 })
     const makeFlap = (
       width: number,
@@ -159,10 +189,10 @@ export function LoginScene() {
       topParcel.add(hinge)
       return hinge
     }
-    const frontFlap = makeFlap(size, size / 2, [0, flapHeight, size / 2], [0, 0, -size / 4])
-    const backFlap = makeFlap(size, size / 2, [0, flapHeight, -size / 2], [0, 0, size / 4])
-    const leftFlap = makeFlap(size / 2, size, [-size / 2, flapHeight, 0], [size / 4, 0, 0])
-    const rightFlap = makeFlap(size / 2, size, [size / 2, flapHeight, 0], [-size / 4, 0, 0])
+    const frontFlap = makeFlap(size, size / 2, [0, outerFlapHeight, half], [0, 0, -size / 4])
+    const backFlap = makeFlap(size, size / 2, [0, outerFlapHeight, -half], [0, 0, size / 4])
+    const leftFlap = makeFlap(size / 2, size, [-half, innerFlapHeight, 0], [size / 4, 0, 0])
+    const rightFlap = makeFlap(size / 2, size, [half, innerFlapHeight, 0], [-size / 4, 0, 0])
 
     const popMaterials = [
       new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.28 }),
