@@ -16,7 +16,7 @@ class TransactionAccess
     public function canTransact(User $user): bool
     {
         return $this->operationalUnits->canUseApplication($user)
-            && in_array($user->role->slug, ['admin', 'superadmin'], true);
+            && in_array($user->activeRole()?->slug, ['admin', 'superadmin'], true);
     }
 
     public function canViewTransactions(User $user): bool
@@ -28,8 +28,8 @@ class TransactionAccess
     {
         abort_unless($this->canTransact($user), 403, 'This action is unauthorized.');
 
-        if ($user->role->slug === 'admin') {
-            $unit = $user->operationalUnit;
+        if ($user->activeRole()?->slug === 'admin') {
+            $unit = $user->activeOperationalUnit();
         } else {
             if ($requestedUnitId === null) {
                 throw ValidationException::withMessages([
@@ -55,8 +55,8 @@ class TransactionAccess
             return false;
         }
 
-        return $user->role->slug === 'superadmin'
-            || $transaction->operational_unit_id === $user->operational_unit_id;
+        return $user->activeRole()?->slug === 'superadmin'
+            || $transaction->operational_unit_id === $user->activeOperationalUnitId();
     }
 
     public function canView(User $user, Transaction $transaction): bool
@@ -65,11 +65,11 @@ class TransactionAccess
             return false;
         }
 
-        if ($user->role->slug === 'superadmin') {
+        if ($user->activeRole()?->slug === 'superadmin') {
             return true;
         }
 
-        if ($transaction->operational_unit_id !== $user->operational_unit_id) {
+        if ($transaction->operational_unit_id !== $user->activeOperationalUnitId()) {
             return false;
         }
 
@@ -83,10 +83,10 @@ class TransactionAccess
      */
     public function scopeTransactions(Builder $query, User $user): Builder
     {
-        return match ($user->role?->slug) {
+        return match ($user->activeRole()?->slug) {
             'superadmin' => $query,
             'admin' => $query
-                ->where('operational_unit_id', $user->operational_unit_id)
+                ->where('operational_unit_id', $user->activeOperationalUnitId())
                 ->where(function (Builder $transactions) use ($user): void {
                     $transactions->where('status', TransactionStatus::Paid->value)
                         ->orWhere(function (Builder $carts) use ($user): void {

@@ -53,6 +53,32 @@ class MasterUserApiTest extends TestCase
         $this->assertStringNotContainsString('password', json_encode(ActivityLog::where('action', 'USER_CREATED')->firstOrFail()->metadata));
     }
 
+    public function test_superadmin_can_assign_the_same_admin_role_to_multiple_units_and_another_role(): void
+    {
+        $this->actingAsSystemUser();
+        $unitA = OperationalUnit::create(['code' => 'OUT-A', 'name' => 'Outlet A', 'type' => OperationalUnitType::Outlet]);
+        $unitB = OperationalUnit::create(['code' => 'OUT-B', 'name' => 'Outlet B', 'type' => OperationalUnitType::Outlet]);
+        $adminRole = Role::where('slug', 'admin')->firstOrFail();
+        $warehouseRole = Role::where('slug', 'warehouse')->firstOrFail();
+
+        $response = $this->postJson('/api/users', [
+            'name' => 'Multi Role User',
+            'email' => 'multi-role@example.com',
+            'password' => 'StrongPass1234',
+            'password_confirmation' => 'StrongPass1234',
+            'assignments' => [
+                ['role_id' => $adminRole->id, 'operational_unit_id' => $unitA->id],
+                ['role_id' => $adminRole->id, 'operational_unit_id' => $unitB->id],
+                ['role_id' => $warehouseRole->id, 'operational_unit_id' => null],
+            ],
+        ])->assertCreated()->assertJsonCount(3, 'data.assignments');
+
+        $user = User::findOrFail($response->json('data.id'));
+        $this->assertDatabaseCount('user_role_assignments', 4);
+        $this->assertSame(3, $user->assignments()->count());
+        $this->assertSame(2, $user->assignments()->where('role_id', $adminRole->id)->count());
+    }
+
     public function test_user_role_and_unit_assignments_are_validated(): void
     {
         $this->actingAsSystemUser();

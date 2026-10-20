@@ -46,6 +46,10 @@ class DomainModelTest extends TestCase
         $user->role()->associate($role);
         $user->operationalUnit()->associate($unit);
         $user->save();
+        $user->assignments()->create([
+            'role_id' => $role->id,
+            'operational_unit_id' => $unit->id,
+        ]);
         $item = Item::create([
             'item_code' => 'WATER-1',
             'name' => 'Water',
@@ -75,6 +79,7 @@ class DomainModelTest extends TestCase
         $this->assertSame($permission->id, $role->permissions->sole()->id);
         $this->assertSame($role->id, $permission->roles->sole()->id);
         $this->assertSame($user->id, $role->users->sole()->id);
+        $this->assertSame($role->id, $user->roles->sole()->id);
         $this->assertSame($role->id, $user->role->id);
         $this->assertSame($unit->id, $user->operationalUnit->id);
         $this->assertSame($user->id, $unit->users->sole()->id);

@@ -24,12 +24,20 @@ class UserController extends Controller
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
         ]);
 
-        $users = User::query()->with(['role', 'operationalUnit'])
+        $users = User::query()->with(['assignments.role', 'assignments.operationalUnit', 'role', 'operationalUnit'])
             ->when($filters['search'] ?? null, fn (Builder $query, string $search) => $query->where(
                 fn (Builder $query) => $query->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%"),
             ))
-            ->when($filters['role'] ?? null, fn (Builder $query, string $slug) => $query->whereHas('role', fn (Builder $role) => $role->where('slug', $slug)))
-            ->when($filters['operational_unit_id'] ?? null, fn (Builder $query, int $unitId) => $query->where('operational_unit_id', $unitId))
+            ->when($filters['role'] ?? null, fn (Builder $query, string $slug) => $query->where(
+                fn (Builder $query) => $query
+                    ->whereHas('assignments.role', fn (Builder $role) => $role->where('slug', $slug))
+                    ->orWhereHas('role', fn (Builder $role) => $role->where('slug', $slug)),
+            ))
+            ->when($filters['operational_unit_id'] ?? null, fn (Builder $query, int $unitId) => $query->where(
+                fn (Builder $query) => $query
+                    ->whereHas('assignments', fn (Builder $assignment) => $assignment->where('operational_unit_id', $unitId))
+                    ->orWhere('operational_unit_id', $unitId),
+            ))
             ->when(array_key_exists('is_active', $filters), fn (Builder $query) => $query->where('is_active', filter_var($filters['is_active'], FILTER_VALIDATE_BOOLEAN)))
             ->orderByDesc('id')
             ->paginate($filters['per_page'] ?? 15)
@@ -47,7 +55,9 @@ class UserController extends Controller
 
     public function show(User $user): UserResource
     {
-        return new UserResource($user->load(['role', 'operationalUnit']));
+        $user->ensureLegacyAssignment();
+
+        return new UserResource($user->load(['assignments.role', 'assignments.operationalUnit', 'role', 'operationalUnit']));
     }
 
     public function update(UserRequest $request, User $user, UserManager $manager): UserResource

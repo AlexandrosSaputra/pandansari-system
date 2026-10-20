@@ -111,28 +111,84 @@ class AuthApiTest extends TestCase
 
         $this->getJson('/api/auth/me')
             ->assertOk()
-            ->assertExactJson(['data' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'is_active' => true,
-                'role' => ['id' => $user->role_id, 'name' => 'Admin', 'slug' => 'admin'],
-                'operational_unit' => [
-                    'id' => $unit->id,
-                    'code' => 'OUT-A',
-                    'name' => 'OUT-A',
-                    'type' => 'OUTLET',
-                    'scanner_enabled' => true,
-                ],
-                'permissions' => [
-                    'dashboard.view',
-                    'inventory.view',
-                    'transaction.create',
-                    'transaction.view',
-                    'transfer.respond',
-                    'transfer.view',
-                ],
-            ]]);
+            ->assertJsonPath('data.id', $user->id)
+            ->assertJsonPath('data.role.slug', 'admin')
+            ->assertJsonPath('data.operational_unit.id', $unit->id)
+            ->assertJsonPath('data.active_assignment.role.slug', 'admin')
+            ->assertJsonPath('data.assignments.0.operational_unit.id', $unit->id)
+            ->assertJsonPath('data.permissions', [
+                'dashboard.view',
+                'inventory.view',
+                'transaction.create',
+                'transaction.view',
+                'transfer.respond',
+                'transfer.view',
+            ])
+            ->assertJsonMissingPath('data.password')
+            ->assertJsonMissingPath('data.remember_token');
+    }
+
+    public function test_multi_role_login_requires_an_assignment_then_can_switch_session_context(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $unit = $this->createUnit('OUT-A');
+        $unitB = $this->createUnit('OUT-B');
+        $user = User::factory()->create();
+        $admin = $user->assignments()->create([
+            'role_id' => Role::where('slug', 'admin')->value('id'),
+            'operational_unit_id' => $unit->id,
+        ]);
+        $warehouse = $user->assignments()->create([
+            'role_id' => Role::where('slug', 'warehouse')->value('id'),
+        ]);
+        $adminB = $user->assignments()->create([
+            'role_id' => Role::where('slug', 'admin')->value('id'),
+            'operational_unit_id' => $unitB->id,
+        ]);
+
+        $this->withHeader('Origin', 'http://localhost:5173')->postJson('/api/auth/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ])->assertOk()
+            ->assertJsonPath('data.active_assignment', null)
+            ->assertJsonPath('data.role', null)
+            ->assertJsonCount(3, 'data.assignments');
+
+        $this->getJson('/api/inventory/warehouse')->assertForbidden();
+
+        $this->postJson('/api/auth/assignment', ['assignment_id' => $admin->id])
+            ->assertOk()
+            ->assertJsonPath('data.role.slug', 'admin')
+            ->assertJsonPath('data.operational_unit.id', $unit->id);
+
+        $this->postJson('/api/auth/assignment', ['assignment_id' => $warehouse->id])
+            ->assertOk()
+            ->assertJsonPath('data.role.slug', 'warehouse')
+            ->assertJsonPath('data.operational_unit', null);
+
+        $this->postJson('/api/auth/assignment', ['assignment_id' => $adminB->id])
+            ->assertOk()
+            ->assertJsonPath('data.role.slug', 'admin')
+            ->assertJsonPath('data.operational_unit.id', $unitB->id);
+    }
+
+    public function test_session_bootstrap_returns_a_normal_guest_state_and_the_authenticated_user(): void
+    {
+        $this->getJson('/api/auth/session')
+            ->assertOk()
+            ->assertExactJson(['data' => null]);
+
+        $user = $this->createAccount('warehouse');
+
+        $this->withHeader('Origin', 'http://localhost:5173')->postJson('/api/auth/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ])->assertOk();
+
+        $this->getJson('/api/auth/session')
+            ->assertOk()
+            ->assertJsonPath('data.id', $user->id)
+            ->assertJsonPath('data.email', $user->email);
     }
 
     public function test_me_requires_authentication_and_logout_invalidates_the_session(): void

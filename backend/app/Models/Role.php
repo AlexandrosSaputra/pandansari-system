@@ -17,9 +17,16 @@ class Role extends Model
         'is_active',
     ];
 
-    public function users(): HasMany
+    public function users(): BelongsToMany
     {
-        return $this->hasMany(User::class);
+        return $this->belongsToMany(User::class, 'user_role_assignments')
+            ->withPivot(['id', 'operational_unit_id', 'is_active'])
+            ->withTimestamps();
+    }
+
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(UserRoleAssignment::class);
     }
 
     public function permissions(): BelongsToMany

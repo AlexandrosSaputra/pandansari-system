@@ -19,6 +19,7 @@ class DatabaseFoundationTest extends TestCase
             'roles' => ['slug', 'is_active'],
             'permissions' => ['slug'],
             'role_permissions' => ['role_id', 'permission_id'],
+            'user_role_assignments' => ['user_id', 'role_id', 'operational_unit_id', 'is_active'],
             'operational_units' => ['type', 'scanner_enabled', 'created_by'],
             'users' => ['role_id', 'operational_unit_id', 'is_active'],
             'items' => ['item_code', 'barcode', 'type', 'visitor_factor'],
@@ -53,6 +54,7 @@ class DatabaseFoundationTest extends TestCase
             ['roles', ['slug']],
             ['permissions', ['slug']],
             ['role_permissions', ['role_id', 'permission_id']],
+            ['user_role_assignments', ['user_id', 'role_id', 'operational_unit_id']],
             ['operational_units', ['code']],
             ['items', ['item_code']],
             ['items', ['barcode']],
@@ -77,6 +79,7 @@ class DatabaseFoundationTest extends TestCase
     {
         $relations = [
             'role_permissions' => ['role_id' => ['roles', 'cascade'], 'permission_id' => ['permissions', 'cascade']],
+            'user_role_assignments' => ['user_id' => ['users', 'cascade'], 'role_id' => ['roles', 'restrict'], 'operational_unit_id' => ['operational_units', 'restrict']],
             'operational_units' => ['created_by' => ['users', 'set null']],
             'users' => ['role_id' => ['roles', 'restrict'], 'operational_unit_id' => ['operational_units', 'restrict']],
             'items' => ['created_by' => ['users', 'set null']],
@@ -107,6 +110,7 @@ class DatabaseFoundationTest extends TestCase
     {
         $indexes = [
             'users' => [['is_active']],
+            'user_role_assignments' => [['user_id', 'is_active'], ['is_active']],
             'operational_units' => [['type'], ['is_active']],
             'items' => [['type'], ['is_active']],
             'unit_items' => [['is_active']],

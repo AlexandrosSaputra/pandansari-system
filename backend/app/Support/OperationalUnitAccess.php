@@ -7,23 +7,34 @@ use App\Models\OperationalUnit;
 use App\Models\StockMovement;
 use App\Models\StockTransfer;
 use App\Models\User;
+use App\Models\UserRoleAssignment;
 use Illuminate\Database\Eloquent\Builder;
 
 class OperationalUnitAccess
 {
     public function canUseApplication(User $user): bool
     {
-        $role = $user->role;
+        $role = $user->activeRole();
+        $unit = $user->activeOperationalUnit();
 
         if (! $user->is_active || ! $role?->is_active) {
             return false;
         }
 
         if ($role->slug === 'admin') {
-            return $user->operationalUnit?->is_active === true;
+            return $unit?->is_active === true;
         }
 
         return true;
+    }
+
+    public function canUseAssignment(User $user, UserRoleAssignment $assignment): bool
+    {
+        if (! $user->is_active || $assignment->user_id !== $user->id || ! $assignment->is_active || ! $assignment->role?->is_active) {
+            return false;
+        }
+
+        return $assignment->role->slug !== 'admin' || $assignment->operationalUnit?->is_active === true;
     }
 
     public function allows(User $user, OperationalUnit $unit): bool
@@ -32,9 +43,9 @@ class OperationalUnitAccess
             return false;
         }
 
-        return match ($user->role->slug) {
+        return match ($user->activeRole()?->slug) {
             'superadmin' => true,
-            'admin' => $unit->is_active && $user->operational_unit_id === $unit->id,
+            'admin' => $unit->is_active && $user->activeOperationalUnitId() === $unit->id,
             default => false,
         };
     }
@@ -45,7 +56,7 @@ class OperationalUnitAccess
             return false;
         }
 
-        return in_array($user->role->slug, ['warehouse', 'superadmin'], true);
+        return in_array($user->activeRole()?->slug, ['warehouse', 'superadmin'], true);
     }
 
     public function canReadInventory(User $user): bool
@@ -54,7 +65,7 @@ class OperationalUnitAccess
             return false;
         }
 
-        return in_array($user->role->slug, ['admin', 'warehouse', 'superadmin'], true);
+        return in_array($user->activeRole()?->slug, ['admin', 'warehouse', 'superadmin'], true);
     }
 
     public function allowsInventoryRead(User $user, OperationalUnit $unit): bool
@@ -63,10 +74,10 @@ class OperationalUnitAccess
             return false;
         }
 
-        return match ($user->role->slug) {
+        return match ($user->activeRole()?->slug) {
             'superadmin' => true,
             'warehouse' => $unit->is_active,
-            'admin' => $unit->is_active && $user->operational_unit_id === $unit->id,
+            'admin' => $unit->is_active && $user->activeOperationalUnitId() === $unit->id,
             default => false,
         };
     }
@@ -77,10 +88,10 @@ class OperationalUnitAccess
             return false;
         }
 
-        return match ($user->role->slug) {
+        return match ($user->activeRole()?->slug) {
             'superadmin' => true,
-            'admin' => $transfer->destinationLocation?->operational_unit_id === $user->operational_unit_id
-                && $user->operationalUnit?->is_active === true,
+            'admin' => $transfer->destinationLocation?->operational_unit_id === $user->activeOperationalUnitId()
+                && $user->activeOperationalUnit()?->is_active === true,
             default => false,
         };
     }
@@ -91,10 +102,10 @@ class OperationalUnitAccess
             return false;
         }
 
-        return match ($user->role->slug) {
+        return match ($user->activeRole()?->slug) {
             'superadmin' => true,
             'warehouse' => $transfer->sourceLocation?->code === 'WH-MAIN',
-            'admin' => $transfer->destinationLocation?->operational_unit_id === $user->operational_unit_id,
+            'admin' => $transfer->destinationLocation?->operational_unit_id === $user->activeOperationalUnitId(),
             default => false,
         };
     }
@@ -105,10 +116,10 @@ class OperationalUnitAccess
      */
     public function scopeStockMovements(Builder $query, User $user): Builder
     {
-        return match ($user->role?->slug) {
+        return match ($user->activeRole()?->slug) {
             'superadmin' => $query,
             'admin' => $query->whereHas('inventoryLocation', fn (Builder $location) => $location
-                ->where('operational_unit_id', $user->operational_unit_id)),
+                ->where('operational_unit_id', $user->activeOperationalUnitId())),
             'warehouse' => $query->where(function (Builder $movement): void {
                 $movement->whereHas('inventoryLocation', fn (Builder $location) => $location
                     ->where('code', 'WH-MAIN'))
@@ -135,11 +146,11 @@ class OperationalUnitAccess
      */
     public function scopeStockTransfers(Builder $query, User $user): Builder
     {
-        return match ($user->role?->slug) {
+        return match ($user->activeRole()?->slug) {
             'superadmin' => $query,
             'warehouse' => $query->whereHas('sourceLocation', fn (Builder $location) => $location->where('code', 'WH-MAIN')),
             'admin' => $query->whereHas('destinationLocation', fn (Builder $location) => $location
-                ->where('operational_unit_id', $user->operational_unit_id)),
+                ->where('operational_unit_id', $user->activeOperationalUnitId())),
             default => $query->whereRaw('1 = 0'),
         };
     }

@@ -13,8 +13,12 @@ abstract class TestCase extends BaseTestCase
     {
         $this->seed(DatabaseSeeder::class);
 
-        $user = User::factory()->create();
-        $user->forceFill(['role_id' => Role::where('slug', $roleSlug)->firstOrFail()->id])->save();
+        if ($roleSlug === 'superadmin') {
+            $user = User::where('email', 'admin@pandansari.local')->firstOrFail();
+        } else {
+            $user = User::factory()->create();
+            $user->forceFill(['role_id' => Role::where('slug', $roleSlug)->firstOrFail()->id])->save();
+        }
         $user->refresh();
         $this->actingAs($user, 'web');
 

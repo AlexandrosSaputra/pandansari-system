@@ -35,7 +35,7 @@ class TransactionCartService
             $lockedActor = User::query()->whereKey($actor->id)->lockForUpdate()->firstOrFail();
             abort_unless($this->access->canTransact($lockedActor), 403, 'This action is unauthorized.');
             abort_if(
-                $lockedActor->role->slug === 'admin' && $lockedActor->operational_unit_id !== $unit->id,
+                $lockedActor->activeRole()?->slug === 'admin' && $lockedActor->activeOperationalUnitId() !== $unit->id,
                 403,
                 'This action is unauthorized.',
             );

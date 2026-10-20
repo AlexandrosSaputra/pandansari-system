@@ -26,7 +26,7 @@ class TransactionCatalogRequest extends FormRequest
     {
         return [
             'operational_unit_id' => [
-                $this->user()?->role?->slug === 'superadmin' ? 'required' : ($this->user()?->role?->slug === 'admin' ? 'prohibited' : 'sometimes'),
+                $this->user()?->activeRole()?->slug === 'superadmin' ? 'required' : ($this->user()?->activeRole()?->slug === 'admin' ? 'prohibited' : 'sometimes'),
                 'integer',
                 Rule::exists('operational_units', 'id')->where(fn (Builder $query) => $query->where('is_active', true)),
             ],

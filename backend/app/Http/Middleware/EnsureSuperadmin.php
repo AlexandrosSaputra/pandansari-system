@@ -18,7 +18,7 @@ class EnsureSuperadmin
     {
         $user = $request->user();
 
-        abort_unless($user instanceof User && $user->role?->slug === 'superadmin', 403, 'This action is unauthorized.');
+        abort_unless($user instanceof User && $user->activeRole()?->slug === 'superadmin', 403, 'This action is unauthorized.');
 
         return $next($request);
     }

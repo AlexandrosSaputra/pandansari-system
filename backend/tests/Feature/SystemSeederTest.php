@@ -92,7 +92,7 @@ class SystemSeederTest extends TestCase
         $this->assertSame($warehousePermissions, $this->permissionSlugs('warehouse'));
     }
 
-    public function test_database_seeder_creates_only_system_configuration_and_can_run_twice(): void
+    public function test_database_seeder_creates_system_configuration_and_initial_superadmin_once(): void
     {
         $this->seed(DatabaseSeeder::class);
         $this->seed(DatabaseSeeder::class);
@@ -100,7 +100,20 @@ class SystemSeederTest extends TestCase
         $this->assertDatabaseCount('roles', 3);
         $this->assertDatabaseCount('permissions', 21);
         $this->assertDatabaseCount('role_permissions', 36);
-        $this->assertDatabaseCount('users', 0);
+        $this->assertDatabaseCount('users', 1);
+        $this->assertDatabaseHas('users', [
+            'name' => 'Superadmin',
+            'email' => 'admin@pandansari.local',
+            'role_id' => Role::where('slug', 'superadmin')->value('id'),
+            'operational_unit_id' => null,
+            'is_active' => true,
+        ]);
+        $this->assertDatabaseCount('user_role_assignments', 1);
+        $this->assertDatabaseHas('user_role_assignments', [
+            'role_id' => Role::where('slug', 'superadmin')->value('id'),
+            'operational_unit_id' => null,
+            'is_active' => true,
+        ]);
         $this->assertDatabaseCount('operational_units', 0);
         $this->assertDatabaseCount('items', 0);
         $this->assertDatabaseCount('inventory_locations', 1);

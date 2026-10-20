@@ -48,21 +48,21 @@ class DatabaseFoundationRollbackTest extends TestCase
         ]);
         $this->assertTrue(Schema::hasTable('activity_logs'));
 
-        $this->artisan('migrate:rollback', ['--step' => 15, '--no-interaction' => true])->assertSuccessful();
+        $this->artisan('migrate:rollback', ['--step' => 16, '--no-interaction' => true])->assertSuccessful();
 
         $this->assertSame($originalUser, (array) DB::table('users')->find($user->id));
         $this->assertFalse(Schema::hasColumn('users', 'role_id'));
         $this->assertFalse(Schema::hasColumn('users', 'operational_unit_id'));
         $this->assertFalse(Schema::hasColumn('users', 'is_active'));
         $this->assertDatabaseCount('migrations', 4);
-        foreach (['roles', 'permissions', 'role_permissions', 'operational_units', 'items', 'unit_items', 'inventory_locations', 'inventory_balances', 'stock_movements', 'stock_transfers', 'stock_transfer_items', 'transactions', 'transaction_items', 'activity_logs'] as $table) {
+        foreach (['roles', 'permissions', 'role_permissions', 'user_role_assignments', 'operational_units', 'items', 'unit_items', 'inventory_locations', 'inventory_balances', 'stock_movements', 'stock_transfers', 'stock_transfer_items', 'transactions', 'transaction_items', 'activity_logs'] as $table) {
             $this->assertFalse(Schema::hasTable($table), "Table remains after rollback: {$table}");
         }
         $this->assertTrue(Schema::hasTable('personal_access_tokens'));
 
         $this->artisan('migrate', ['--no-interaction' => true])->assertSuccessful();
 
-        $this->assertDatabaseCount('migrations', 19);
+        $this->assertDatabaseCount('migrations', 20);
         $this->assertDatabaseHas('users', [...$originalUser, 'is_active' => true]);
         $this->assertTrue(Schema::hasTable('activity_logs'));
     }
