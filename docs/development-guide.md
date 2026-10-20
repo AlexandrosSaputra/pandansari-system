@@ -4,7 +4,7 @@ Panduan ini untuk setup lokal pada checkout baru. Jalankan perintah dari direkto
 
 ## Prasyarat
 
-- PHP sesuai batas versi di `backend/composer.json` (`^8.3`) beserta ekstensi yang dibutuhkan Composer/Laravel.
+- PHP sesuai batas versi di `backend/composer.json` (`^8.3`) beserta ekstensi yang dibutuhkan Composer/Laravel. Aktifkan `pdo_mysql` untuk aplikasi dan `pdo_sqlite` untuk test otomatis yang memakai SQLite in-memory.
 - Composer, Node.js, npm, dan MySQL.
 - Database MySQL yang dapat diakses dengan pengaturan `DB_*` pada `backend/.env`.
 
@@ -44,6 +44,12 @@ Contoh konfigurasi menggunakan `VITE_API_URL=http://localhost:8000/api` dan fron
 ```powershell
 # Dari backend/
 php artisan test --compact
+```
+
+Jika perintah test menampilkan `could not find driver` untuk koneksi SQLite, aktifkan ekstensi `pdo_sqlite` pada PHP CLI yang digunakan. Pada instalasi Windows yang sudah menyediakan DLL tetapi belum mengaktifkannya, test dapat diperiksa sementara tanpa mengubah `php.ini`:
+
+```powershell
+php -d extension=php_pdo_sqlite.dll vendor/bin/phpunit
 ```
 
 ```powershell

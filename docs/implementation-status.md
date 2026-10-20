@@ -13,7 +13,7 @@ Angka ini adalah estimasi penilaian fitur, bukan metrik terukur, hasil uji pener
 | Persediaan dan ledger | Tersedia | 80% | Saldo, stok masuk/keluar, transfer, dan riwayat mutasi tersedia. `ADJUSTMENT` dan `DAMAGED` belum tersedia. Stock opname di luar lingkup. |
 | POS dan ticketing | Tersedia | 80% | Keranjang, barcode manual, ticketing, checkout atomik, dan riwayat transaksi tersedia. |
 | Dashboard dan laporan | Sebagian | 40% | Dashboard operasional dasar tersedia; laporan bisnis lengkap dan AI Insight belum tersedia. |
-| Kualitas dan kesiapan operasional | Sebagian | 50% | Frontend diverifikasi; backend belum dapat dijalankan karena dependensi Composer belum terpasang pada lingkungan pemeriksaan. |
+| Kualitas dan kesiapan operasional | Sebagian | 65% | Backend dan frontend lulus pemeriksaan otomatis; alur API inti memiliki test integrasi end-to-end. Uji interaksi browser dan UAT masih diperlukan. |
 | IoT dan manajemen perangkat | Belum tersedia | 10% | Input barcode di POS ada, tetapi bukan integrasi ESP32. |
 | Forecasting dan rekomendasi AI | Belum tersedia | 0% | Tidak ada dataset, model, tabel hasil, atau halaman AI Insight. |
 
@@ -24,7 +24,7 @@ Angka ini adalah estimasi penilaian fitur, bukan metrik terukur, hasil uji pener
 - Kode menyediakan POS outlet/ticketing, keranjang, dan checkout.
 - Checkout mengunci saldo stok dan menolak penjualan yang melampaui stok tersedia.
 - Transfer menahan stok Gudang ketika dibuat dan memindahkan saldo setelah diterima.
-- Antarmuka menyediakan riwayat transaksi dan mutasi. Demonstrasi dengan backend dan database nyata masih perlu diverifikasi.
+- Antarmuka menyediakan riwayat transaksi dan mutasi. Backend dapat dijalankan dengan database MySQL lokal dan endpoint health merespons; interaksi browser dengan alur demonstrasi lengkap masih perlu diverifikasi.
 
 ## Kesenjangan utama terhadap proposal
 
@@ -32,7 +32,7 @@ Angka ini adalah estimasi penilaian fitur, bukan metrik terukur, hasil uji pener
 2. Tidak ada `visitor_daily`, `forecast_results`, `stock_recommendations`, layanan Python, eksperimen model, atau dashboard rekomendasi.
 3. Jenis mutasi saat ini adalah `STOCK_IN`, `STOCK_OUT`, `TRANSFER_IN`, `TRANSFER_OUT`, dan `SALE`. Proposal juga memerlukan aturan untuk stok awal, penyesuaian, serta barang rusak.
 4. Dashboard belum menampilkan omzet per outlet, produk terlaris, penjualan per jam/hari, prakiraan, dan rekomendasi pengadaan sebagaimana target proposal.
-5. Bukti uji backend end-to-end belum tersedia pada lingkungan pemeriksaan saat ini.
+5. Bukti uji API end-to-end tersedia untuk alur inti, tetapi belum ada bukti uji browser otomatis atau UAT pengguna.
 
 ## Catatan kesesuaian istilah
 
