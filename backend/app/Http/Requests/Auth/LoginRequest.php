@@ -4,6 +4,7 @@ namespace App\Http\Requests\Auth;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Str;
 
 class LoginRequest extends FormRequest
 {
@@ -23,8 +24,17 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'email'],
+            'username' => ['required', 'string', 'alpha_dash', 'max:50'],
             'password' => ['required', 'string'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $username = $this->input('username');
+
+        if (is_string($username)) {
+            $this->merge(['username' => Str::lower(trim($username))]);
+        }
     }
 }

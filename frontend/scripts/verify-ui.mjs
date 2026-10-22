@@ -8,7 +8,7 @@ import { LazyMotion, domAnimation } from 'motion/react'
 
 // In-memory fixtures only. This suite neither calls nor modifies the backend.
 const server = await createServer({
-  server: { middlewareMode: true, hmr: false },
+  server: { middlewareMode: true, hmr: false, ws: false },
   appType: 'custom',
 })
 let checks = 0
@@ -36,6 +36,7 @@ try {
   const user = {
     id: 1,
     name: 'Fixture',
+    username: 'fixture-user',
     email: 'fixture@example.test',
     is_active: true,
     role: { id: 1, name: 'Admin', slug: 'admin' },
@@ -434,6 +435,7 @@ try {
     enabled: false,
   })
   const unsubscribe = authObserver.subscribe(() => {})
+  let unsubscribePrivate = () => {}
   let authActions
   function AuthProbe() {
     // eslint-disable-next-line react/globals -- SSR-only harness for mutation callbacks.
@@ -443,7 +445,7 @@ try {
   render(h(AuthProbe))
   try {
     await authActions.login({
-      email: user.email,
+      username: user.username,
       password: 'FixturePassword123',
     })
     check(
@@ -461,6 +463,26 @@ try {
         assert.equal(queryClient.getQueryData(['/users', 'private']), undefined)
       },
     )
+    const movementKey = keys.list('/inventory/movements')
+    const previousAssignmentPage = page([
+      { id: 1, location: { name: 'PREVIOUS_ASSIGNMENT_DATA' } },
+    ])
+    const activeAssignmentPage = page([])
+    queryClient.setQueryData(movementKey, previousAssignmentPage)
+    const privateObserver = new QueryObserver(queryClient, {
+      queryKey: movementKey,
+      queryFn: async () => activeAssignmentPage,
+      staleTime: Infinity,
+    })
+    unsubscribePrivate = privateObserver.subscribe(() => {})
+    await authActions.selectAssignment(2)
+    check('Assignment switch resets and refetches the active private screen', () => {
+      assert.deepEqual(privateObserver.getCurrentResult().data, activeAssignmentPage)
+      assert.doesNotMatch(
+        JSON.stringify(privateObserver.getCurrentResult().data),
+        /PREVIOUS_ASSIGNMENT_DATA/,
+      )
+    })
     await authActions.logout()
     check('Logout notifies mounted guards with an unauthenticated state', () =>
       assert.equal(authObserver.getCurrentResult().data, null),
@@ -482,6 +504,7 @@ try {
       },
     )
   } finally {
+    unsubscribePrivate()
     unsubscribe()
     api.defaults.adapter = originalAdapter
     sessionApi.defaults.adapter = originalSessionAdapter
@@ -492,4 +515,10 @@ try {
   )
 } finally {
   await server.close()
+  // Vite 8 can retain a closed, non-listening internal server on Windows.
+  // It has no work left, so do not let that handle keep this one-shot check alive.
+  for (const handle of process._getActiveHandles()) {
+    if (handle.constructor?.name === 'Server' && handle.listening === false)
+      handle.unref()
+  }
 }

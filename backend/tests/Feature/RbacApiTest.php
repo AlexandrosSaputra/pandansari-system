@@ -77,6 +77,6 @@ class RbacApiTest extends TestCase
         $this->getJson('/api/permissions')->assertForbidden();
         $this->putJson('/api/roles/'.Role::where('slug', 'admin')->value('id').'/permissions', [])->assertForbidden();
 
-        $this->assertDatabaseCount('role_permissions', 36);
+        $this->assertDatabaseCount('role_permissions', 37);
     }
 }

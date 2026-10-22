@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
@@ -26,6 +27,7 @@ class UserRequest extends FormRequest
 
         return [
             'name' => [$creating ? 'required' : 'sometimes', 'string', 'max:255'],
+            'username' => [$creating ? 'required' : 'sometimes', 'string', 'alpha_dash', 'min:3', 'max:50', Rule::unique('users', 'username')->ignore($user instanceof User ? $user->id : null)],
             'email' => [$creating ? 'required' : 'sometimes', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user instanceof User ? $user->id : null)],
             'password' => [$creating ? 'required' : 'sometimes', 'string', 'confirmed', Password::min(12)->mixedCase()->numbers()],
             'assignments' => [$creating ? 'required_without:role_id' : 'sometimes', 'array', 'min:1'],
@@ -37,5 +39,14 @@ class UserRequest extends FormRequest
             'operational_unit_id' => ['sometimes', 'nullable', 'integer', Rule::exists('operational_units', 'id')],
             'is_active' => ['sometimes', 'boolean'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $username = $this->input('username');
+
+        if (is_string($username)) {
+            $this->merge(['username' => Str::lower(trim($username))]);
+        }
     }
 }

@@ -26,7 +26,9 @@ class UserController extends Controller
 
         $users = User::query()->with(['assignments.role', 'assignments.operationalUnit', 'role', 'operationalUnit'])
             ->when($filters['search'] ?? null, fn (Builder $query, string $search) => $query->where(
-                fn (Builder $query) => $query->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%"),
+                fn (Builder $query) => $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('username', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%"),
             ))
             ->when($filters['role'] ?? null, fn (Builder $query, string $slug) => $query->where(
                 fn (Builder $query) => $query

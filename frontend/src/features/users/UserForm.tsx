@@ -16,6 +16,7 @@ const assignmentSchema = z.object({
 const schema = z
   .object({
     name: z.string().trim().min(1, 'Nama wajib diisi.').max(255),
+    username: z.string().trim().min(3, 'Username minimal 3 karakter.').max(50).regex(/^[a-zA-Z0-9_-]+$/, 'Gunakan huruf, angka, tanda hubung, atau garis bawah.'),
     email: z.email('Email tidak valid.').max(255),
     password: z.string(),
     password_confirmation: z.string(),
@@ -39,7 +40,7 @@ export function UserForm({ user, onClose, onSaved }: { user?: User; onClose: () 
   const form = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: {
-      name: user?.name ?? '', email: user?.email ?? '', password: '', password_confirmation: '',
+      name: user?.name ?? '', username: user?.username ?? '', email: user?.email ?? '', password: '', password_confirmation: '',
       assignments: user?.assignments?.length
         ? user.assignments.map((assignment) => ({ role_id: assignment.role.id, operational_unit_id: assignment.operational_unit?.id ?? null, is_active: assignment.is_active }))
         : user?.role
@@ -83,6 +84,7 @@ export function UserForm({ user, onClose, onSaved }: { user?: User; onClose: () 
       <SaveForm form={form} mutation={mutation} onClose={onClose} onSaved={onSaved} wasActive={user?.is_active} blocked={!roles.data || !!roles.error}>
         <div className="form-grid">
           <FormField label="Nama" error={errors.name?.message}><Input {...form.register('name')} /></FormField>
+          <FormField label="Username" error={errors.username?.message}><Input autoComplete="username" {...form.register('username')} /></FormField>
           <FormField label="Email" error={errors.email?.message}><Input type="email" autoComplete="off" {...form.register('email')} /></FormField>
           <FormField label={user ? 'Kata sandi baru (opsional)' : 'Kata sandi'} error={errors.password?.message} hint="Minimal 12 karakter, huruf besar/kecil dan angka."><Input type="password" autoComplete="new-password" {...form.register('password')} /></FormField>
           <FormField label="Konfirmasi kata sandi" error={errors.password_confirmation?.message}><Input type="password" autoComplete="new-password" {...form.register('password_confirmation')} /></FormField>

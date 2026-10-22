@@ -54,6 +54,7 @@ class PermissionSeeder extends Seeder
             ],
             'warehouse' => [
                 'dashboard.view',
+                'operational-unit.view',
                 'inventory.view',
                 'inventory.stock-in',
                 'inventory.stock-out',

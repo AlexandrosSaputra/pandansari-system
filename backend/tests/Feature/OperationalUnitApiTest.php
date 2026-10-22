@@ -77,13 +77,13 @@ class OperationalUnitApiTest extends TestCase
         $this->assertSame(1, OperationalUnit::count());
     }
 
-    public function test_unit_api_requires_authentication_and_permissions(): void
+    public function test_unit_api_requires_authentication_and_warehouse_can_list_transfer_destinations(): void
     {
         $this->getJson('/api/operational-units')->assertUnauthorized();
         $this->postJson('/api/operational-units', [])->assertUnauthorized();
 
         $this->actingAsSystemUser('warehouse');
-        $this->getJson('/api/operational-units')->assertForbidden();
+        $this->getJson('/api/operational-units')->assertOk();
         $this->postJson('/api/operational-units', [])->assertForbidden();
 
         $this->assertDatabaseCount('operational_units', 0);

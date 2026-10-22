@@ -46,6 +46,7 @@ class SystemSeederTest extends TestCase
             'inventory.stock-in',
             'inventory.stock-out',
             'inventory.view',
+            'operational-unit.view',
             'report.view',
             'transfer.create',
             'transfer.view',
@@ -76,7 +77,7 @@ class SystemSeederTest extends TestCase
 
         $this->assertDatabaseCount('roles', 3);
         $this->assertDatabaseCount('permissions', 21);
-        $this->assertDatabaseCount('role_permissions', 36);
+        $this->assertDatabaseCount('role_permissions', 37);
         $this->assertSame($adminPermissions, $this->permissionSlugs('admin'));
         $this->assertSame($warehousePermissions, $this->permissionSlugs('warehouse'));
         $this->assertSame($allPermissions, $this->permissionSlugs('superadmin'));
@@ -86,7 +87,7 @@ class SystemSeederTest extends TestCase
         $this->seed(PermissionSeeder::class);
 
         $this->assertDatabaseCount('permissions', 22);
-        $this->assertDatabaseCount('role_permissions', 37);
+        $this->assertDatabaseCount('role_permissions', 38);
         $this->assertContains('custom.action', $this->permissionSlugs('superadmin'));
         $this->assertSame($adminPermissions, $this->permissionSlugs('admin'));
         $this->assertSame($warehousePermissions, $this->permissionSlugs('warehouse'));
@@ -99,10 +100,11 @@ class SystemSeederTest extends TestCase
 
         $this->assertDatabaseCount('roles', 3);
         $this->assertDatabaseCount('permissions', 21);
-        $this->assertDatabaseCount('role_permissions', 36);
+        $this->assertDatabaseCount('role_permissions', 37);
         $this->assertDatabaseCount('users', 1);
         $this->assertDatabaseHas('users', [
             'name' => 'Superadmin',
+            'username' => 'admin',
             'email' => 'admin@pandansari.local',
             'role_id' => Role::where('slug', 'superadmin')->value('id'),
             'operational_unit_id' => null,

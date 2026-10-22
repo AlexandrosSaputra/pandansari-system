@@ -6,12 +6,23 @@ import { queryClient } from '../../lib/queryClient'
 import type { AuthUser, Resource } from '../../types/api'
 
 let sessionRevision = 0
+const isPrivateQuery = (query: { queryKey: readonly unknown[] }) =>
+  query.queryKey[0] !== keys.auth[0]
+
 function clearPrivateCache() {
   // Keep the auth query's observers attached so guards receive the new session immediately.
   queryClient.removeQueries({
-    predicate: (query) => query.queryKey[0] !== keys.auth[0],
+    predicate: isPrivateQuery,
   })
   queryClient.getMutationCache().clear()
+}
+
+async function refreshPrivateCache() {
+  await queryClient.cancelQueries({ predicate: isPrivateQuery })
+  queryClient.getMutationCache().clear()
+  // Active screens must drop data from the previous assignment and refetch
+  // immediately under the newly selected server-side session context.
+  await queryClient.resetQueries({ predicate: isPrivateQuery })
 }
 async function clearSession() {
   sessionRevision += 1
@@ -36,7 +47,7 @@ export function useAuth() {
     staleTime: 60_000,
   })
   const loginMutation = useMutation({
-    mutationFn: async (credentials: { email: string; password: string }) => {
+    mutationFn: async (credentials: { username: string; password: string }) => {
       await sessionApi.get('/sanctum/csrf-cookie')
       const response = await api.post<Resource<AuthUser>>(
         '/auth/login',
@@ -67,9 +78,8 @@ export function useAuth() {
     },
     onSuccess: async (user) => {
       sessionRevision += 1
-      await queryClient.cancelQueries()
-      clearPrivateCache()
       queryClient.setQueryData(keys.auth, user)
+      await refreshPrivateCache()
     },
   })
   return {

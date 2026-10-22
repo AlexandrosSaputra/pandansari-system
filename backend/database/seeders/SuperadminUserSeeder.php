@@ -21,6 +21,7 @@ class SuperadminUserSeeder extends Seeder
             ['email' => 'admin@pandansari.local'],
             [
                 'name' => 'Superadmin',
+                'username' => 'admin',
                 'password' => Hash::make('Password123!'),
                 'role_id' => $role->id,
                 'operational_unit_id' => null,

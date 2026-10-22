@@ -30,6 +30,7 @@ class UserManager
             $user = new User;
             $user->fill([
                 'name' => $attributes['name'],
+                'username' => $attributes['username'],
                 'email' => $attributes['email'],
                 'password' => $attributes['password'],
             ]);
@@ -97,7 +98,7 @@ class UserManager
             }
 
             $wasActive = $user->is_active;
-            $user->fill(array_intersect_key($attributes, array_flip(['name', 'email', 'password'])));
+            $user->fill(array_intersect_key($attributes, array_flip(['name', 'username', 'email', 'password'])));
             $primary = collect($assignments)->firstWhere('is_active', true) ?? $assignments[0];
             $user->forceFill([
                 'role_id' => $primary['role_id'],

@@ -14,7 +14,7 @@ export function apiError(error: unknown) {
   const status = error.response?.status ?? 0
   const messages: Record<number, string> = {
     0: 'Tidak dapat terhubung ke server. Periksa koneksi Anda.',
-    401: 'Sesi berakhir atau email dan kata sandi tidak sesuai.',
+    401: 'Sesi berakhir atau username dan kata sandi tidak sesuai.',
     403: 'Anda tidak memiliki izin untuk mengakses data ini.',
     404: 'Data tidak ditemukan.',
     419: 'Sesi keamanan berakhir. Muat ulang sesi dan coba kembali.',

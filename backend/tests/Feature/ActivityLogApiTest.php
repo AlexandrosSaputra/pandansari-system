@@ -57,7 +57,7 @@ class ActivityLogApiTest extends TestCase
         $user->forceFill(['role_id' => Role::where('slug', 'warehouse')->value('id')])->save();
 
         $this->withHeader('Origin', 'http://localhost:5173')->postJson('/api/auth/login', [
-            'email' => $user->email, 'password' => 'StrongPass1234',
+            'username' => $user->username, 'password' => 'StrongPass1234',
         ])->assertOk()->assertJsonPath('data.role.slug', 'warehouse');
         $this->postJson('/api/auth/logout')->assertOk()->assertExactJson(['message' => 'Logged out.']);
 

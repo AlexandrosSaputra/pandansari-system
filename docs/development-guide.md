@@ -27,6 +27,16 @@ php artisan serve --host=localhost --port=8000 --no-reload
 
 Seeder membuat role, permission, lokasi Gudang, dan akun awal pengembangan. Detail akun awal ada di `backend/database/seeders/SuperadminUserSeeder.php`; ganti kredensial awal sebelum memakai lingkungan bersama. Jangan menjalankan seeder pada database berisi data penting tanpa meninjau efeknya.
 
+Untuk lingkungan demonstrasi lokal yang kosong, tersedia seeder opt-in yang menambahkan unit outlet dan ticketing, akun Gudang dan petugas, katalog, harga, serta stok awal. Kata sandi tidak disimpan di repositori dan wajib diberikan melalui environment saat menjalankan seeder:
+
+```powershell
+$env:DEMO_USER_PASSWORD = '<kata-sandi-demo-lokal>'
+php artisan db:seed --class=DemoDataSeeder --no-interaction
+Remove-Item Env:DEMO_USER_PASSWORD
+```
+
+`DemoDataSeeder` idempoten untuk data master dan hanya menambah stok Gudang hingga target demo jika saldonya masih kurang. Seeder tidak dipanggil oleh `DatabaseSeeder`, sehingga tidak berjalan tanpa perintah eksplisit.
+
 ## Frontend
 
 Buka terminal lain, masuk ke `frontend/`, lalu jalankan:

@@ -1,3 +1,4 @@
+import logoKebun from '../../assets/logo-kebun.png'
 import { Navigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -14,7 +15,7 @@ import { LoginScene } from './LoginScene'
 import { useAuth } from './useAuth'
 
 const schema = z.object({
-  email: z.email('Masukkan email yang valid.'),
+  username: z.string().trim().min(1, 'Masukkan username.'),
   password: z.string().min(1, 'Masukkan kata sandi.'),
 })
 
@@ -37,18 +38,11 @@ export function LoginPage() {
       <div className="login-stage">
         <section className="login-showcase" aria-label="Pandansari System">
           <LoginScene />
-          <div className="login-showcase-copy">
-            <div className="login-brand-mark" aria-hidden="true">PS</div>
-            <div>
-              <p className="login-brand-name">Pandansari System</p>
-              <p>Kelola operasional dan persediaan dalam satu ruang kerja.</p>
-            </div>
-          </div>
         </section>
 
         <main className="login-card" aria-labelledby="login-heading">
           <div className="login-card-brand">
-            <div className="login-brand-mark">PS</div>
+            <img className="login-brand-logo" src={logoKebun} alt="Logo Kebun Pandansari" />
             <p className="eyebrow">PANDANSARI SYSTEM</p>
           </div>
           <h1 id="login-heading">
@@ -103,12 +97,12 @@ export function LoginPage() {
               }
             })}
           >
-            <FormField label="Email" error={form.formState.errors.email?.message}>
+            <FormField label="Username" error={form.formState.errors.username?.message}>
               <span className="login-input-wrap">
-                <Input type="email" autoComplete="username" placeholder="Masukkan alamat email" {...form.register('email')} />
+                <Input autoComplete="username" placeholder="Masukkan username" {...form.register('username')} />
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
-                  <rect x="3" y="5" width="18" height="14" rx="2" />
-                  <path d="m3 7 9 6 9-6" />
+                  <circle cx="12" cy="8" r="3.25" />
+                  <path d="M5.5 20a6.5 6.5 0 0 1 13 0" />
                 </svg>
               </span>
             </FormField>
@@ -124,6 +118,7 @@ export function LoginPage() {
             {auth.loginMutation.error && <ErrorState error={auth.loginMutation.error} />}
             <Button type="submit" className="login-submit" busy={auth.loginMutation.isPending}>
               Masuk
+              <span className="login-submit-arrow" aria-hidden="true">→</span>
             </Button>
           </form>
           )}

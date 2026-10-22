@@ -1,3 +1,4 @@
+import logoKebun from '../../assets/logo-kebun.png'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../../features/auth/useAuth'
 import { navigation } from './navigation'
@@ -12,7 +13,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="sidebar-content">
       <div className="sidebar-brand">
-        <span className="brand-mark">PS</span>
+        <img className="brand-logo" src={logoKebun} alt="Logo Kebun Pandansari" />
         <div>
           <p className="font-semibold">Pandansari</p>
           <p className="text-xs text-slate-400">Sistem Operasional</p>

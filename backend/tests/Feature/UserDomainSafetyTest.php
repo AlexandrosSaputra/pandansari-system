@@ -35,7 +35,7 @@ class UserDomainSafetyTest extends TestCase
         $role = Role::create(['name' => 'Admin', 'slug' => 'admin']);
         $user = User::factory()->create();
 
-        $this->assertSame(['name', 'email', 'password'], $user->getFillable());
+        $this->assertSame(['name', 'username', 'email', 'password'], $user->getFillable());
         $this->assertFalse($user->isFillable('role_id'));
         $this->assertFalse($user->isFillable('operational_unit_id'));
         $this->assertFalse($user->isFillable('is_active'));

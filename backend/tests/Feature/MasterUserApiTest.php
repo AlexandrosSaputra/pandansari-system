@@ -33,12 +33,14 @@ class MasterUserApiTest extends TestCase
 
         $response = $this->postJson('/api/users', [
             'name' => 'Admin Andi',
+            'username' => 'admin-andi',
             'email' => 'andi@example.com',
             'password' => 'StrongPass1234',
             'password_confirmation' => 'StrongPass1234',
             'role_id' => Role::where('slug', 'admin')->firstOrFail()->id,
             'operational_unit_id' => $unit->id,
-        ])->assertCreated()->assertJsonPath('data.role.slug', 'admin')
+        ])->assertCreated()->assertJsonPath('data.username', 'admin-andi')
+            ->assertJsonPath('data.role.slug', 'admin')
             ->assertJsonPath('data.operational_unit.id', $unit->id)
             ->assertJsonMissingPath('data.password');
 
@@ -63,6 +65,7 @@ class MasterUserApiTest extends TestCase
 
         $response = $this->postJson('/api/users', [
             'name' => 'Multi Role User',
+            'username' => 'multi-role-user',
             'email' => 'multi-role@example.com',
             'password' => 'StrongPass1234',
             'password_confirmation' => 'StrongPass1234',
@@ -86,7 +89,7 @@ class MasterUserApiTest extends TestCase
         $inactive = OperationalUnit::create(['code' => 'OUT-B', 'name' => 'Outlet B', 'type' => OperationalUnitType::Outlet, 'is_active' => false]);
         $roles = Role::pluck('id', 'slug');
         $base = [
-            'name' => 'New User', 'email' => 'new@example.com',
+            'name' => 'New User', 'username' => 'new-user', 'email' => 'new@example.com',
             'password' => 'StrongPass1234', 'password_confirmation' => 'StrongPass1234',
         ];
 
@@ -132,7 +135,7 @@ class MasterUserApiTest extends TestCase
     {
         $this->actingAsSystemUser();
         $unit = OperationalUnit::create(['code' => 'OUT-A', 'name' => 'Outlet A', 'type' => OperationalUnitType::Outlet]);
-        $admin = User::factory()->create(['name' => 'Searchable Admin', 'email' => 'search@example.com']);
+        $admin = User::factory()->create(['name' => 'Searchable Admin', 'username' => 'searchable-admin', 'email' => 'search@example.com']);
         $admin->forceFill([
             'role_id' => Role::where('slug', 'admin')->value('id'),
             'operational_unit_id' => $unit->id,
@@ -148,6 +151,7 @@ class MasterUserApiTest extends TestCase
 
         $this->postJson('/api/users', [
             'name' => 'Duplicate', 'email' => 'search@example.com',
+            'username' => 'duplicate-user',
             'password' => 'StrongPass1234', 'password_confirmation' => 'StrongPass1234',
             'role_id' => Role::where('slug', 'warehouse')->value('id'),
         ])->assertUnprocessable()->assertJsonValidationErrors('email');

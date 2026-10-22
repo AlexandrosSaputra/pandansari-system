@@ -31,7 +31,7 @@ class AuthApiTest extends TestCase
         $user = $this->createAccount($slug, $unit);
 
         $response = $this->withHeader('Origin', 'http://localhost:5173')->postJson('/api/auth/login', [
-            'email' => $user->email,
+            'username' => $user->username,
             'password' => 'password',
         ]);
 
@@ -46,7 +46,7 @@ class AuthApiTest extends TestCase
     public static function invalidAccounts(): array
     {
         return [
-            'email missing from database' => ['unknown_email'],
+            'username missing from database' => ['unknown_username'],
             'wrong password' => ['wrong_password'],
             'inactive user' => ['inactive_user'],
             'inactive role' => ['inactive_role'],
@@ -75,7 +75,7 @@ class AuthApiTest extends TestCase
         }
 
         $response = $this->withHeader('Origin', 'http://localhost:5173')->postJson('/api/auth/login', [
-            'email' => $scenario === 'unknown_email' ? 'missing@example.com' : $user->email,
+            'username' => $scenario === 'unknown_username' ? 'missing-user' : $user->username,
             'password' => $scenario === 'wrong_password' ? 'incorrect' : 'password',
         ]);
 
@@ -90,12 +90,12 @@ class AuthApiTest extends TestCase
         $this->withHeader('Origin', 'http://localhost:5173')
             ->postJson('/api/auth/login', [])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['email', 'password']);
+            ->assertJsonValidationErrors(['username', 'password']);
 
         $this->postJson('/api/auth/login', [
-            'email' => 'not-an-email',
+            'username' => 'invalid username!',
             'password' => ['not', 'a', 'string'],
-        ])->assertUnprocessable()->assertJsonValidationErrors(['email', 'password']);
+        ])->assertUnprocessable()->assertJsonValidationErrors(['username', 'password']);
     }
 
     public function test_me_returns_only_the_auth_resource_with_role_unit_and_permissions(): void
@@ -105,7 +105,7 @@ class AuthApiTest extends TestCase
         $user = $this->createAccount('admin', $unit, useSeededRole: true);
 
         $this->withHeader('Origin', 'http://localhost:5173')->postJson('/api/auth/login', [
-            'email' => $user->email,
+            'username' => $user->username,
             'password' => 'password',
         ])->assertOk();
 
@@ -147,7 +147,7 @@ class AuthApiTest extends TestCase
         ]);
 
         $this->withHeader('Origin', 'http://localhost:5173')->postJson('/api/auth/login', [
-            'email' => $user->email,
+            'username' => $user->username,
             'password' => 'password',
         ])->assertOk()
             ->assertJsonPath('data.active_assignment', null)
@@ -181,13 +181,14 @@ class AuthApiTest extends TestCase
         $user = $this->createAccount('warehouse');
 
         $this->withHeader('Origin', 'http://localhost:5173')->postJson('/api/auth/login', [
-            'email' => $user->email,
+            'username' => $user->username,
             'password' => 'password',
         ])->assertOk();
 
         $this->getJson('/api/auth/session')
             ->assertOk()
             ->assertJsonPath('data.id', $user->id)
+            ->assertJsonPath('data.username', $user->username)
             ->assertJsonPath('data.email', $user->email);
     }
 
@@ -200,7 +201,7 @@ class AuthApiTest extends TestCase
         $user = $this->createAccount('warehouse');
 
         $this->withHeader('Origin', 'http://localhost:5173')->postJson('/api/auth/login', [
-            'email' => $user->email,
+            'username' => $user->username,
             'password' => 'password',
         ])->assertOk();
 
@@ -212,17 +213,17 @@ class AuthApiTest extends TestCase
         $this->getJson('/api/auth/me')->assertUnauthorized();
     }
 
-    public function test_login_is_limited_to_five_attempts_per_email_and_ip(): void
+    public function test_login_is_limited_to_five_attempts_per_username_and_ip(): void
     {
         for ($attempt = 0; $attempt < 5; $attempt++) {
             $this->withHeader('Origin', 'http://localhost:5173')->postJson('/api/auth/login', [
-                'email' => 'rate-limit@example.com',
+                'username' => 'rate-limit-user',
                 'password' => 'wrong',
             ])->assertUnauthorized();
         }
 
         $this->postJson('/api/auth/login', [
-            'email' => 'rate-limit@example.com',
+            'username' => 'rate-limit-user',
             'password' => 'wrong',
         ])->assertTooManyRequests();
     }

@@ -34,6 +34,7 @@ export interface RoleAssignment {
   operational_unit: UnitSummary | null
 }
 export interface User extends Person {
+  username: string
   is_active: boolean
   assignments: RoleAssignment[]
   role: Pick<Role, 'id' | 'name' | 'slug'> | null

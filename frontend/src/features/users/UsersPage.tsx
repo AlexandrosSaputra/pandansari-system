@@ -67,6 +67,7 @@ export function UsersPage() {
         onSize={(size) => filters.set('per_page', size)}
         columns={[
           { title: 'Nama', render: (row) => <strong>{row.name}</strong> },
+          { title: 'Username', render: (row) => row.username },
           { title: 'Email', render: (row) => row.email },
           {
             title: 'Role',
