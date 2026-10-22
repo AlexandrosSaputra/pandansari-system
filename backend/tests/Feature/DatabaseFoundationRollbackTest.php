@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -13,15 +12,22 @@ class DatabaseFoundationRollbackTest extends TestCase
     {
         parent::setUp();
 
+        $database = env('DB_ROLLBACK_DATABASE', 'pandansari_rollback_testing');
+
+        if (! str_ends_with($database, '_testing')) {
+            $this->fail('The rollback test database name must end with _testing.');
+        }
+
+        $connection = config('database.connections.mysql');
+        $connection['database'] = $database;
+
         config([
             'database.default' => 'foundation_rollback',
-            'database.connections.foundation_rollback' => [
-                'driver' => 'sqlite',
-                'database' => ':memory:',
-                'prefix' => '',
-                'foreign_key_constraints' => true,
-            ],
+            'database.connections.foundation_rollback' => $connection,
         ]);
+
+        DB::purge('foundation_rollback');
+        Schema::dropAllTables();
     }
 
     public function test_foundation_can_migrate_rollback_and_migrate_again_preserving_existing_users(): void
@@ -35,8 +41,14 @@ class DatabaseFoundationRollbackTest extends TestCase
             ],
             '--no-interaction' => true,
         ])->assertSuccessful();
-        $user = User::factory()->create();
-        $originalUser = (array) DB::table('users')->find($user->id);
+        $userId = DB::table('users')->insertGetId([
+            'name' => 'Existing User',
+            'email' => 'existing@example.com',
+            'password' => 'not-used-by-this-test',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $originalUser = (array) DB::table('users')->find($userId);
 
         $this->artisan('migrate', ['--no-interaction' => true])->assertSuccessful();
 
@@ -48,12 +60,13 @@ class DatabaseFoundationRollbackTest extends TestCase
         ]);
         $this->assertTrue(Schema::hasTable('activity_logs'));
 
-        $this->artisan('migrate:rollback', ['--step' => 16, '--no-interaction' => true])->assertSuccessful();
+        $this->artisan('migrate:rollback', ['--step' => 17, '--no-interaction' => true])->assertSuccessful();
 
-        $this->assertSame($originalUser, (array) DB::table('users')->find($user->id));
+        $this->assertSame($originalUser, (array) DB::table('users')->find($userId));
         $this->assertFalse(Schema::hasColumn('users', 'role_id'));
         $this->assertFalse(Schema::hasColumn('users', 'operational_unit_id'));
         $this->assertFalse(Schema::hasColumn('users', 'is_active'));
+        $this->assertFalse(Schema::hasColumn('users', 'username'));
         $this->assertDatabaseCount('migrations', 4);
         foreach (['roles', 'permissions', 'role_permissions', 'user_role_assignments', 'operational_units', 'items', 'unit_items', 'inventory_locations', 'inventory_balances', 'stock_movements', 'stock_transfers', 'stock_transfer_items', 'transactions', 'transaction_items', 'activity_logs'] as $table) {
             $this->assertFalse(Schema::hasTable($table), "Table remains after rollback: {$table}");
@@ -62,8 +75,9 @@ class DatabaseFoundationRollbackTest extends TestCase
 
         $this->artisan('migrate', ['--no-interaction' => true])->assertSuccessful();
 
-        $this->assertDatabaseCount('migrations', 20);
+        $this->assertDatabaseCount('migrations', 21);
         $this->assertDatabaseHas('users', [...$originalUser, 'is_active' => true]);
+        $this->assertTrue(Schema::hasColumn('users', 'username'));
         $this->assertTrue(Schema::hasTable('activity_logs'));
     }
 }

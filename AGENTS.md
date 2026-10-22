@@ -17,6 +17,7 @@
 - Keep completed transactions immutable. A barcode scan may add an item to a cart, but stock is reduced only on a successful checkout.
 - Do not add dependencies, change infrastructure configuration, or create migrations without an explicit request.
 - Before changing code, inspect the applicable local guidance and existing tests. Use the smallest relevant test suite to verify a code change.
+- Run backend tests against dedicated MySQL databases only; never use SQLite. Keep test database names clearly separated from development and production databases (for example, with a `_testing` suffix), and create the dedicated test databases when they do not yet exist.
 
 ## Documentation conventions
 
