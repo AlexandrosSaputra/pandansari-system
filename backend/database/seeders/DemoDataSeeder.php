@@ -9,16 +9,13 @@ use App\Models\InventoryBalance;
 use App\Models\InventoryLocation;
 use App\Models\Item;
 use App\Models\OperationalUnit;
-use App\Models\Role;
 use App\Models\UnitItem;
 use App\Models\User;
 use App\Models\UserRoleAssignment;
 use App\Services\WarehouseStockService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use LogicException;
 
 class DemoDataSeeder extends Seeder
 {
@@ -90,19 +87,13 @@ class DemoDataSeeder extends Seeder
     /**
      * Run the database seeds.
      */
-    public function run(WarehouseStockService $warehouseStock): void
+    public function run(WarehouseStockService $warehouseStock, UserSeeder $userSeeder): void
     {
-        $password = (string) config('demo.user_password');
-
-        if ($password === '') {
-            throw new LogicException('DEMO_USER_PASSWORD must be configured before seeding demo data.');
-        }
+        $userSeeder->validateDemoAccountConfiguration();
 
         $this->call(DatabaseSeeder::class);
 
         $superadmin = User::where('email', config('auth.initial_superadmin_email'))->firstOrFail();
-        $warehouseRole = Role::where('slug', 'warehouse')->firstOrFail();
-        $adminRole = Role::where('slug', 'admin')->firstOrFail();
         $outlets = [];
         $products = [];
 
@@ -157,29 +148,8 @@ class DemoDataSeeder extends Seeder
         $this->upsertUnitItem($ticketing, $ticket, '15000.00', 0, $superadmin);
         $this->removeUnexpectedUnitItems($ticketing, [$ticket->id]);
 
-        $warehouseUser = $this->upsertUser(
-            'warehouse.demo@pandansari.local',
-            'warehouse-demo',
-            'Petugas Gudang Demo',
-            $warehouseRole,
-            null,
-            $password,
-        );
-        $adminUser = $this->upsertUser(
-            'admin.demo@pandansari.local',
-            'admin-demo',
-            'Petugas Outlet dan Ticketing Demo',
-            $adminRole,
-            $outlets[0],
-            $password,
-        );
-
-        foreach ([...$outlets, $ticketing] as $unit) {
-            $adminUser->assignments()->updateOrCreate([
-                'role_id' => $adminRole->id,
-                'operational_unit_id' => $unit->id,
-            ], ['is_active' => true]);
-        }
+        $demoAccounts = $userSeeder->seedDemoAccounts($outlets, $ticketing);
+        $warehouseUser = $demoAccounts['warehouse'];
 
         $this->removeObsoleteDemoUnits();
 
@@ -342,40 +312,6 @@ class DemoDataSeeder extends Seeder
             'is_active' => true,
             'created_by' => $creator->id,
         ]);
-    }
-
-    private function upsertUser(
-        string $email,
-        string $username,
-        string $name,
-        Role $role,
-        ?OperationalUnit $unit,
-        string $password,
-    ): User {
-        $user = User::firstOrCreate(['email' => $email], [
-            'name' => $name,
-            'username' => $username,
-            'password' => Hash::make($password),
-            'email_verified_at' => now(),
-        ]);
-
-        $user->forceFill([
-            'name' => $name,
-            'username' => $username,
-            'role_id' => $role->id,
-            'operational_unit_id' => $unit?->id,
-            'is_active' => true,
-        ]);
-        if ($user->isDirty()) {
-            $user->save();
-        }
-
-        $user->assignments()->updateOrCreate([
-            'role_id' => $role->id,
-            'operational_unit_id' => $unit?->id,
-        ], ['is_active' => true]);
-
-        return $user;
     }
 
     private function topUpWarehouse(

@@ -25,7 +25,7 @@ php artisan migrate --seed --no-interaction
 php artisan serve --host=localhost --port=8000 --no-reload
 ```
 
-Seeder membuat role, permission, lokasi Gudang, dan akun awal pengembangan. Detail akun awal ada di `backend/database/seeders/SuperadminUserSeeder.php`; ganti kredensial awal sebelum memakai lingkungan bersama. Jangan menjalankan seeder pada database berisi data penting tanpa meninjau efeknya.
+Seeder membuat role, permission, lokasi Gudang, dan akun awal pengembangan. Seluruh pasangan username/password akun bawaan dan demo didefinisikan di `backend/database/seeders/UserSeeder.php`; ganti kredensial awal sebelum memakai lingkungan bersama. Jangan menjalankan seeder pada database berisi data penting tanpa meninjau efeknya.
 
 Untuk lingkungan demonstrasi lokal yang kosong, tersedia seeder opt-in yang menambahkan unit outlet dan ticketing, akun Gudang dan petugas, katalog, harga, serta stok awal. Kata sandi tidak disimpan di repositori dan wajib diberikan melalui environment saat menjalankan seeder:
 

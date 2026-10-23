@@ -4,10 +4,12 @@ namespace Tests\Feature;
 
 use App\Models\Permission;
 use App\Models\Role;
+use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class SystemSeederTest extends TestCase
@@ -110,6 +112,10 @@ class SystemSeederTest extends TestCase
             'operational_unit_id' => null,
             'is_active' => true,
         ]);
+        $this->assertTrue(Hash::check(
+            'Password123!',
+            (string) User::where('username', 'admin')->value('password'),
+        ));
         $this->assertDatabaseCount('user_role_assignments', 1);
         $this->assertDatabaseHas('user_role_assignments', [
             'role_id' => Role::where('slug', 'superadmin')->value('id'),
