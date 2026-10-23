@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\HealthController;
@@ -27,6 +28,9 @@ Route::prefix('auth')->name('api.auth.')->group(function (): void {
 
     Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/me', [AuthController::class, 'me'])->name('me');
+        Route::patch('/profile', [AccountController::class, 'updateProfile'])->name('profile.update');
+        Route::put('/password', [AccountController::class, 'updatePassword'])->name('password.update');
+        Route::get('/activity-logs', [AccountController::class, 'activityLogs'])->name('activity-logs.index');
         Route::post('/assignment', [AuthController::class, 'selectAssignment'])->name('assignment.select');
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     });

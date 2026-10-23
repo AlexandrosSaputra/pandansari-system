@@ -615,6 +615,27 @@
     background: white;
     box-shadow: 0 20px 35px -12px #0f172a26;
   }
+  .profile-menu::before,
+  .profile-menu::after {
+    position: absolute;
+    pointer-events: none;
+    content: '';
+    clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  }
+  .profile-menu::before {
+    top: -0.5rem;
+    right: 1.25rem;
+    width: 0.875rem;
+    height: 0.5rem;
+    background: #e2e8f0e6;
+  }
+  .profile-menu::after {
+    top: -0.375rem;
+    right: calc(1.25rem + 1px);
+    width: 0.75rem;
+    height: 0.4375rem;
+    background: white;
+  }
   .profile-card {
     padding: 0.7rem 0.75rem;
     border: 1px solid #f1f5f9;

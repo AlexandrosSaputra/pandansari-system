@@ -33,6 +33,27 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <Navigate to="/dashboard" replace /> },
           {
+            path: 'account/profile',
+            lazy: async () => ({
+              Component: (await import('../features/account/ProfilePage'))
+                .ProfilePage,
+            }),
+          },
+          {
+            path: 'account/settings',
+            lazy: async () => ({
+              Component: (await import('../features/account/AccountSettingsPage'))
+                .AccountSettingsPage,
+            }),
+          },
+          {
+            path: 'account/activity',
+            lazy: async () => ({
+              Component: (await import('../features/account/MyActivityPage'))
+                .MyActivityPage,
+            }),
+          },
+          {
             element: <PermissionGuard permission="dashboard.view" />,
             children: [
               {

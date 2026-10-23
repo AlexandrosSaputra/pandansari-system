@@ -50,10 +50,18 @@ try {
     operationalUnit = role === 'admin' ? unit : null,
   ) {
     queryClient.clear()
-    queryClient.setQueryData(keys.auth, {
-      ...user,
+    const activeAssignment = {
+      id: 1,
+      is_active: true,
       role: { ...user.role, slug: role },
       operational_unit: operationalUnit,
+    }
+    queryClient.setQueryData(keys.auth, {
+      ...user,
+      role: activeAssignment.role,
+      operational_unit: operationalUnit,
+      assignments: [activeAssignment],
+      active_assignment: activeAssignment,
       permissions,
     })
   }
@@ -305,6 +313,33 @@ try {
       assert.doesNotMatch(html, /NaN|undefined|Rp/)
     })
   }
+  session('warehouse', ['dashboard.view'])
+  const { ProfilePage } = await server.ssrLoadModule(
+    '/src/features/account/ProfilePage.tsx',
+  )
+  check('Profile page renders the signed-in identity and assignments', () => {
+    const html = render(h(ProfilePage))
+    assert.match(html, /Profil Saya/)
+    assert.match(html, /fixture@example\.test/)
+    assert.match(html, /Seluruh role dan unit/)
+  })
+  const { AccountSettingsPage } = await server.ssrLoadModule(
+    '/src/features/account/AccountSettingsPage.tsx',
+  )
+  check('Account settings exposes profile and password forms', () => {
+    const html = render(h(AccountSettingsPage))
+    assert.match(html, /Informasi akun/)
+    assert.match(html, /Kata sandi saat ini/)
+    assert.match(html, /Perbarui kata sandi/)
+  })
+  const { MyActivityPage } = await server.ssrLoadModule(
+    '/src/features/account/MyActivityPage.tsx',
+  )
+  check('Personal activity page renders without global audit permission', () => {
+    const html = render(h(MyActivityPage))
+    assert.match(html, /Log Aktivitas Saya/)
+    assert.match(html, /Riwayat aktivitas keamanan dan operasional/)
+  })
   const { api, sessionApi } = await server.ssrLoadModule('/src/lib/api.ts')
   const { usePosCart } = await server.ssrLoadModule(
     '/src/features/transactions/usePosCart.ts',

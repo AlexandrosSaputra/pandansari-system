@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../../features/auth/useAuth'
 import { Button, ErrorState } from '../ui'
@@ -67,18 +68,28 @@ function ProfileMenuIcon({ name }: { name: 'profile' | 'settings' | 'log' | 'log
 export function Topbar({ onMenu }: { onMenu: () => void }) {
   const auth = useAuth()
   const { pathname } = useLocation()
+  const profileDetailsRef = useRef<HTMLDetailsElement>(null)
   const current = [...navigation]
     .sort((a, b) => b.to.length - a.to.length)
     .find((item) => pathname === item.to || pathname.startsWith(`${item.to}/`))
-  const currentLabel =
-    current?.to === '/dashboard'
+  const accountPage = {
+    '/account/profile': { group: 'Akun', label: 'Profil Saya' },
+    '/account/settings': { group: 'Akun', label: 'Pengaturan Akun' },
+    '/account/activity': { group: 'Akun', label: 'Log Aktivitas Saya' },
+  }[pathname]
+  const currentGroup = accountPage?.group ?? current?.group
+  const currentLabel = accountPage?.label ?? (current?.to === '/dashboard'
       ? 'Ringkasan Operasional'
-      : (current?.label ?? 'Pandansari')
+      : (current?.label ?? 'Pandansari'))
   const userName = auth.user?.name ?? 'Pengguna'
   const roleName = auth.user?.role?.name ?? 'Akun'
   const unitName =
     auth.user?.operational_unit?.name ??
     (auth.canWarehouse ? 'Gudang Utama' : 'Semua unit')
+
+  useEffect(() => {
+    profileDetailsRef.current?.removeAttribute('open')
+  }, [pathname])
 
   return (
     <header className="topbar">
@@ -103,9 +114,9 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
         </button>
 
         <nav aria-label="Breadcrumb" className="topbar-breadcrumb">
-          {current?.group && current.group !== 'Ruang kerja' && (
+          {currentGroup && currentGroup !== 'Ruang kerja' && (
             <>
-              <span className="text-slate-500">{current.group}</span>
+              <span className="text-slate-500">{currentGroup}</span>
               <ChevronIcon />
             </>
           )}
@@ -138,7 +149,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
         </button>
         <span aria-hidden="true" className="topbar-divider" />
 
-        <details className="profile-details">
+        <details ref={profileDetailsRef} className="profile-details">
           <summary className="profile-summary">
             <span className="profile-avatar">{userName.slice(0, 1)}</span>
             <span className="hidden min-w-0 flex-col text-left sm:flex">
@@ -214,30 +225,18 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
             </div>
 
             <div className="profile-actions">
-              <button
-                type="button"
-                className="profile-action"
-                disabled
-                title="Halaman profil belum tersedia"
-              >
+              <Link className="profile-action" to="/account/profile">
                 <ProfileMenuIcon name="profile" />
                 <span>Profil Saya</span>
-              </button>
-              <button
-                type="button"
-                className="profile-action"
-                disabled
-                title="Pengaturan akun belum tersedia"
-              >
+              </Link>
+              <Link className="profile-action" to="/account/settings">
                 <ProfileMenuIcon name="settings" />
                 <span>Pengaturan Akun</span>
-              </button>
-              {auth.hasPermission('audit.view') && (
-                <Link className="profile-action" to="/activity-logs">
-                  <ProfileMenuIcon name="log" />
-                  <span>Log Aktivitas Saya</span>
-                </Link>
-              )}
+              </Link>
+              <Link className="profile-action" to="/account/activity">
+                <ProfileMenuIcon name="log" />
+                <span>Log Aktivitas Saya</span>
+              </Link>
             </div>
 
             {auth.logoutMutation.error && (
