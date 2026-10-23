@@ -6,7 +6,6 @@ import { SaveForm } from '../../components/ui/SaveForm'
 import { useSave } from '../../lib/queries'
 import type { Item } from '../../types/api'
 const schema = z.object({
-  item_code: z.string().trim().min(1, 'Kode wajib diisi.').max(255),
   barcode: z.string().max(255),
   name: z.string().trim().min(1, 'Nama wajib diisi.').max(255),
   type: z.enum(['PRODUCT', 'SERVICE']),
@@ -27,7 +26,6 @@ export function ItemForm({
   const form = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: {
-      item_code: item?.item_code ?? '',
       barcode: item?.barcode ?? '',
       name: item?.name ?? '',
       type: item?.type ?? 'PRODUCT',
@@ -74,14 +72,26 @@ export function ItemForm({
         successMessage={item ? 'Item berhasil diperbarui.' : 'Item berhasil ditambahkan.'}
       >
         <div className="form-grid">
-          <FormField label="Kode item" error={errors.item_code?.message}>
-            <Input {...form.register('item_code')} />
+          <FormField label="Kode item">
+            <Input
+              value={item?.item_code ?? ''}
+              placeholder="Dibuat otomatis saat disimpan"
+              disabled={!item}
+              readOnly={!!item}
+              className="item-code-input"
+            />
           </FormField>
           <FormField label="Barcode" error={errors.barcode?.message}>
-            <Input {...form.register('barcode')} />
+            <Input
+              placeholder="Contoh: 8991234567890"
+              {...form.register('barcode')}
+            />
           </FormField>
           <FormField label="Nama" error={errors.name?.message}>
-            <Input {...form.register('name')} />
+            <Input
+              placeholder="Contoh: Air Mineral 600 ml"
+              {...form.register('name')}
+            />
           </FormField>
           <FormField label="Jenis" error={errors.type?.message}>
             <Select
@@ -97,7 +107,10 @@ export function ItemForm({
             </Select>
           </FormField>
           <FormField label="Satuan (UOM)" error={errors.uom?.message}>
-            <Input {...form.register('uom')} />
+            <Input
+              placeholder="Contoh: pcs, botol, atau porsi"
+              {...form.register('uom')}
+            />
           </FormField>
           <FormField
             label="Faktor pengunjung"

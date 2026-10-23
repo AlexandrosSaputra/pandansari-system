@@ -13,6 +13,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class ItemController extends Controller
@@ -48,16 +49,25 @@ class ItemController extends Controller
         $item = DB::transaction(function () use ($attributes, $request, $logger): Item {
             $item = Item::create([
                 ...$attributes,
+                'item_code' => 'PENDING-'.Str::uuid(),
                 'visitor_factor' => $attributes['visitor_factor'] ?? 0,
                 'is_active' => $attributes['is_active'] ?? true,
                 'created_by' => $request->user()->id,
             ]);
+            $item->update(['item_code' => $this->generatedItemCode($item)]);
             $logger->log($request->user(), 'ITEM_CREATED', $item, ['item_code' => $item->item_code]);
 
             return $item;
         });
 
         return (new ItemResource($item))->response()->setStatusCode(201);
+    }
+
+    private function generatedItemCode(Item $item): string
+    {
+        $prefix = $item->type === ItemType::Product ? 'PROD' : 'SERVICE';
+
+        return sprintf('%s-%06d', $prefix, $item->id);
     }
 
     public function show(Item $item): ItemResource

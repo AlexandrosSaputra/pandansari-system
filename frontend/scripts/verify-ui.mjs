@@ -259,6 +259,7 @@ try {
     'rbac.view',
     'operational-unit.view',
     'item.view',
+    'item.manage',
     'inventory.view',
   ])
   const page = (data) => ({
@@ -309,11 +310,53 @@ try {
     page([]),
   )
   const masterItemsPage = page([])
-  masterItemsPage.meta.total = 30
+  masterItemsPage.meta.total = 32
   queryClient.setQueryData(
     keys.list('/items', { per_page: 1 }),
     masterItemsPage,
   )
+  const activeItemsPage = page([])
+  activeItemsPage.meta.total = 28
+  queryClient.setQueryData(
+    keys.list('/items', { per_page: 1, is_active: true }),
+    activeItemsPage,
+  )
+  const itemListPage = page([
+    {
+      id: 21,
+      item_code: 'PROD-TEST-ITEM',
+      barcode: null,
+      name: 'Item Master Fixture',
+      type: 'PRODUCT',
+      uom: 'pcs',
+      visitor_factor: 0,
+      is_active: true,
+      created_at: null,
+      updated_at: null,
+    },
+  ])
+  Object.assign(itemListPage.meta, {
+    per_page: 15,
+    total: 32,
+    last_page: 3,
+  })
+  queryClient.setQueryData(
+    keys.list('/items', { page: 1, per_page: 15 }),
+    itemListPage,
+  )
+  const { ItemsPage } = await server.ssrLoadModule(
+    '/src/features/items/ItemsPage.tsx',
+  )
+  check('Master Item renders the referenced metrics, filters, and numbered table', () => {
+    const html = render(h(ItemsPage))
+    assert.match(html, /Ringkasan master item/)
+    assert.match(html, /Total item/)
+    assert.match(html, /Item Master Fixture/)
+    assert.match(html, /PROD-TEST-ITEM/)
+    assert.match(html, /Semua Jenis/)
+    assert.match(html, /Navigasi halaman/)
+    assert.match(html, /Tambah Item/)
+  })
   const { UnitItemsView } = await server.ssrLoadModule(
     '/src/features/items/UnitItemsView.tsx',
   )
@@ -328,7 +371,7 @@ try {
     assert.match(html, /aria-label="Lihat rincian Item per Unit Fixture"/)
     assert.match(html, /Total item yang ada/i)
     assert.match(html, /Total item diplot/i)
-    assert.match(html, />30</)
+    assert.match(html, />32</)
     assert.doesNotMatch(html, /Archived Unit Fixture/)
   })
   queryClient.setQueryData(
@@ -377,6 +420,14 @@ try {
         ).includes(expected),
       ),
     )
+    if (name === 'ItemForm') {
+      check('Item form shows generated code and helpful placeholders', () => {
+        const html = render(h(module[name], { onClose() {}, onSaved() {} }))
+        assert.match(html, /Dibuat otomatis saat disimpan/)
+        assert.match(html, /Contoh: Air Mineral 600 ml/)
+        assert.match(html, /disabled=""/)
+      })
+    }
   }
   const { UnitForm } = await server.ssrLoadModule(
     '/src/features/operational-units/UnitForm.tsx',

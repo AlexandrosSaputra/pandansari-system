@@ -15,16 +15,20 @@ class ItemApiTest extends TestCase
         $actor = $this->actingAsSystemUser();
 
         $product = $this->postJson('/api/items', [
-            'item_code' => 'WATER', 'barcode' => '1234567890', 'name' => 'Air Mineral',
+            'barcode' => '1234567890', 'name' => 'Air Mineral',
             'type' => 'PRODUCT', 'uom' => 'bottle',
-        ])->assertCreated()->assertJsonPath('data.visitor_factor', 0);
+        ])->assertCreated()
+            ->assertJsonPath('data.item_code', 'PROD-000001')
+            ->assertJsonPath('data.visitor_factor', 0);
 
         $this->postJson('/api/items', [
-            'item_code' => 'TICKET', 'name' => 'Ticket', 'type' => 'SERVICE', 'visitor_factor' => 1,
-        ])->assertCreated()->assertJsonPath('data.barcode', null);
+            'name' => 'Ticket', 'type' => 'SERVICE', 'visitor_factor' => 1,
+        ])->assertCreated()
+            ->assertJsonPath('data.item_code', 'SERVICE-000002')
+            ->assertJsonPath('data.barcode', null);
 
         $this->postJson('/api/items', [
-            'item_code' => 'PARKING', 'name' => 'Parkir', 'type' => 'SERVICE', 'visitor_factor' => 0,
+            'name' => 'Parkir', 'type' => 'SERVICE', 'visitor_factor' => 0,
         ])->assertCreated();
 
         $this->assertDatabaseCount('items', 3);
@@ -34,24 +38,24 @@ class ItemApiTest extends TestCase
         ]);
     }
 
-    public function test_item_uniqueness_enum_and_product_factor_are_validated(): void
+    public function test_item_code_is_generated_and_other_item_rules_are_validated(): void
     {
         $this->actingAsSystemUser();
         $this->postJson('/api/items', [
-            'item_code' => 'WATER', 'barcode' => '123', 'name' => 'Water', 'type' => 'PRODUCT',
+            'barcode' => '123', 'name' => 'Water', 'type' => 'PRODUCT',
         ])->assertCreated();
 
         $this->postJson('/api/items', [
-            'item_code' => 'WATER', 'name' => 'Duplicate', 'type' => 'PRODUCT',
+            'item_code' => 'MANUAL-CODE', 'name' => 'Manual', 'type' => 'PRODUCT',
         ])->assertUnprocessable()->assertJsonValidationErrors('item_code');
         $this->postJson('/api/items', [
-            'item_code' => 'OTHER', 'barcode' => '123', 'name' => 'Duplicate barcode', 'type' => 'PRODUCT',
+            'barcode' => '123', 'name' => 'Duplicate barcode', 'type' => 'PRODUCT',
         ])->assertUnprocessable()->assertJsonValidationErrors('barcode');
         $this->postJson('/api/items', [
-            'item_code' => 'OTHER', 'name' => 'Invalid', 'type' => 'STOCK',
+            'name' => 'Invalid', 'type' => 'STOCK',
         ])->assertUnprocessable()->assertJsonValidationErrors('type');
         $this->postJson('/api/items', [
-            'item_code' => 'OTHER', 'name' => 'Invalid factor', 'type' => 'PRODUCT', 'visitor_factor' => 2,
+            'name' => 'Invalid factor', 'type' => 'PRODUCT', 'visitor_factor' => 2,
         ])->assertUnprocessable()->assertJsonValidationErrors('visitor_factor');
 
         $this->assertDatabaseCount('items', 1);
@@ -61,7 +65,7 @@ class ItemApiTest extends TestCase
     {
         $this->actingAsSystemUser();
         $id = $this->postJson('/api/items', [
-            'item_code' => 'WATER', 'name' => 'Water', 'type' => 'PRODUCT',
+            'name' => 'Water', 'type' => 'PRODUCT',
         ])->assertCreated()->json('data.id');
 
         $this->patchJson('/api/items/'.$id, ['name' => 'Air Mineral'])->assertOk();

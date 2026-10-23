@@ -105,7 +105,7 @@ type UnitItemsQueryState = {
   refetch: () => unknown
 }
 
-function SummaryIcon({ tone, type }: { tone: string; type: string }) {
+function SummaryIcon({ type }: { type: string }) {
   const paths: Record<string, ReactNode> = {
     location: (
       <>
@@ -133,48 +133,37 @@ function SummaryIcon({ tone, type }: { tone: string; type: string }) {
   }
 
   return (
-    <span
-      className={`grid size-10 shrink-0 place-items-center rounded-xl border ${tone}`}
-    >
+    <span className="items-metric-icon">
       <SvgIcon className="size-5">{paths[type]}</SvgIcon>
     </span>
   )
 }
 
 function SummaryCard({
+  tone,
   label,
   value,
   tag,
-  tagClassName,
-  iconTone,
   icon,
 }: {
+  tone: 'emerald' | 'blue' | 'violet' | 'amber'
   label: string
   value: string | number
   tag: string
-  tagClassName: string
-  iconTone: string
   icon: string
 }) {
   return (
-    <Card className="flex min-h-32 flex-col justify-between gap-3 rounded-2xl border-slate-200/80 p-5 shadow-sm transition-shadow hover:shadow-md">
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-[0.68rem] font-bold uppercase tracking-[0.08em] text-slate-500">
-          {label}
-        </span>
-        <SummaryIcon tone={iconTone} type={icon} />
+    <article className={`items-metric items-metric-${tone}`}>
+      <div className="items-metric-heading">
+        <span>{label}</span>
+        <SummaryIcon type={icon} />
       </div>
-      <div className="flex flex-wrap items-baseline gap-2">
-        <strong className="text-2xl font-bold tracking-tight text-slate-900">
-          {value}
-        </strong>
-        <span
-          className={`inline-flex rounded-md border px-2 py-0.5 text-[0.68rem] font-medium ${tagClassName}`}
-        >
-          {tag}
-        </span>
-      </div>
-    </Card>
+      <strong>{value}</strong>
+      <span className="items-metric-pill">
+        <i />
+        {tag}
+      </span>
+    </article>
   )
 }
 
@@ -211,38 +200,34 @@ function OutletSummary({
   return (
     <section
       aria-label="Ringkasan outlet"
-      className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+      className="items-metrics"
     >
       <SummaryCard
+        tone="emerald"
         label="Total lokasi"
         value={units.length}
         tag={`${activeUnits} titik aktif`}
-        tagClassName="border-emerald-200/70 bg-emerald-50 text-emerald-700"
-        iconTone="border-emerald-100 bg-emerald-50 text-emerald-600"
         icon="location"
       />
       <SummaryCard
+        tone="blue"
         label="Total item yang ada"
         value={masterItemTotal ?? '…'}
         tag="Master item"
-        tagClassName="border-blue-200/70 bg-blue-50 text-blue-700"
-        iconTone="border-blue-100 bg-blue-50 text-blue-600"
         icon="item"
       />
       <SummaryCard
+        tone="violet"
         label="Total item diplot"
         value={plottedTotal}
         tag="Teralokasi"
-        tagClassName="border-violet-200/70 bg-violet-50 text-violet-700"
-        iconTone="border-violet-100 bg-violet-50 text-violet-600"
         icon="plotted"
       />
       <SummaryCard
+        tone="amber"
         label="Tiket masuk reguler"
         value={ticketPrice === undefined ? '—' : formatCurrency(ticketPrice)}
         tag={ticketPrice === undefined ? 'Belum diatur' : 'Tarif aktif'}
-        tagClassName="border-amber-200/70 bg-amber-50 text-amber-700"
-        iconTone="border-amber-100 bg-amber-50 text-amber-600"
         icon="ticket"
       />
     </section>

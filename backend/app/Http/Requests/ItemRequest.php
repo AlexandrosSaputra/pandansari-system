@@ -26,7 +26,7 @@ class ItemRequest extends FormRequest
         $item = $this->route('item');
 
         return [
-            'item_code' => [$creating ? 'required' : 'sometimes', 'string', 'max:255', Rule::unique('items', 'item_code')->ignore($item instanceof Item ? $item->id : null)],
+            'item_code' => ['prohibited'],
             'barcode' => ['sometimes', 'nullable', 'string', 'max:255', Rule::unique('items', 'barcode')->ignore($item instanceof Item ? $item->id : null)],
             'name' => [$creating ? 'required' : 'sometimes', 'string', 'max:255'],
             'type' => [$creating ? 'required' : 'sometimes', Rule::enum(ItemType::class)],

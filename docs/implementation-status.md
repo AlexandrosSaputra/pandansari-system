@@ -9,7 +9,7 @@ Angka ini adalah estimasi penilaian fitur, bukan metrik terukur atau perhitungan
 | Area proposal | Status | Estimasi | Catatan |
 | --- | --- | ---: | --- |
 | Login, RBAC, pengguna, dan outlet | Tersedia | 90% | Role, permission, assignment unit, route guard, profil mandiri, penggantian kata sandi, log aktivitas pribadi, panel notifikasi aktivitas akun, penguncian setelah tiga kata sandi salah, dan pemulihan melalui OTP email superadmin tersedia. |
-| Produk dan lokasi | Tersedia | 85% | Item, barcode, harga per unit, lokasi inventori, dan unit operasional tersedia. Superadmin dapat mengelola item per unit melalui tampilan parent–child yang dikelompokkan berdasarkan outlet atau ticketing. |
+| Produk dan lokasi | Tersedia | 85% | Item, barcode, harga per unit, lokasi inventori, dan unit operasional tersedia. Kode Master Item dibuat otomatis oleh sistem; halaman memiliki ringkasan katalog, filter, tabel bernomor, dan pagination responsif. Superadmin dapat mengelola item per unit melalui tampilan parent–child yang dikelompokkan berdasarkan outlet atau ticketing. |
 | Persediaan dan ledger | Tersedia | 80% | Saldo, stok masuk/keluar, transfer, dan riwayat mutasi tersedia. `ADJUSTMENT` dan `DAMAGED` belum tersedia. Stock opname di luar lingkup. |
 | POS dan ticketing | Tersedia | 80% | POS outlet dan Ticketing memiliki menu serta ruang transaksi terpisah dengan engine keranjang dan checkout yang sama; barcode manual dan riwayat transaksi tersedia. |
 | Dashboard dan laporan | Sebagian | 40% | Dashboard operasional dasar tersedia; laporan bisnis lengkap dan AI Insight belum tersedia. |
