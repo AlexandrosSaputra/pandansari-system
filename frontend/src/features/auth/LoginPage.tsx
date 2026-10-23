@@ -9,8 +9,8 @@ import {
   ErrorState,
   FormField,
   Input,
-  Skeleton,
 } from '../../components/ui'
+import { AppLoadingScreen } from '../../components/common/AppLoadingScreen'
 import { apiError, setFormErrors } from '../../lib/errors'
 import { LoginScene } from './LoginScene'
 import { useAuth } from './useAuth'
@@ -35,12 +35,7 @@ export function LoginPage() {
     ? apiError(auth.loginMutation.error)
     : null
 
-  if (auth.isLoading)
-    return (
-      <div className="login-shell login-shell-loading">
-        <Skeleton rows={4} />
-      </div>
-    )
+  if (auth.isLoading) return <AppLoadingScreen />
   if (auth.isAuthenticated) return <Navigate to="/dashboard" replace />
 
   return (

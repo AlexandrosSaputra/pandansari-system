@@ -872,7 +872,6 @@
   box-shadow: 0 1.5rem 3.75rem -1.8rem rgb(16 36 74 / 26%);
   animation: login-rise 0.65s cubic-bezier(.22, 1, .36, 1) both;
 }
-.login-shell-loading { display: grid; place-items: center; padding: 1.5rem; }
 .login-showcase { position: relative; z-index: 1; align-self: stretch; justify-self: stretch; width: 100%; min-height: 480px; overflow: visible; }
 .login-scene { position: absolute; top: 0; left: calc(var(--login-scene-bleed) / -2); display: block; width: calc(100% + var(--login-scene-bleed)); height: 100%; touch-action: none; --login-scene-bleed: clamp(8rem, 18vw, 18rem); }
 .login-warehouse {

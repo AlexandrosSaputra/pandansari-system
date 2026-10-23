@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { AppLoadingScreen } from '../../components/common/AppLoadingScreen'
 import { Badge, Button, ListContent, PageHeader } from '../../components/ui'
 import { FilterBar } from '../../components/ui/Filters'
 import { dateFilters, enumOptions } from '../../components/ui/filterDefinitions'
@@ -11,6 +12,9 @@ export function TransactionsPage() {
   const filters = useFilters()
   const query = useList<Transaction>('/transactions', filters.params)
   const [detail, setDetail] = useState<number>()
+
+  if (query.isPending) return <AppLoadingScreen />
+
   return (
     <>
       <PageHeader

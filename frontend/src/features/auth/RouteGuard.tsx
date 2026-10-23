@@ -1,16 +1,11 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from './useAuth'
-import { Skeleton } from '../../components/ui'
+import { AppLoadingScreen } from '../../components/common/AppLoadingScreen'
 import { ForbiddenPage } from '../../pages/ForbiddenPage'
 export function ProtectedRoute() {
   const auth = useAuth()
   const location = useLocation()
-  if (auth.isLoading)
-    return (
-      <div className="mx-auto max-w-4xl p-8">
-        <Skeleton rows={7} />
-      </div>
-    )
+  if (auth.isLoading) return <AppLoadingScreen />
   // A session check that cannot reach the API must not leave a protected page
   // visible behind a retry error. Return the user to the login screen instead.
   if (auth.error)

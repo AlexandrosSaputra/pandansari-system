@@ -1,14 +1,14 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { PermissionGuard, ProtectedRoute } from '../features/auth/RouteGuard'
 import { AppLayout } from '../layouts/AppLayout'
-import { RouterHydrationFallback } from '../components/common/RouterHydrationFallback'
+import { AppLoadingScreen } from '../components/common/AppLoadingScreen'
 import { NotFoundPage } from '../pages/NotFoundPage'
 import { RouteErrorPage } from '../pages/RouteErrorPage'
 
 export const router = createBrowserRouter([
   {
     path: '/login',
-    hydrateFallbackElement: <RouterHydrationFallback />,
+    hydrateFallbackElement: <AppLoadingScreen />,
     lazy: async () => ({
       Component: (await import('../features/auth/LoginPage')).LoginPage,
     }),
@@ -16,7 +16,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/forgot-password',
-    hydrateFallbackElement: <RouterHydrationFallback />,
+    hydrateFallbackElement: <AppLoadingScreen />,
     lazy: async () => ({
       Component: (await import('../features/auth/ForgotPasswordPage'))
         .ForgotPasswordPage,
@@ -25,7 +25,7 @@ export const router = createBrowserRouter([
   },
   {
     element: <ProtectedRoute />,
-    hydrateFallbackElement: <RouterHydrationFallback />,
+    hydrateFallbackElement: <AppLoadingScreen />,
     errorElement: <RouteErrorPage />,
     children: [
       {
