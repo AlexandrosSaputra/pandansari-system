@@ -27,6 +27,9 @@ try {
     '/src/components/ui/index.tsx',
   )
   const { formatCurrency } = await server.ssrLoadModule('/src/utils/format.ts')
+  const { presentActivity } = await server.ssrLoadModule(
+    '/src/features/account/activityPresentation.ts',
+  )
   const unit = {
     id: 7,
     code: 'TEST',
@@ -200,6 +203,42 @@ try {
   check('Rupiah formatting uses the API amount', () =>
     assert.match(formatCurrency('12500.50'), /12\.500,50/),
   )
+  check('Transaction activity exposes its number and nominal total', () => {
+    const presentation = presentActivity({
+      id: 91,
+      actor: null,
+      action: 'TRANSACTION_PAID',
+      subject_type: 'Transaction',
+      subject_id: 23,
+      metadata: {
+        transaction_number: 'TRX-20261023-001',
+        total: '125000.50',
+        visitor_count: 3,
+      },
+      created_at: '2026-10-23T10:15:00+07:00',
+    })
+
+    assert.equal(presentation.title, 'Transaksi berhasil disimpan')
+    assert.match(presentation.description, /TRX-20261023-001/)
+    assert.match(presentation.description, /125\.000,50/)
+  })
+  check('Warehouse activity is described as a stock movement', () => {
+    const presentation = presentActivity({
+      id: 92,
+      actor: null,
+      action: 'WAREHOUSE_STOCK_OUT',
+      subject_type: 'StockMovement',
+      subject_id: 24,
+      metadata: { item_id: 7, quantity: 12 },
+      created_at: '2026-10-23T11:30:00+07:00',
+    })
+
+    assert.equal(presentation.title, 'Stok keluar berhasil dicatat')
+    assert.equal(
+      presentation.description,
+      '12 unit • Barang #7 • Gudang utama',
+    )
+  })
   session('superadmin', [
     'user.view',
     'user.manage',

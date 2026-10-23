@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../../features/auth/useAuth'
 import { Button, ErrorState } from '../ui'
 import { navigation } from './navigation'
+import { NotificationDrawer } from './NotificationDrawer'
 
 function ChevronIcon() {
   return (
@@ -67,6 +68,7 @@ function ProfileMenuIcon({ name }: { name: 'profile' | 'settings' | 'log' | 'log
 
 export function Topbar({ onMenu }: { onMenu: () => void }) {
   const auth = useAuth()
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
   const { pathname } = useLocation()
   const profileDetailsRef = useRef<HTMLDetailsElement>(null)
   const current = [...navigation]
@@ -131,12 +133,17 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
         <button
           type="button"
           className="notification-button"
-          aria-label="Notifikasi"
+          aria-label="Buka riwayat notifikasi"
           title="Notifikasi"
+          aria-expanded={notificationsOpen}
+          onClick={() => {
+            profileDetailsRef.current?.removeAttribute('open')
+            setNotificationsOpen(true)
+          }}
         >
           <svg
             aria-hidden="true"
-            className="size-5"
+            className="size-4"
             fill="none"
             stroke="currentColor"
             strokeWidth="1.8"
@@ -256,6 +263,9 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
           </div>
         </details>
       </div>
+      {notificationsOpen && (
+        <NotificationDrawer onClose={() => setNotificationsOpen(false)} />
+      )}
     </header>
   )
 }

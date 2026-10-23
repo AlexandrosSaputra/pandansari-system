@@ -15,7 +15,7 @@ export function Modal({
   onClose: () => void
   busy?: boolean
   wide?: boolean
-  side?: boolean
+  side?: false | 'left' | 'right'
 }) {
   const ref = useRef<HTMLDialogElement>(null)
   const id = useId()
@@ -35,14 +35,18 @@ export function Modal({
     <dialog
       ref={ref}
       aria-labelledby={id}
-      className={`modal ${wide ? 'modal-wide' : ''} ${side ? 'drawer' : ''}`}
+      className={`modal ${wide ? 'modal-wide' : ''} ${side ? 'drawer' : ''} ${side === 'right' ? 'drawer-right' : ''}`}
       onCancel={(e) => {
         e.preventDefault()
         if (!busy) onClose()
       }}
     >
       <m.div
-        initial={side ? { opacity: 0, x: -24 } : { opacity: 0, y: 8 }}
+        initial={
+          side
+            ? { opacity: 0, x: side === 'right' ? 24 : -24 }
+            : { opacity: 0, y: 8 }
+        }
         animate={{ opacity: 1, x: 0, y: 0 }}
         transition={{ duration: 0.18 }}
       >
@@ -66,13 +70,15 @@ export function Drawer({
   title,
   children,
   onClose,
+  side = 'left',
 }: {
   title: string
   children: ReactNode
   onClose: () => void
+  side?: 'left' | 'right'
 }) {
   return (
-    <Modal title={title} onClose={onClose} side>
+    <Modal title={title} onClose={onClose} side={side}>
       {children}
     </Modal>
   )

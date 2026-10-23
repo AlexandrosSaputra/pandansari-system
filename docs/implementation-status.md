@@ -8,7 +8,7 @@ Angka ini adalah estimasi penilaian fitur, bukan metrik terukur atau perhitungan
 
 | Area proposal | Status | Estimasi | Catatan |
 | --- | --- | ---: | --- |
-| Login, RBAC, pengguna, dan outlet | Tersedia | 90% | Role, permission, assignment unit, route guard, profil mandiri, penggantian kata sandi, log aktivitas pribadi, penguncian setelah tiga kata sandi salah, dan pemulihan melalui OTP email superadmin tersedia. |
+| Login, RBAC, pengguna, dan outlet | Tersedia | 90% | Role, permission, assignment unit, route guard, profil mandiri, penggantian kata sandi, log aktivitas pribadi, panel notifikasi aktivitas akun, penguncian setelah tiga kata sandi salah, dan pemulihan melalui OTP email superadmin tersedia. |
 | Produk dan lokasi | Tersedia | 85% | Item, barcode, harga per unit, lokasi inventori, dan unit operasional tersedia. |
 | Persediaan dan ledger | Tersedia | 80% | Saldo, stok masuk/keluar, transfer, dan riwayat mutasi tersedia. `ADJUSTMENT` dan `DAMAGED` belum tersedia. Stock opname di luar lingkup. |
 | POS dan ticketing | Tersedia | 80% | POS outlet dan Ticketing memiliki menu serta ruang transaksi terpisah dengan engine keranjang dan checkout yang sama; barcode manual dan riwayat transaksi tersedia. |
@@ -23,7 +23,7 @@ Angka ini adalah estimasi penilaian fitur, bukan metrik terukur atau perhitungan
 - Email akun Superadmin awal dapat dikonfigurasi melalui `SUPERADMIN_EMAIL`; migrasi memperbarui akun lokal lama tanpa membuat akun kedua.
 - Kode mengunci login per username setelah tiga kata sandi salah. Penguncian hanya dibuka setelah reset kata sandi dengan OTP berhasil, bukan saat OTP baru diminta.
 - Kode menyediakan pemulihan kata sandi untuk seluruh role melalui OTP alfanumerik yang dikirim ke alamat email pemulihan khusus.
-- Setiap pengguna terautentikasi dapat melihat profil dan assignment miliknya, memperbarui identitas akun, mengganti kata sandi setelah memverifikasi kata sandi saat ini, serta melihat log aktivitas pribadinya tanpa memperoleh akses ke log pengguna lain.
+- Setiap pengguna terautentikasi dapat melihat profil dan assignment miliknya, memperbarui identitas akun, mengganti kata sandi setelah memverifikasi kata sandi saat ini, serta melihat log aktivitas pribadinya tanpa memperoleh akses ke log pengguna lain. Tombol notifikasi pada header membuka panel kanan berisi riwayat tersebut, termasuk waktu, nominal transaksi, dan ringkasan mutasi stok sesuai metadata aktivitas.
 - Kode menyediakan stok masuk/keluar Gudang dan transfer ke outlet.
 - Kode menyediakan ruang POS outlet dan Ticketing yang terpisah sesuai tipe unit, dengan engine keranjang dan checkout yang sama.
 - Checkout mengunci saldo stok dan menolak penjualan yang melampaui stok tersedia.

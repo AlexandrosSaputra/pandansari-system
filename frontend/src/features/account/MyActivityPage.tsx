@@ -6,15 +6,7 @@ import { useFilters } from '../../hooks/useFilters'
 import { useList } from '../../lib/queries'
 import type { ActivityLog } from '../../types/api'
 import { formatDateTime } from '../../utils/format'
-
-const activityLabels: Record<string, string> = {
-  AUTH_LOGIN_SUCCESS: 'Masuk ke sistem',
-  AUTH_LOGOUT: 'Keluar dari sistem',
-  AUTH_ASSIGNMENT_SELECTED: 'Mengganti unit atau role aktif',
-  AUTH_LOGIN_LOCKED: 'Akun dikunci karena percobaan masuk gagal',
-  ACCOUNT_PROFILE_UPDATED: 'Memperbarui profil',
-  ACCOUNT_PASSWORD_UPDATED: 'Mengganti kata sandi',
-}
+import { presentActivity } from './activityPresentation'
 
 export function MyActivityPage() {
   const filters = useFilters()
@@ -46,7 +38,7 @@ export function MyActivityPage() {
           { title: 'Waktu', render: (row) => formatDateTime(row.created_at) },
           {
             title: 'Aktivitas',
-            render: (row) => activityLabels[row.action] ?? row.action,
+            render: (row) => presentActivity(row).title,
           },
           { title: 'Jenis subjek', render: (row) => row.subject_type ?? '—' },
           { title: 'ID subjek', render: (row) => row.subject_id ?? '—' },
@@ -70,7 +62,11 @@ export function MyActivityPage() {
             </div>
             <div>
               <dt>Aktivitas</dt>
-              <dd>{activityLabels[selected.action] ?? selected.action}</dd>
+              <dd>{presentActivity(selected).title}</dd>
+            </div>
+            <div>
+              <dt>Ringkasan</dt>
+              <dd>{presentActivity(selected).description}</dd>
             </div>
             <div>
               <dt>Subjek</dt>
