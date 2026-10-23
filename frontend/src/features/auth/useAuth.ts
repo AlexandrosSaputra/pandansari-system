@@ -19,7 +19,6 @@ function clearPrivateCache() {
 
 async function refreshPrivateCache() {
   await queryClient.cancelQueries({ predicate: isPrivateQuery })
-  queryClient.getMutationCache().clear()
   // Active screens must drop data from the previous assignment and refetch
   // immediately under the newly selected server-side session context.
   await queryClient.resetQueries({ predicate: isPrivateQuery })

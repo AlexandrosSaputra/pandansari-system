@@ -1,6 +1,7 @@
 import logoKebun from '../../assets/logo-kebun.png'
-import { Navigate } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
+import { Link, Navigate } from 'react-router-dom'
+import { useState } from 'react'
+import { useForm, useWatch } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
@@ -21,9 +22,11 @@ const schema = z.object({
 
 export function LoginPage() {
   const auth = useAuth()
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false)
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
   })
+  const username = useWatch({ control: form.control, name: 'username' })
 
   if (auth.isLoading)
     return (
@@ -100,7 +103,7 @@ export function LoginPage() {
             <FormField label="Username" error={form.formState.errors.username?.message}>
               <span className="login-input-wrap">
                 <Input autoComplete="username" placeholder="Masukkan username" {...form.register('username')} />
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
+                <svg className="login-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
                   <circle cx="12" cy="8" r="3.25" />
                   <path d="M5.5 20a6.5 6.5 0 0 1 13 0" />
                 </svg>
@@ -108,13 +111,49 @@ export function LoginPage() {
             </FormField>
             <FormField label="Kata sandi" error={form.formState.errors.password?.message}>
               <span className="login-input-wrap">
-                <Input type="password" autoComplete="current-password" placeholder="Masukkan kata sandi" {...form.register('password')} />
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
+                <Input
+                  type={isPasswordVisible ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  placeholder="Masukkan kata sandi"
+                  className="login-password-input"
+                  {...form.register('password')}
+                />
+                <svg className="login-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
                   <rect x="4" y="10" width="16" height="10" rx="2" />
                   <path d="M8 10V7a4 4 0 0 1 8 0v3" />
                 </svg>
+                <button
+                  type="button"
+                  className="password-visibility-toggle"
+                  aria-label={isPasswordVisible ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
+                  aria-pressed={isPasswordVisible}
+                  onClick={() => setIsPasswordVisible((visible) => !visible)}
+                >
+                  {isPasswordVisible ? (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
+                      <path d="m3 3 18 18" />
+                      <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
+                      <path d="M9.9 5.1A10.7 10.7 0 0 1 12 4.9c5.3 0 8.5 4.7 9.1 5.7a1 1 0 0 1 0 1c-.4.7-1.8 2.7-4.2 4" />
+                      <path d="M6.6 6.6C4.5 8 3.2 10 2.9 10.6a1 1 0 0 0 0 1C3.5 12.6 6.7 17.3 12 17.3c.8 0 1.5-.1 2.2-.3" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
+                      <path d="M2.9 12a1 1 0 0 1 0-1C3.5 10 6.7 5.3 12 5.3s8.5 4.7 9.1 5.7a1 1 0 0 1 0 1C20.5 13 17.3 17.7 12 17.7S3.5 13 2.9 12Z" />
+                      <circle cx="12" cy="11.5" r="3" />
+                    </svg>
+                  )}
+                </button>
               </span>
             </FormField>
+            <div className="login-helper-row">
+              <Link
+                className="login-link"
+                to="/forgot-password"
+                state={{ username: username ?? '' }}
+              >
+                Lupa password?
+              </Link>
+            </div>
             {auth.loginMutation.error && <ErrorState error={auth.loginMutation.error} />}
             <Button type="submit" className="login-submit" busy={auth.loginMutation.isPending}>
               Masuk

@@ -4,7 +4,7 @@ Panduan ini untuk setup lokal pada checkout baru. Jalankan perintah dari direkto
 
 ## Prasyarat
 
-- PHP sesuai batas versi di `backend/composer.json` (`^8.3`) beserta ekstensi yang dibutuhkan Composer/Laravel. Aktifkan `pdo_mysql` untuk aplikasi dan `pdo_sqlite` untuk test otomatis yang memakai SQLite in-memory.
+- PHP sesuai batas versi di `backend/composer.json` (`^8.3`) beserta ekstensi yang dibutuhkan Composer/Laravel. Aktifkan `pdo_mysql` untuk aplikasi dan test otomatis.
 - Composer, Node.js, npm, dan MySQL.
 - Database MySQL yang dapat diakses dengan pengaturan `DB_*` pada `backend/.env`.
 
@@ -37,6 +37,20 @@ Remove-Item Env:DEMO_USER_PASSWORD
 
 `DemoDataSeeder` idempoten untuk data master dan hanya menambah stok Gudang hingga target demo jika saldonya masih kurang. Seeder tidak dipanggil oleh `DatabaseSeeder`, sehingga tidak berjalan tanpa perintah eksplisit.
 
+Untuk fitur lupa password, isi alamat penerima OTP khusus di `backend/.env` dan konfigurasi SMTP sesuai penyedia email yang digunakan:
+
+```dotenv
+PASSWORD_RESET_SUPERADMIN_EMAIL=admin-pemulihan@example.com
+MAIL_MAILER=smtp
+MAIL_HOST=127.0.0.1
+MAIL_PORT=2525
+MAIL_USERNAME=null
+MAIL_PASSWORD=null
+MAIL_FROM_ADDRESS="no-reply@example.com"
+```
+
+Alamat penerima tidak disimpan di kode. OTP berlaku selama 10 menit, hanya dapat dicoba tiga kali, dan permintaan ulang dibatasi satu kali setiap 60 detik untuk username yang sama.
+
 ## Frontend
 
 Buka terminal lain, masuk ke `frontend/`, lalu jalankan:
@@ -56,11 +70,7 @@ Contoh konfigurasi menggunakan `VITE_API_URL=http://localhost:8000/api` dan fron
 php artisan test --compact
 ```
 
-Jika perintah test menampilkan `could not find driver` untuk koneksi SQLite, aktifkan ekstensi `pdo_sqlite` pada PHP CLI yang digunakan. Pada instalasi Windows yang sudah menyediakan DLL tetapi belum mengaktifkannya, test dapat diperiksa sementara tanpa mengubah `php.ini`:
-
-```powershell
-php -d extension=php_pdo_sqlite.dll vendor/bin/phpunit
-```
+Test backend wajib memakai database MySQL khusus. Konfigurasi default test menggunakan `pandansari_testing` dan `pandansari_rollback_testing`; buat kedua database tersebut sebelum menjalankan suite dan jangan arahkan test ke database pengembangan atau produksi.
 
 ```powershell
 # Dari frontend/

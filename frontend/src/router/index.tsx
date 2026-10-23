@@ -15,6 +15,15 @@ export const router = createBrowserRouter([
     errorElement: <RouteErrorPage />,
   },
   {
+    path: '/forgot-password',
+    hydrateFallbackElement: <RouterHydrationFallback />,
+    lazy: async () => ({
+      Component: (await import('../features/auth/ForgotPasswordPage'))
+        .ForgotPasswordPage,
+    }),
+    errorElement: <RouteErrorPage />,
+  },
+  {
     element: <ProtectedRoute />,
     hydrateFallbackElement: <RouterHydrationFallback />,
     errorElement: <RouteErrorPage />,

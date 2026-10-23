@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\InventoryLocationType;
+use App\Enums\OperationalUnitType;
 use App\Models\InventoryLocation;
 use App\Models\OperationalUnit;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -92,7 +93,14 @@ class OperationalUnitApiTest extends TestCase
     public function test_inventory_location_code_collision_returns_conflict_and_rolls_back_unit(): void
     {
         $this->actingAsSystemUser();
-        InventoryLocation::create(['code' => 'UNIT-1', 'name' => 'Reserved Code', 'type' => InventoryLocationType::Warehouse]);
+        $probe = OperationalUnit::create([
+            'code' => 'AUTO-INCREMENT-PROBE',
+            'name' => 'Auto Increment Probe',
+            'type' => OperationalUnitType::Outlet,
+        ]);
+        $collisionCode = 'UNIT-'.($probe->id + 1);
+        $probe->delete();
+        InventoryLocation::create(['code' => $collisionCode, 'name' => 'Reserved Code', 'type' => InventoryLocationType::Warehouse]);
 
         $this->postJson('/api/operational-units', [
             'code' => 'OUT-A', 'name' => 'Toko A', 'type' => 'OUTLET',

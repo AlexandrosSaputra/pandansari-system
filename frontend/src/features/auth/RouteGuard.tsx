@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from './useAuth'
-import { ErrorState, Skeleton } from '../../components/ui'
+import { Skeleton } from '../../components/ui'
 import { ForbiddenPage } from '../../pages/ForbiddenPage'
 export function ProtectedRoute() {
   const auth = useAuth()
@@ -11,17 +11,10 @@ export function ProtectedRoute() {
         <Skeleton rows={7} />
       </div>
     )
+  // A session check that cannot reach the API must not leave a protected page
+  // visible behind a retry error. Return the user to the login screen instead.
   if (auth.error)
-    return (
-      <div className="mx-auto max-w-lg p-8">
-        <ErrorState
-          error={auth.error}
-          retry={() => {
-            void auth.retry()
-          }}
-        />
-      </div>
-    )
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />
   return auth.isAuthenticated ? (
     <Outlet />
   ) : (

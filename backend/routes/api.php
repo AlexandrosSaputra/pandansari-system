@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\InventoryController;
 use App\Http\Controllers\Api\ItemController;
 use App\Http\Controllers\Api\OperationalUnitController;
+use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\RolePermissionController;
@@ -20,6 +21,8 @@ Route::get('/health', HealthController::class)->name('api.health');
 
 Route::prefix('auth')->name('api.auth.')->group(function (): void {
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:auth-login')->name('login');
+    Route::post('/password/forgot', [PasswordResetController::class, 'requestOtp'])->middleware('throttle:password-reset-request')->name('password.forgot');
+    Route::post('/password/reset', [PasswordResetController::class, 'reset'])->middleware('throttle:password-reset-attempt')->name('password.reset');
     Route::get('/session', [AuthController::class, 'session'])->name('session');
 
     Route::middleware('auth:sanctum')->group(function (): void {

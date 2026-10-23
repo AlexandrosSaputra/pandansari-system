@@ -8,7 +8,8 @@ import { LazyMotion, domAnimation } from 'motion/react'
 
 // In-memory fixtures only. This suite neither calls nor modifies the backend.
 const server = await createServer({
-  server: { middlewareMode: true, hmr: false, ws: false },
+  server: { middlewareMode: true, hmr: false, ws: false, watch: null },
+  optimizeDeps: { noDiscovery: true, include: [] },
   appType: 'custom',
 })
 let checks = 0
@@ -83,6 +84,15 @@ try {
       ),
     )
   }
+  const { ForgotPasswordPage } = await server.ssrLoadModule(
+    '/src/features/auth/ForgotPasswordPage.tsx',
+  )
+  check('Forgot password page exposes the username recovery step', () => {
+    const html = render(h(ForgotPasswordPage))
+    assert.match(html, /Lupa password/)
+    assert.match(html, /Kirim kode OTP/)
+    assert.match(html, /name="username"/)
+  })
   session('admin', ['dashboard.view'])
   check('Permission guard denies missing permission', () =>
     assert.match(guard('user.view'), /Akses tidak diizinkan/),
@@ -522,3 +532,7 @@ try {
       handle.unref()
   }
 }
+
+// Vite 8 may retain internal timers on Windows after close(). This line is only
+// reached when every awaited check and cleanup step above completed successfully.
+process.stdout.write('', () => process.exit(0))

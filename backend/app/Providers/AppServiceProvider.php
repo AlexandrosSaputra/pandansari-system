@@ -29,5 +29,22 @@ class AppServiceProvider extends ServiceProvider
 
             return Limit::perMinute(5)->by(hash('sha256', $normalizedUsername.'|'.$request->ip()));
         });
+
+        RateLimiter::for('password-reset-request', function (Request $request): array {
+            $username = $request->input('username');
+            $normalizedUsername = is_string($username) ? Str::lower(trim($username)) : '';
+
+            return [
+                Limit::perMinute(1)->by(hash('sha256', $normalizedUsername)),
+                Limit::perHour(10)->by(hash('sha256', (string) $request->ip())),
+            ];
+        });
+
+        RateLimiter::for('password-reset-attempt', function (Request $request): Limit {
+            $username = $request->input('username');
+            $normalizedUsername = is_string($username) ? Str::lower(trim($username)) : '';
+
+            return Limit::perMinute(10)->by(hash('sha256', $normalizedUsername.'|'.$request->ip()));
+        });
     }
 }
