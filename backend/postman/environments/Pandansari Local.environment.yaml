@@ -1,0 +1,12 @@
+name: Pandansari Local
+values:
+  - key: base_url
+    value: ''
+  - key: token
+    value: ''
+  - key: operational_unit_id
+    value: ''
+  - key: transaction_id
+    value: ''
+  - key: barcode
+    value: ''

@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\RolePermissionController;
 use App\Http\Controllers\Api\StockTransferController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\TransactionItemController;
+use App\Http\Controllers\Api\TransactionScanController;
 use App\Http\Controllers\Api\UnitItemController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
@@ -81,6 +82,7 @@ Route::middleware('auth:sanctum')->name('api.')->group(function (): void {
     Route::get('transactions', [TransactionController::class, 'index'])->middleware('permission:transaction.view')->name('transactions.index');
     Route::get('transactions/{transaction}', [TransactionController::class, 'show'])->middleware('permission:transaction.view')->name('transactions.show');
     Route::post('transactions/{transaction}/items', [TransactionItemController::class, 'store'])->middleware('permission:transaction.create')->name('transactions.items.store');
+    Route::post('transactions/{transaction}/scans', [TransactionScanController::class, 'store'])->middleware('permission:transaction.create')->name('transactions.scans.store');
     Route::patch('transactions/{transaction}/items/{transactionItem}', [TransactionItemController::class, 'update'])->middleware('permission:transaction.create')->name('transactions.items.update');
     Route::delete('transactions/{transaction}/items/{transactionItem}', [TransactionItemController::class, 'destroy'])->middleware('permission:transaction.create')->name('transactions.items.destroy');
     Route::post('transactions/{transaction}/checkout', [TransactionController::class, 'checkout'])->middleware('permission:transaction.create')->name('transactions.checkout');
