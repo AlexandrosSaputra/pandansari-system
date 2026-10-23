@@ -78,6 +78,26 @@ class OperationalUnitApiTest extends TestCase
         $this->assertSame(1, OperationalUnit::count());
     }
 
+    public function test_list_orders_operational_units_alphabetically_by_name(): void
+    {
+        $this->actingAsSystemUser();
+
+        foreach (['Outlet 3', 'Outlet 1', 'Loket Ticket', 'Outlet 2'] as $index => $name) {
+            OperationalUnit::create([
+                'code' => 'UNIT-'.($index + 1),
+                'name' => $name,
+                'type' => $name === 'Loket Ticket' ? OperationalUnitType::Ticketing : OperationalUnitType::Outlet,
+            ]);
+        }
+
+        $this->getJson('/api/operational-units?per_page=100')
+            ->assertOk()
+            ->assertJsonPath('data.0.name', 'Loket Ticket')
+            ->assertJsonPath('data.1.name', 'Outlet 1')
+            ->assertJsonPath('data.2.name', 'Outlet 2')
+            ->assertJsonPath('data.3.name', 'Outlet 3');
+    }
+
     public function test_unit_api_requires_authentication_and_warehouse_can_list_transfer_destinations(): void
     {
         $this->getJson('/api/operational-units')->assertUnauthorized();

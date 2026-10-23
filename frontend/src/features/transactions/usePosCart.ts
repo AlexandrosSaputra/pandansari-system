@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../lib/api'
 import { apiError } from '../../lib/errors'
+import { notifications } from '../../lib/notifications'
 import { getResource, keys, useInvalidate } from '../../lib/queries'
 import type { Resource, Transaction } from '../../types/api'
 import { getSessionRevision, useAuth } from '../auth/useAuth'
@@ -75,15 +76,20 @@ export function usePosCart(unitId: number) {
     onSuccess: async (transaction, operation) => {
       if (revision !== getSessionRevision()) return
       client.setQueryData(key, transaction)
-      if (operation.type === 'checkout')
+      if (operation.type === 'checkout') {
+        notifications.success(
+          `Pembayaran dikonfirmasi. Transaksi ${transaction.transaction_number} selesai.`,
+        )
         await invalidate([
           '/transactions',
           '/transaction-catalog',
           `/operational-units/${unitId}/inventory`,
           '/inventory/movements',
         ])
+      }
     },
     onError: async (error) => {
+      notifications.error(apiError(error).message)
       if (apiError(error).status !== 409 || revision !== getSessionRevision())
         return
       await invalidate([
@@ -118,6 +124,7 @@ export function usePosCart(unitId: number) {
         client.setQueryData(key, transaction)
       }
     },
+    onError: (error) => notifications.error(apiError(error).message),
   })
   return { cart, action, newCart }
 }

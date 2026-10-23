@@ -34,7 +34,8 @@ class OperationalUnitController extends Controller
             ))
             ->when($filters['type'] ?? null, fn (Builder $query, string $type) => $query->where('type', $type))
             ->when(array_key_exists('is_active', $filters), fn (Builder $query) => $query->where('is_active', filter_var($filters['is_active'], FILTER_VALIDATE_BOOLEAN)))
-            ->orderByDesc('id')
+            ->orderBy('name')
+            ->orderBy('id')
             ->paginate($filters['per_page'] ?? 15)
             ->withQueryString();
 

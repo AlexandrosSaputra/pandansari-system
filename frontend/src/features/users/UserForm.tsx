@@ -81,7 +81,7 @@ export function UserForm({ user, onClose, onSaved }: { user?: User; onClose: () 
 
   return (
     <Modal title={user ? 'Edit Pengguna' : 'Tambah Pengguna'} onClose={onClose} busy={save.isPending}>
-      <SaveForm form={form} mutation={mutation} onClose={onClose} onSaved={onSaved} wasActive={user?.is_active} blocked={!roles.data || !!roles.error}>
+      <SaveForm form={form} mutation={mutation} onClose={onClose} onSaved={onSaved} wasActive={user?.is_active} blocked={!roles.data || !!roles.error} successMessage={user ? 'Pengguna berhasil diperbarui.' : 'Pengguna berhasil ditambahkan.'}>
         <div className="form-grid">
           <FormField label="Nama" error={errors.name?.message}><Input {...form.register('name')} /></FormField>
           <FormField label="Username" error={errors.username?.message}><Input autoComplete="username" {...form.register('username')} /></FormField>

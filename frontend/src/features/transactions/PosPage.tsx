@@ -65,7 +65,7 @@ function TransactionWorkspace({ unit }: { unit: UnitSummary }) {
                   })
                   barcode.reset()
                 } catch {
-                  /* The shared cart panel displays the backend error. */
+                  /* The shared notification center displays the backend error. */
                 }
               })}
             >

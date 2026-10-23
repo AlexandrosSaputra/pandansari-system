@@ -77,6 +77,11 @@ export function UnitItemForm({
         onClose={onClose}
         onSaved={onSaved}
         wasActive={item?.is_active}
+        successMessage={
+          item
+            ? 'Item unit berhasil diperbarui.'
+            : `Item berhasil ditambahkan ke ${unitName ?? 'unit'}.`
+        }
       >
         <FormField label="Item" error={form.formState.errors.item_id?.message}>
           {item ? (

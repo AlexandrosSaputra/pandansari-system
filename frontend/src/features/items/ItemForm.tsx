@@ -71,6 +71,7 @@ export function ItemForm({
         onClose={onClose}
         onSaved={onSaved}
         wasActive={item?.is_active}
+        successMessage={item ? 'Item berhasil diperbarui.' : 'Item berhasil ditambahkan.'}
       >
         <div className="form-grid">
           <FormField label="Kode item" error={errors.item_code?.message}>

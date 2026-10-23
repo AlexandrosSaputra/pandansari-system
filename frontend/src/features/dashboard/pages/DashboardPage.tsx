@@ -2,7 +2,7 @@ import { SummaryCard } from '../components/SummaryCard'
 import { RecentActivity } from '../components/RecentActivity'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Button, Card, Notice, PageHeader } from '../../../components/ui'
+import { Button, Card, PageHeader } from '../../../components/ui'
 import {
   isNavigationItemVisible,
   navigation,
@@ -41,7 +41,6 @@ export function DashboardPage() {
     canTransact && auth.hasPermission('transaction.view'),
   )
   const [stock, setStock] = useState<'in' | 'out' | null>(null)
-  const [saved, setSaved] = useState(false)
   const title = auth.isSuperadmin
     ? 'Ringkasan Operasional'
     : auth.canWarehouse
@@ -80,7 +79,6 @@ export function DashboardPage() {
           </>
         }
       />
-      {saved && <Notice>Perubahan stok berhasil dicatat.</Notice>}
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {auth.hasPermission('inventory.view') && (
           <SummaryCard title="Jenis produk dalam inventori" query={inventory}>
@@ -129,10 +127,7 @@ export function DashboardPage() {
         <StockForm
           direction={stock}
           onClose={() => setStock(null)}
-          onSaved={() => {
-            setStock(null)
-            setSaved(true)
-          }}
+          onSaved={() => setStock(null)}
         />
       )}
     </>

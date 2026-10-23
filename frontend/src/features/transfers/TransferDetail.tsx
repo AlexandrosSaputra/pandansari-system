@@ -16,6 +16,8 @@ import {
 } from '../../components/ui'
 import { SaveForm } from '../../components/ui/SaveForm'
 import { api } from '../../lib/api'
+import { apiError } from '../../lib/errors'
+import { notifications } from '../../lib/notifications'
 import { useDetail, useInvalidate } from '../../lib/queries'
 import type { StockTransfer } from '../../types/api'
 import { formatDateTime } from '../../utils/format'
@@ -38,14 +40,11 @@ export function TransferDetail({
   const auth = useAuth()
   const invalidate = useInvalidate()
   const [action, setAction] = useState<'accept' | 'reject' | null>(null)
-  const [notice, setNotice] = useState('')
   const form = useForm<z.infer<typeof rejectionSchema>>({
     resolver: zodResolver(rejectionSchema),
     defaultValues: { rejection_reason: '' },
   })
-  const success = async () => {
-    setAction(null)
-    setNotice('Respons transfer berhasil disimpan.')
+  const refreshAfterResponse = async () => {
     await invalidate([
       '/stock-transfers',
       '/inventory/warehouse',
@@ -55,15 +54,20 @@ export function TransferDetail({
   }
   const accept = useMutation({
     mutationFn: () => api.post(`/stock-transfers/${id}/accept`),
-    onSuccess: success,
-    onError: () => {
+    onSuccess: async () => {
+      setAction(null)
+      notifications.success('Transfer berhasil diterima.')
+      await refreshAfterResponse()
+    },
+    onError: (error) => {
+      notifications.error(apiError(error).message)
       void query.refetch()
     },
   })
   const reject = useMutation({
     mutationFn: (values: z.infer<typeof rejectionSchema>) =>
       api.post(`/stock-transfers/${id}/reject`, values),
-    onSuccess: success,
+    onSuccess: refreshAfterResponse,
     onError: () => {
       void query.refetch()
     },
@@ -95,11 +99,6 @@ export function TransferDetail({
       ) : (
         data && (
           <>
-            {notice && (
-              <p role="status" className="notice notice-success">
-                {notice}
-              </p>
-            )}
             <dl className="detail-grid">
               <div>
                 <dt>Status</dt>
@@ -196,6 +195,7 @@ export function TransferDetail({
             mutation={reject}
             onClose={() => setAction(null)}
             onSaved={() => setAction(null)}
+            successMessage="Transfer berhasil ditolak."
           >
             <FormField
               label="Alasan penolakan"

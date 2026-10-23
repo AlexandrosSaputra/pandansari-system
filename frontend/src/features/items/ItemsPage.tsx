@@ -3,7 +3,6 @@ import {
   Badge,
   Button,
   ListContent,
-  Notice,
   PageHeader,
 } from '../../components/ui'
 import { FilterBar } from '../../components/ui/Filters'
@@ -21,7 +20,6 @@ export function ItemsPage() {
   const filters = useFilters()
   const query = useList<Item>('/items', filters.params)
   const [editing, setEditing] = useState<Item | 'new' | null>(null)
-  const [saved, setSaved] = useState(false)
   const manage = auth.isSuperadmin && auth.hasPermission('item.manage')
   return (
     <>
@@ -31,17 +29,13 @@ export function ItemsPage() {
         actions={
           manage && (
             <Button
-              onClick={() => {
-                setSaved(false)
-                setEditing('new')
-              }}
+              onClick={() => setEditing('new')}
             >
               + Tambah Item
             </Button>
           )
         }
       />
-      {saved && <Notice>Item berhasil disimpan.</Notice>}
       <FilterBar
         filters={filters}
         definitions={[
@@ -73,10 +67,7 @@ export function ItemsPage() {
               manage ? (
                 <Button
                   variant="ghost"
-                  onClick={() => {
-                    setSaved(false)
-                    setEditing(row)
-                  }}
+                  onClick={() => setEditing(row)}
                 >
                   Edit
                 </Button>
@@ -90,10 +81,7 @@ export function ItemsPage() {
         <ItemForm
           item={editing === 'new' ? undefined : editing}
           onClose={() => setEditing(null)}
-          onSaved={() => {
-            setEditing(null)
-            setSaved(true)
-          }}
+          onSaved={() => setEditing(null)}
         />
       )}
     </>

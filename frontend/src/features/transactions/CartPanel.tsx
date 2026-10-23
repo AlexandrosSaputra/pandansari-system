@@ -39,12 +39,6 @@ export function CartPanel({ pos }: { pos: ReturnType<typeof usePosCart> }) {
             <p className="mb-2 text-xs text-slate-400">
               {data.transaction_number}
             </p>
-            {data.status === 'PAID' && (
-              <div role="status" className="notice notice-success">
-                Pembayaran dikonfirmasi. Transaksi {data.transaction_number}{' '}
-                selesai.
-              </div>
-            )}
             <AnimatePresence initial={false}>
               {data.items?.map((item) => (
                 <CartLine
@@ -88,7 +82,6 @@ export function CartPanel({ pos }: { pos: ReturnType<typeof usePosCart> }) {
             </div>
             {pos.action.error && (
               <>
-                <ErrorState error={pos.action.error} />
                 {apiError(pos.action.error).status === 409 && (
                   <p className="text-sm text-amber-800">
                     Stok atau status transaksi berubah. Periksa kembali
@@ -97,7 +90,6 @@ export function CartPanel({ pos }: { pos: ReturnType<typeof usePosCart> }) {
                 )}
               </>
             )}
-            {pos.newCart.error && <ErrorState error={pos.newCart.error} />}
             {data.status === 'PAID' ? (
               <Button
                 className="mt-5 w-full"

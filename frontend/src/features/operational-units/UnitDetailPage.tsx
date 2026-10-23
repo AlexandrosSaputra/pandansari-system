@@ -6,7 +6,6 @@ import {
   Card,
   ErrorState,
   ListContent,
-  Notice,
   PageHeader,
   Skeleton,
 } from '../../components/ui'
@@ -30,7 +29,6 @@ export function UnitDetailPage() {
     tab === 'items' && auth.hasPermission('item.view'),
   )
   const [editing, setEditing] = useState<UnitItem | 'new' | null>(null)
-  const [saved, setSaved] = useState(false)
   const manage = auth.isSuperadmin && auth.hasPermission('item.manage')
   if (unit.isPending) return <Skeleton />
   if (unit.error || !unit.data)
@@ -90,13 +88,9 @@ export function UnitDetailPage() {
         </Card>
       ) : (
         <>
-          {saved && <Notice>Item unit berhasil disimpan.</Notice>}
           {manage && (
             <Button
-              onClick={() => {
-                setSaved(false)
-                setEditing('new')
-              }}
+              onClick={() => setEditing('new')}
             >
               + Tambah Item
             </Button>
@@ -146,10 +140,7 @@ export function UnitDetailPage() {
           item={editing === 'new' ? undefined : editing}
           excludedItemIds={items.data?.data.map((row) => row.item.id)}
           onClose={() => setEditing(null)}
-          onSaved={() => {
-            setEditing(null)
-            setSaved(true)
-          }}
+          onSaved={() => setEditing(null)}
         />
       )}
     </>

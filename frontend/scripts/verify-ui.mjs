@@ -17,6 +17,12 @@ try {
   const { queryClient } = await server.ssrLoadModule('/src/lib/queryClient.ts')
   const { keys } = await server.ssrLoadModule('/src/lib/queries.ts')
   const { apiError } = await server.ssrLoadModule('/src/lib/errors.ts')
+  const { notifications, TOAST_DURATION } = await server.ssrLoadModule(
+    '/src/lib/notifications.ts',
+  )
+  const { ToastNotifications } = await server.ssrLoadModule(
+    '/src/components/common/ToastNotifications.tsx',
+  )
   const { PermissionGuard } = await server.ssrLoadModule(
     '/src/features/auth/RouteGuard.tsx',
   )
@@ -86,6 +92,14 @@ try {
     checks += 1
     console.log(`PASS ${name}`)
   }
+  const toastId = notifications.success('Perubahan berhasil disimpan.')
+  check('Global toast renders a five-second dismissible status message', () => {
+    const html = render(h(ToastNotifications))
+    assert.match(html, /Perubahan berhasil disimpan/)
+    assert.match(html, new RegExp(`data-duration="${TOAST_DURATION}"`))
+    assert.match(html, /Tutup notifikasi/)
+  })
+  notifications.dismiss(toastId)
   function guard(permission, transaction = false) {
     return render(
       h(

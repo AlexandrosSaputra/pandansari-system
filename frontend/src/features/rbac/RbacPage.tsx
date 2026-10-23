@@ -10,6 +10,8 @@ import {
   Skeleton,
 } from '../../components/ui'
 import { api } from '../../lib/api'
+import { apiError } from '../../lib/errors'
+import { notifications } from '../../lib/notifications'
 import { useInvalidate, useList } from '../../lib/queries'
 import { queryClient } from '../../lib/queryClient'
 import { keys } from '../../lib/queries'
@@ -25,7 +27,6 @@ function PermissionEditor({ role }: { role: Role }) {
   })
   const [selected, setSelected] = useState(() => new Set(role.permissions))
   const [confirm, setConfirm] = useState(false)
-  const [saved, setSaved] = useState(false)
   const invalidate = useInvalidate()
   const editable =
     auth.isSuperadmin &&
@@ -36,12 +37,13 @@ function PermissionEditor({ role }: { role: Role }) {
       api.put(`/roles/${role.id}/permissions`, { permissions: [...selected] }),
     onSuccess: async () => {
       setConfirm(false)
-      setSaved(true)
+      notifications.success('Permission berhasil disimpan.')
       await Promise.all([
         invalidate(['/roles']),
         queryClient.invalidateQueries({ queryKey: keys.auth }),
       ])
     },
+    onError: (error) => notifications.error(apiError(error).message),
   })
   const groups = [
     ...new Set(
@@ -68,11 +70,6 @@ function PermissionEditor({ role }: { role: Role }) {
           </Button>
         )}
       </div>
-      {saved && (
-        <p role="status" className="notice notice-success">
-          Permission berhasil disimpan.
-        </p>
-      )}
       {permissions.error && (
         <ErrorState
           error={permissions.error}
@@ -108,7 +105,6 @@ function PermissionEditor({ role }: { role: Role }) {
                         type="checkbox"
                         checked={selected.has(permission.slug)}
                         onChange={(e) => {
-                          setSaved(false)
                           setSelected((previous) => {
                             const next = new Set(previous)
                             if (e.target.checked) next.add(permission.slug)

@@ -5,14 +5,13 @@ import { z } from 'zod'
 import {
   Button,
   Card,
-  ErrorState,
   FormField,
   Input,
-  Notice,
   PageHeader,
 } from '../../components/ui'
 import { api } from '../../lib/api'
-import { setFormErrors } from '../../lib/errors'
+import { apiError, setFormErrors } from '../../lib/errors'
+import { notifications } from '../../lib/notifications'
 import { keys } from '../../lib/queries'
 import { queryClient } from '../../lib/queryClient'
 import type { AuthUser, Resource } from '../../types/api'
@@ -81,12 +80,16 @@ export function AccountSettingsPage() {
         username: updatedUser.username,
         email: updatedUser.email,
       })
+      notifications.success('Profil berhasil diperbarui.')
     },
   })
   const passwordMutation = useMutation({
     mutationFn: async (values: PasswordValues) =>
       (await api.put<{ message: string }>('/auth/password', values)).data,
-    onSuccess: () => passwordForm.reset(),
+    onSuccess: (response) => {
+      passwordForm.reset()
+      notifications.success(response.message)
+    },
   })
 
   return (
@@ -102,16 +105,13 @@ export function AccountSettingsPage() {
           <p className="mt-1 text-sm text-slate-500">
             Perubahan hanya berlaku untuk identitas akun Anda.
           </p>
-          {profileMutation.isSuccess && (
-            <Notice>Profil berhasil diperbarui.</Notice>
-          )}
-          {profileMutation.error && <ErrorState error={profileMutation.error} />}
           <form
             className="mt-5 space-y-4"
             onSubmit={profileForm.handleSubmit(async (values) => {
               try {
                 await profileMutation.mutateAsync(values)
               } catch (error) {
+                notifications.error(apiError(error).message)
                 setFormErrors(error, profileForm.setError)
               }
             })}
@@ -159,16 +159,13 @@ export function AccountSettingsPage() {
             Gunakan minimal 12 karakter dengan huruf besar, huruf kecil, dan
             angka.
           </p>
-          {passwordMutation.data && <Notice>{passwordMutation.data.message}</Notice>}
-          {passwordMutation.error && (
-            <ErrorState error={passwordMutation.error} />
-          )}
           <form
             className="mt-5 space-y-4"
             onSubmit={passwordForm.handleSubmit(async (values) => {
               try {
                 await passwordMutation.mutateAsync(values)
               } catch (error) {
+                notifications.error(apiError(error).message)
                 setFormErrors(error, passwordForm.setError)
               }
             })}

@@ -1,8 +1,9 @@
 import { useState, type ReactNode } from 'react'
 import type { FieldValues, UseFormReturn } from 'react-hook-form'
 import type { UseMutationResult } from '@tanstack/react-query'
-import { Button, ConfirmDialog, ErrorState } from './index'
-import { setFormErrors } from '../../lib/errors'
+import { Button, ConfirmDialog } from './index'
+import { apiError, setFormErrors } from '../../lib/errors'
+import { notifications } from '../../lib/notifications'
 export function SaveForm<T extends FieldValues>({
   form,
   mutation,
@@ -11,6 +12,7 @@ export function SaveForm<T extends FieldValues>({
   onSaved,
   wasActive,
   blocked = false,
+  successMessage = 'Perubahan berhasil disimpan.',
 }: {
   form: UseFormReturn<T>
   mutation: Pick<
@@ -22,14 +24,17 @@ export function SaveForm<T extends FieldValues>({
   onSaved: () => void
   wasActive?: boolean
   blocked?: boolean
+  successMessage?: string
 }) {
   const [pending, setPending] = useState<T | null>(null)
   const save = async (values: T) => {
     try {
       await mutation.mutateAsync(values)
+      notifications.success(successMessage)
       onSaved()
     } catch (error) {
       setPending(null)
+      notifications.error(apiError(error).message)
       setFormErrors(error, form.setError)
     }
   }
@@ -45,7 +50,6 @@ export function SaveForm<T extends FieldValues>({
         <fieldset disabled={mutation.isPending} className="space-y-4">
           {children}
         </fieldset>
-        {mutation.error && <ErrorState error={mutation.error} />}
         <div className="form-actions">
           <Button
             variant="secondary"

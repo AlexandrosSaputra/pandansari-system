@@ -4,7 +4,6 @@ import {
   Badge,
   Button,
   ListContent,
-  Notice,
   PageHeader,
 } from '../../components/ui'
 import { FilterBar } from '../../components/ui/Filters'
@@ -23,7 +22,6 @@ export function TransfersPage() {
   const query = useList<StockTransfer>('/stock-transfers', filters.params)
   const [creating, setCreating] = useState(false)
   const [detail, setDetail] = useState<number>()
-  const [saved, setSaved] = useState(false)
   const prefetch = (id: number) => {
     const path = `/stock-transfers/${id}`
     void client.prefetchQuery({
@@ -40,19 +38,13 @@ export function TransfersPage() {
           auth.canWarehouse &&
           auth.hasPermission('transfer.create') && (
             <Button
-              onClick={() => {
-                setSaved(false)
-                setCreating(true)
-              }}
+              onClick={() => setCreating(true)}
             >
               + Buat Transfer
             </Button>
           )
         }
       />
-      {saved && (
-        <Notice>Transfer berhasil dibuat dan stok telah direservasi.</Notice>
-      )}
       <FilterBar
         filters={filters}
         definitions={[
@@ -110,10 +102,7 @@ export function TransfersPage() {
       {creating && (
         <TransferForm
           onClose={() => setCreating(false)}
-          onSaved={() => {
-            setCreating(false)
-            setSaved(true)
-          }}
+          onSaved={() => setCreating(false)}
         />
       )}
       {detail && (

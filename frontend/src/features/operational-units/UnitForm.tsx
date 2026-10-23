@@ -49,6 +49,11 @@ export function UnitForm({
         onClose={onClose}
         onSaved={onSaved}
         wasActive={unit?.is_active}
+        successMessage={
+          unit
+            ? 'Outlet / Ticketing berhasil diperbarui.'
+            : 'Outlet / Ticketing berhasil ditambahkan.'
+        }
       >
         <FormField label="Kode" error={form.formState.errors.code?.message}>
           <Input {...form.register('code')} />

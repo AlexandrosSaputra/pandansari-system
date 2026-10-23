@@ -61,6 +61,7 @@ export function StockForm({
         mutation={mutation}
         onClose={onClose}
         onSaved={onSaved}
+        successMessage="Perubahan stok berhasil dicatat."
       >
         <FormField
           label="Produk"

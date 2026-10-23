@@ -3,7 +3,6 @@ import {
   Badge,
   Button,
   ListContent,
-  Notice,
   PageHeader,
 } from '../../components/ui'
 import { FilterBar } from '../../components/ui/Filters'
@@ -18,7 +17,6 @@ export function UsersPage() {
   const filters = useFilters()
   const query = useList<User>('/users', filters.params)
   const [editing, setEditing] = useState<User | 'new' | null>(null)
-  const [saved, setSaved] = useState(false)
   const manage = auth.isSuperadmin && auth.hasPermission('user.manage')
   return (
     <>
@@ -28,17 +26,13 @@ export function UsersPage() {
         actions={
           manage && (
             <Button
-              onClick={() => {
-                setSaved(false)
-                setEditing('new')
-              }}
+              onClick={() => setEditing('new')}
             >
               + Tambah Pengguna
             </Button>
           )
         }
       />
-      {saved && <Notice>Pengguna berhasil disimpan.</Notice>}
       <FilterBar
         filters={filters}
         definitions={[
@@ -91,10 +85,7 @@ export function UsersPage() {
               manage ? (
                 <Button
                   variant="ghost"
-                  onClick={() => {
-                    setSaved(false)
-                    setEditing(row)
-                  }}
+                  onClick={() => setEditing(row)}
                 >
                   Edit
                 </Button>
@@ -108,10 +99,7 @@ export function UsersPage() {
         <UserForm
           user={editing === 'new' ? undefined : editing}
           onClose={() => setEditing(null)}
-          onSaved={() => {
-            setEditing(null)
-            setSaved(true)
-          }}
+          onSaved={() => setEditing(null)}
         />
       )}
     </>

@@ -4,7 +4,6 @@ import {
   Button,
   EmptyState,
   ListContent,
-  Notice,
   PageHeader,
   type Column,
 } from '../../components/ui'
@@ -43,7 +42,6 @@ export function InventoryPage() {
     tab === 'warehouse' || !!unitId,
   )
   const [stock, setStock] = useState<'in' | 'out' | null>(null)
-  const [saved, setSaved] = useState(false)
   const columns: Column<InventoryBalance>[] = [
     { title: 'Kode', render: (row) => row.item.item_code },
     { title: 'Item', render: (row) => <strong>{row.item.name}</strong> },
@@ -143,7 +141,6 @@ export function InventoryPage() {
           />
         </div>
       )}
-      {saved && <Notice>Perubahan stok berhasil dicatat.</Notice>}
       {tab === 'unit' && !unitId ? (
         <EmptyState message="Pilih unit untuk melihat inventori" />
       ) : (
@@ -163,10 +160,7 @@ export function InventoryPage() {
         <StockForm
           direction={stock}
           onClose={() => setStock(null)}
-          onSaved={() => {
-            setStock(null)
-            setSaved(true)
-          }}
+          onSaved={() => setStock(null)}
         />
       )}
     </>

@@ -19,7 +19,7 @@ Angka ini adalah estimasi penilaian fitur, bukan metrik terukur atau perhitungan
 
 ## Alur yang telah memiliki implementasi
 
-- Kode menyediakan pengelolaan pengguna, unit, item, role, permission, dan audit log untuk Superadmin.
+- Kode menyediakan pengelolaan pengguna, unit, item, role, permission, dan audit log untuk Superadmin. Status aksi utama di seluruh aplikasi ditampilkan sebagai toast di pojok kanan atas; toast dapat ditutup manual dan hilang otomatis setelah lima detik agar informasi terlihat tanpa mengganggu alur kerja.
 - Halaman Outlet menyediakan tampilan parent–child berbentuk accordion untuk menambah atau mengubah harga, stok minimum, serta status item setiap outlet atau ticketing. Halaman Master Item tetap menjadi katalog global.
 - Email akun Superadmin awal dapat dikonfigurasi melalui `SUPERADMIN_EMAIL`; migrasi memperbarui akun lokal lama tanpa membuat akun kedua.
 - Kode mengunci login per username setelah tiga kata sandi salah. Penguncian hanya dibuka setelah reset kata sandi dengan OTP berhasil, bukan saat OTP baru diminta.

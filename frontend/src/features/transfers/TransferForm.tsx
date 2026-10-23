@@ -214,6 +214,7 @@ export function TransferForm({
         mutation={mutation}
         onClose={onClose}
         onSaved={onSaved}
+        successMessage="Transfer berhasil dibuat dan stok telah direservasi."
       >
         <p className="text-sm text-slate-500">
           Sumber: Gudang Utama. Stok akan direservasi hingga transfer diterima

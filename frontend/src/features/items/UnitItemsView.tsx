@@ -39,14 +39,12 @@ function UnitItemPanel({
   manageUnits,
   initiallyOpen,
   onEditUnit,
-  onSaved,
 }: {
   unit: OperationalUnit
   manage: boolean
   manageUnits: boolean
   initiallyOpen: boolean
   onEditUnit: (unit: OperationalUnit) => void
-  onSaved: (message: string) => void
 }) {
   const [open, setOpen] = useState(initiallyOpen)
   const [editing, setEditing] = useState<UnitItem | 'new' | null>(null)
@@ -175,14 +173,7 @@ function UnitItemPanel({
           item={editing === 'new' ? undefined : editing}
           excludedItemIds={rows.map((row) => row.item.id)}
           onClose={() => setEditing(null)}
-          onSaved={() => {
-            setEditing(null)
-            onSaved(
-              editing === 'new'
-                ? `Item berhasil ditambahkan ke ${unit.name}.`
-                : `Item ${unit.name} berhasil diperbarui.`,
-            )
-          }}
+          onSaved={() => setEditing(null)}
         />
       )}
     </Card>
@@ -193,12 +184,10 @@ export function UnitItemsView({
   manage,
   manageUnits = false,
   onEditUnit = () => undefined,
-  onSaved,
 }: {
   manage: boolean
   manageUnits?: boolean
   onEditUnit?: (unit: OperationalUnit) => void
-  onSaved: (message: string) => void
 }) {
   const [search, setSearch] = useState('')
   const [type, setType] = useState('')
@@ -273,7 +262,6 @@ export function UnitItemsView({
             manageUnits={manageUnits}
             initiallyOpen={index === 0}
             onEditUnit={onEditUnit}
-            onSaved={onSaved}
           />
         ))
       ) : (
