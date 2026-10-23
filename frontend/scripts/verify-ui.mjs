@@ -378,6 +378,23 @@ try {
       ),
     )
   }
+  const { UnitForm } = await server.ssrLoadModule(
+    '/src/features/operational-units/UnitForm.tsx',
+  )
+  const { generateUnitCode } = await server.ssrLoadModule(
+    '/src/features/operational-units/unitCode.ts',
+  )
+  check('New operational unit form explains the generated code format', () => {
+    const html = render(
+      h(UnitForm, { onClose() {}, onSaved() {} }),
+    )
+    assert.match(html, /Dibuat otomatis \(contoh: AB1234\)/)
+    assert.match(html, /format 2 huruf dan 4 angka/)
+    assert.match(html, /Masukkan nama outlet atau ticketing/)
+    assert.match(html, /name="code"/)
+    assert.match(html, /bg-slate-100/)
+    assert.equal(generateUnitCode('Outlet 15', 1234), 'OU1234')
+  })
   const { TransactionDetail } = await server.ssrLoadModule(
     '/src/features/transactions/TransactionDetail.tsx',
   )

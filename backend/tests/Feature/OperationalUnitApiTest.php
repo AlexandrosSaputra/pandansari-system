@@ -18,11 +18,17 @@ class OperationalUnitApiTest extends TestCase
         $actor = $this->actingAsSystemUser();
 
         $response = $this->postJson('/api/operational-units', [
-            'code' => 'OUT-A', 'name' => 'Toko A', 'type' => 'OUTLET', 'scanner_enabled' => true,
+            'name' => 'Toko A', 'type' => 'OUTLET', 'scanner_enabled' => true,
         ])->assertCreated()->assertJsonPath('data.type', 'OUTLET')
             ->assertJsonPath('data.inventory_location.type', 'UNIT');
 
         $unitId = $response->json('data.id');
+        $unitCode = $response->json('data.code');
+        $this->assertMatchesRegularExpression('/^[A-Z]{2}\d{4}$/', $unitCode);
+        $this->assertDatabaseHas('operational_units', [
+            'id' => $unitId,
+            'code' => $unitCode,
+        ]);
         $this->assertDatabaseHas('inventory_locations', [
             'code' => 'UNIT-'.$unitId,
             'operational_unit_id' => $unitId,
@@ -40,19 +46,27 @@ class OperationalUnitApiTest extends TestCase
         $this->actingAsSystemUser();
 
         $this->postJson('/api/operational-units', [
-            'code' => 'TICKET', 'name' => 'Ticketing', 'type' => 'TICKETING',
+            'name' => 'Ticketing', 'type' => 'TICKETING',
         ])->assertCreated()->assertJsonPath('data.scanner_enabled', false);
 
         $this->postJson('/api/operational-units', [
-            'code' => 'TICKET2', 'name' => 'Ticketing 2', 'type' => 'TICKETING', 'scanner_enabled' => true,
+            'name' => 'Ticketing 2', 'type' => 'TICKETING', 'scanner_enabled' => true,
         ])->assertUnprocessable()->assertJsonValidationErrors('scanner_enabled');
 
         $this->postJson('/api/operational-units', [
-            'code' => 'INVALID', 'name' => 'Invalid', 'type' => 'WAREHOUSE',
+            'name' => 'Invalid', 'type' => 'WAREHOUSE',
         ])->assertUnprocessable()->assertJsonValidationErrors('type');
 
         $this->postJson('/api/operational-units', [
-            'code' => 'TICKET', 'name' => 'Duplicate', 'type' => 'OUTLET',
+            'code' => 'OU1234', 'name' => 'Outlet 15', 'type' => 'OUTLET',
+        ])->assertCreated()->assertJsonPath('data.code', 'OU1234');
+
+        $this->postJson('/api/operational-units', [
+            'code' => 'INVALID', 'name' => 'Invalid Code', 'type' => 'OUTLET',
+        ])->assertUnprocessable()->assertJsonValidationErrors('code');
+
+        $this->postJson('/api/operational-units', [
+            'code' => 'OU1234', 'name' => 'Duplicate Code', 'type' => 'OUTLET',
         ])->assertUnprocessable()->assertJsonValidationErrors('code');
     }
 
@@ -60,11 +74,14 @@ class OperationalUnitApiTest extends TestCase
     {
         $this->actingAsSystemUser();
         $created = $this->postJson('/api/operational-units', [
-            'code' => 'OUT-A', 'name' => 'Toko A', 'type' => 'OUTLET',
+            'name' => 'Toko A', 'type' => 'OUTLET',
         ])->assertCreated();
         $id = $created->json('data.id');
+        $code = $created->json('data.code');
         $locationId = InventoryLocation::where('operational_unit_id', $id)->value('id');
 
+        $this->patchJson('/api/operational-units/'.$id, ['code' => 'ZZ9999'])
+            ->assertUnprocessable()->assertJsonValidationErrors('code');
         $this->patchJson('/api/operational-units/'.$id, ['name' => 'Toko A Baru'])->assertOk();
         $this->assertDatabaseHas('activity_logs', ['action' => 'OPERATIONAL_UNIT_UPDATED', 'subject_id' => $id]);
         $this->patchJson('/api/operational-units/'.$id, ['is_active' => false])
@@ -74,7 +91,7 @@ class OperationalUnitApiTest extends TestCase
         $this->assertDatabaseHas('activity_logs', ['action' => 'OPERATIONAL_UNIT_STATUS_CHANGED', 'subject_id' => $id]);
         $this->getJson('/api/operational-units?search=Baru&type=OUTLET&is_active=0&per_page=1')
             ->assertOk()->assertJsonPath('meta.total', 1)->assertJsonPath('data.0.id', $id);
-        $this->getJson('/api/operational-units/'.$id)->assertOk()->assertJsonPath('data.code', 'OUT-A');
+        $this->getJson('/api/operational-units/'.$id)->assertOk()->assertJsonPath('data.code', $code);
         $this->assertSame(1, OperationalUnit::count());
     }
 
@@ -123,7 +140,7 @@ class OperationalUnitApiTest extends TestCase
         InventoryLocation::create(['code' => $collisionCode, 'name' => 'Reserved Code', 'type' => InventoryLocationType::Warehouse]);
 
         $this->postJson('/api/operational-units', [
-            'code' => 'OUT-A', 'name' => 'Toko A', 'type' => 'OUTLET',
+            'name' => 'Toko A', 'type' => 'OUTLET',
         ])->assertConflict()->assertExactJson(['message' => 'A record with these values already exists.']);
 
         $this->assertDatabaseCount('operational_units', 0);

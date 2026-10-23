@@ -23,10 +23,11 @@ class OperationalUnitRequest extends FormRequest
     public function rules(): array
     {
         $creating = $this->isMethod('post');
-        $unit = $this->route('operationalUnit');
 
         return [
-            'code' => [$creating ? 'required' : 'sometimes', 'string', 'max:255', Rule::unique('operational_units', 'code')->ignore($unit instanceof OperationalUnit ? $unit->id : null)],
+            'code' => $creating
+                ? ['sometimes', 'string', 'regex:/^[A-Z]{2}\d{4}$/', Rule::unique('operational_units', 'code')]
+                : ['prohibited'],
             'name' => [$creating ? 'required' : 'sometimes', 'string', 'max:255'],
             'type' => [$creating ? 'required' : 'sometimes', Rule::enum(OperationalUnitType::class)],
             'scanner_enabled' => ['sometimes', 'boolean'],

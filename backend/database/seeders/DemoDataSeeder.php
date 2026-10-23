@@ -38,11 +38,10 @@ class DemoDataSeeder extends Seeder
      * A product is stored once in the item master. Repeating an SKU in another
      * outlet below will reuse the same item and create a separate unit item.
      *
-     * @var array<int, array{code: string, name: string, items: array<int, array{name: string, price: string}>}>
+     * @var array<int, array{name: string, items: array<int, array{name: string, price: string}>}>
      */
     private const array OUTLET_CATALOG = [
         [
-            'code' => 'OUT-DEMO',
             'name' => 'Outlet 1',
             'items' => [
                 ['name' => 'AQUA 1,5 L', 'price' => '7000.00'],
@@ -57,7 +56,6 @@ class DemoDataSeeder extends Seeder
             ],
         ],
         [
-            'code' => 'OUT-MINUMAN',
             'name' => 'Outlet 2',
             'items' => [
                 ['name' => 'BENG-BENG DRINK', 'price' => '5000.00'],
@@ -73,7 +71,6 @@ class DemoDataSeeder extends Seeder
             ],
         ],
         [
-            'code' => 'OUT-POP-MIE',
             'name' => 'Outlet 3',
             'items' => [
                 ['name' => 'ICE CREAM CONTONG', 'price' => '5000.00'],
@@ -111,7 +108,6 @@ class DemoDataSeeder extends Seeder
 
         foreach (self::OUTLET_CATALOG as $outletData) {
             $outlet = $this->upsertUnit(
-                $outletData['code'],
                 $outletData['name'],
                 OperationalUnitType::Outlet,
                 $superadmin,
@@ -145,7 +141,6 @@ class DemoDataSeeder extends Seeder
         }
 
         $ticketing = $this->upsertUnit(
-            'TKT-DEMO',
             'Loket Ticket',
             OperationalUnitType::Ticketing,
             $superadmin,
@@ -265,18 +260,24 @@ class DemoDataSeeder extends Seeder
     }
 
     private function upsertUnit(
-        string $code,
         string $name,
         OperationalUnitType $type,
         User $creator,
     ): OperationalUnit {
-        $unit = OperationalUnit::updateOrCreate(['code' => $code], [
+        $unit = OperationalUnit::firstOrNew([
             'name' => $name,
             'type' => $type,
+        ]);
+
+        if (! $unit->exists || preg_match('/^[A-Z]{2}\d{4}$/', $unit->code) !== 1) {
+            $unit->code = $this->availableUnitCode($name);
+        }
+
+        $unit->fill([
             'scanner_enabled' => true,
             'is_active' => true,
             'created_by' => $creator->id,
-        ]);
+        ])->save();
 
         InventoryLocation::updateOrCreate(['operational_unit_id' => $unit->id], [
             'code' => 'UNIT-'.$unit->id,
@@ -287,6 +288,22 @@ class DemoDataSeeder extends Seeder
         ]);
 
         return $unit;
+    }
+
+    private function availableUnitCode(string $name): string
+    {
+        $letters = preg_replace('/[^A-Z]/', '', Str::upper(Str::ascii($name))) ?? '';
+        $prefix = substr($letters.'XX', 0, 2);
+
+        for ($offset = 1; $offset <= 10000; $offset++) {
+            $code = sprintf('%s%04d', $prefix, $offset % 10000);
+
+            if (! OperationalUnit::where('code', $code)->exists()) {
+                return $code;
+            }
+        }
+
+        throw new LogicException("No operational unit codes remain for prefix {$prefix}.");
     }
 
     private function upsertItem(

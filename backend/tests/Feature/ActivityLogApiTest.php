@@ -74,7 +74,7 @@ class ActivityLogApiTest extends TestCase
         });
 
         $this->postJson('/api/operational-units', [
-            'code' => 'OUT-A', 'name' => 'Toko A', 'type' => 'OUTLET',
+            'name' => 'Toko A', 'type' => 'OUTLET',
         ])->assertInternalServerError()->assertExactJson(['message' => 'Server Error.']);
 
         $this->assertSame(0, OperationalUnit::count());

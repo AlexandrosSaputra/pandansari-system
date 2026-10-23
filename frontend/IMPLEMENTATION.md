@@ -57,7 +57,7 @@ Pencarian, role, unit, status, pagination. Tambah/edit memakai RHF + Zod. Admin 
 
 ## 7. Unit operasional
 
-Filter pencarian, jenis, status. Form code/name/type/scanner/status. Ticketing mematikan scanner. Daftar terhubung ke halaman detail. Penonaktifan memakai konfirmasi.
+Filter pencarian, jenis, status. Kode unit dibuat otomatis dengan dua huruf pertama dari nama dan empat angka acak ketika pengguna selesai mengisi nama; backend memvalidasi format dan keunikannya serta menyediakan fallback saat kode tidak dikirim. Form menampilkan kode sebagai field abu-abu baca-saja beserta placeholder dan petunjuk. Form juga mengelola nama/type/scanner/status. Ticketing mematikan scanner. Daftar terhubung ke halaman detail. Penonaktifan memakai konfirmasi.
 
 ## 8. Unit Item / Child
 

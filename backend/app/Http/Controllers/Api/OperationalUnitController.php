@@ -16,9 +16,14 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use RuntimeException;
 
 class OperationalUnitController extends Controller
 {
+    private const CODE_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+    private const CODE_GENERATION_ATTEMPTS = 100;
+
     public function index(Request $request): AnonymousResourceCollection
     {
         $filters = $request->validate([
@@ -49,6 +54,7 @@ class OperationalUnitController extends Controller
         $unit = DB::transaction(function () use ($attributes, $request, $logger): OperationalUnit {
             $unit = OperationalUnit::create([
                 ...$attributes,
+                'code' => $attributes['code'] ?? $this->generateCode(),
                 'scanner_enabled' => $attributes['scanner_enabled'] ?? false,
                 'is_active' => $attributes['is_active'] ?? true,
                 'created_by' => $request->user()->id,
@@ -99,5 +105,22 @@ class OperationalUnitController extends Controller
         });
 
         return new OperationalUnitResource($unit);
+    }
+
+    private function generateCode(): string
+    {
+        $lastLetterIndex = strlen(self::CODE_LETTERS) - 1;
+
+        for ($attempt = 0; $attempt < self::CODE_GENERATION_ATTEMPTS; $attempt++) {
+            $code = self::CODE_LETTERS[random_int(0, $lastLetterIndex)]
+                .self::CODE_LETTERS[random_int(0, $lastLetterIndex)]
+                .str_pad((string) random_int(0, 9999), 4, '0', STR_PAD_LEFT);
+
+            if (! OperationalUnit::query()->where('code', $code)->exists()) {
+                return $code;
+            }
+        }
+
+        throw new RuntimeException('Unable to generate a unique operational unit code.');
     }
 }

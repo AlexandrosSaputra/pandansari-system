@@ -29,7 +29,7 @@ Tidak ada klaim UAT dari pemeriksaan otomatis. Perangkat ESP32, WebSocket, stock
 Database lokal awal belum memadai karena hanya memiliki akun Superadmin dan lokasi Gudang. `DemoDataSeeder` disediakan secara opt-in dan idempoten untuk menambahkan:
 
 - akun Gudang serta Admin yang memiliki assignment Outlet dan Ticketing;
-- unit `OUT-DEMO` dan `TKT-DEMO` beserta lokasi inventori;
+- unit Outlet dan Ticketing dengan kode otomatis berformat dua huruf dan empat angka beserta lokasi inventori;
 - dua produk ber-barcode dan satu layanan ticketing;
 - harga per unit serta stok Gudang yang cukup untuk transfer dan checkout.
 

@@ -50,11 +50,11 @@ class DemoDataSeederTest extends TestCase
         $warehouseRoleId = Role::where('slug', 'warehouse')->value('id');
         $adminRoleId = Role::where('slug', 'admin')->value('id');
         $outletIds = [
-            $this->unitId('OUT-DEMO'),
-            $this->unitId('OUT-MINUMAN'),
-            $this->unitId('OUT-POP-MIE'),
+            $this->unitId('Outlet 1'),
+            $this->unitId('Outlet 2'),
+            $this->unitId('Outlet 3'),
         ];
-        $ticketingId = $this->unitId('TKT-DEMO');
+        $ticketingId = $this->unitId('Loket Ticket');
         $warehouseUser = User::where('email', 'warehouse.demo@pandansari.local')->firstOrFail();
         $adminUser = User::where('email', 'admin.demo@pandansari.local')->firstOrFail();
 
@@ -65,6 +65,9 @@ class DemoDataSeederTest extends TestCase
             ['Loket Ticket', 'Outlet 1', 'Outlet 2', 'Outlet 3'],
             OperationalUnit::query()->orderBy('name')->pluck('name')->all(),
         );
+        foreach (OperationalUnit::pluck('code') as $code) {
+            $this->assertMatchesRegularExpression('/^[A-Z]{2}\d{4}$/', $code);
+        }
         $this->assertTrue(Hash::check('DemoPassword123!', $warehouseUser->password));
         $this->assertTrue(Hash::check('DemoPassword123!', $adminUser->password));
         $this->assertDatabaseHas('user_role_assignments', [
@@ -164,14 +167,14 @@ class DemoDataSeederTest extends TestCase
                 'is_active' => true,
             ]);
         }
-        $adminUser->update(['operational_unit_id' => $this->unitId('OUT-BASO')]);
+        $adminUser->update(['operational_unit_id' => $this->unitId('Baso')]);
 
         $this->seed(DemoDataSeeder::class);
 
         $this->assertDatabaseCount('operational_units', 4);
         $this->assertDatabaseMissing('operational_units', ['code' => 'OUT-BASO']);
         $this->assertDatabaseMissing('operational_units', ['code' => 'TKT-PANDANSARI']);
-        $this->assertSame($this->unitId('OUT-DEMO'), $adminUser->fresh()->operational_unit_id);
+        $this->assertSame($this->unitId('Outlet 1'), $adminUser->fresh()->operational_unit_id);
     }
 
     public function test_archives_an_obsolete_parent_when_it_has_transaction_history(): void
@@ -219,8 +222,8 @@ class DemoDataSeederTest extends TestCase
         ]);
     }
 
-    private function unitId(string $code): int
+    private function unitId(string $name): int
     {
-        return (int) OperationalUnit::where('code', $code)->value('id');
+        return (int) OperationalUnit::where('name', $name)->value('id');
     }
 }
