@@ -7,6 +7,7 @@ import {
   isNavigationItemVisible,
   navigation,
 } from '../../../components/common/navigation'
+import { NavigationIcon } from '../../../components/common/NavigationIcon'
 import { useList } from '../../../lib/queries'
 import type {
   InventoryBalance,
@@ -104,7 +105,7 @@ export function DashboardPage() {
         <div className="flex flex-wrap gap-2">
           {shortcuts.map((item) => (
             <Link className="btn btn-secondary" to={item.to} key={item.to}>
-              <span aria-hidden="true">{item.icon}</span>
+              <NavigationIcon name={item.icon} className="size-3.5" />
               {item.label}
             </Link>
           ))}
