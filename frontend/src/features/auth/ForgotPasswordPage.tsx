@@ -58,6 +58,9 @@ export function ForgotPasswordPage() {
   const [requestError, setRequestError] = useState<unknown>(null)
   const [resetError, setResetError] = useState<unknown>(null)
   const [resendSeconds, setResendSeconds] = useState(0)
+  const [isNewPasswordVisible, setIsNewPasswordVisible] = useState(false)
+  const [isConfirmationPasswordVisible, setIsConfirmationPasswordVisible] =
+    useState(false)
   const requestForm = useForm<RequestValues>({
     resolver: zodResolver(requestSchema),
     defaultValues: { username: initialUsername },
@@ -239,11 +242,18 @@ export function ForgotPasswordPage() {
                 hint="Minimal 12 karakter, huruf besar, huruf kecil, dan angka."
                 error={resetForm.formState.errors.password?.message}
               >
-                <Input
-                  type="password"
-                  autoComplete="new-password"
-                  {...resetForm.register('password')}
-                />
+                <span className="login-input-wrap">
+                  <Input
+                    type={isNewPasswordVisible ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    className="login-password-input"
+                    {...resetForm.register('password')}
+                  />
+                  <PasswordVisibilityToggle
+                    visible={isNewPasswordVisible}
+                    onClick={() => setIsNewPasswordVisible((visible) => !visible)}
+                  />
+                </span>
               </FormField>
               <FormField
                 label="Konfirmasi kata sandi"
@@ -251,11 +261,20 @@ export function ForgotPasswordPage() {
                   resetForm.formState.errors.password_confirmation?.message
                 }
               >
-                <Input
-                  type="password"
-                  autoComplete="new-password"
-                  {...resetForm.register('password_confirmation')}
-                />
+                <span className="login-input-wrap">
+                  <Input
+                    type={isConfirmationPasswordVisible ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    className="login-password-input"
+                    {...resetForm.register('password_confirmation')}
+                  />
+                  <PasswordVisibilityToggle
+                    visible={isConfirmationPasswordVisible}
+                    onClick={() =>
+                      setIsConfirmationPasswordVisible((visible) => !visible)
+                    }
+                  />
+                </span>
               </FormField>
               {resetError !== null && <ErrorState error={resetError} />}
               <Button
@@ -315,5 +334,49 @@ export function ForgotPasswordPage() {
         </main>
       </div>
     </div>
+  )
+}
+
+function PasswordVisibilityToggle({
+  visible,
+  onClick,
+}: {
+  visible: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      className="password-visibility-toggle"
+      aria-label={visible ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
+      aria-pressed={visible}
+      onClick={onClick}
+    >
+      {visible ? (
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.9"
+          aria-hidden="true"
+        >
+          <path d="m3 3 18 18" />
+          <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
+          <path d="M9.9 5.1A10.7 10.7 0 0 1 12 4.9c5.3 0 8.5 4.7 9.1 5.7a1 1 0 0 1 0 1c-.4.7-1.8 2.7-4.2 4" />
+          <path d="M6.6 6.6C4.5 8 3.2 10 2.9 10.6a1 1 0 0 0 0 1C3.5 12.6 6.7 17.3 12 17.3c.8 0 1.5-.1 2.2-.3" />
+        </svg>
+      ) : (
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.9"
+          aria-hidden="true"
+        >
+          <path d="M2.9 12a1 1 0 0 1 0-1C3.5 10 6.7 5.3 12 5.3s8.5 4.7 9.1 5.7a1 1 0 0 1 0 1C20.5 13 17.3 17.7 12 17.7S3.5 13 2.9 12Z" />
+          <circle cx="12" cy="11.5" r="3" />
+        </svg>
+      )}
+    </button>
   )
 }

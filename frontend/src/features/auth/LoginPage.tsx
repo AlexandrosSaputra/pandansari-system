@@ -11,7 +11,7 @@ import {
   Input,
   Skeleton,
 } from '../../components/ui'
-import { setFormErrors } from '../../lib/errors'
+import { apiError, setFormErrors } from '../../lib/errors'
 import { LoginScene } from './LoginScene'
 import { useAuth } from './useAuth'
 
@@ -23,10 +23,17 @@ const schema = z.object({
 export function LoginPage() {
   const auth = useAuth()
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
+  const [lockedUsername, setLockedUsername] = useState<string | null>(null)
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
   })
   const username = useWatch({ control: form.control, name: 'username' })
+  const normalizedUsername = username?.trim().toLowerCase() ?? ''
+  const isCurrentUsernameLocked =
+    lockedUsername !== null && normalizedUsername === lockedUsername
+  const loginError = auth.loginMutation.error
+    ? apiError(auth.loginMutation.error)
+    : null
 
   if (auth.isLoading)
     return (
@@ -97,6 +104,11 @@ export function LoginPage() {
                 form.reset()
               } catch (error) {
                 setFormErrors(error, form.setError)
+
+                if (apiError(error).status === 423) {
+                  setLockedUsername(values.username.trim().toLowerCase())
+                  form.setValue('password', '')
+                }
               }
             })}
           >
@@ -116,6 +128,7 @@ export function LoginPage() {
                   autoComplete="current-password"
                   placeholder="Masukkan kata sandi"
                   className="login-password-input"
+                  disabled={isCurrentUsernameLocked}
                   {...form.register('password')}
                 />
                 <svg className="login-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden="true">
@@ -127,6 +140,7 @@ export function LoginPage() {
                   className="password-visibility-toggle"
                   aria-label={isPasswordVisible ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
                   aria-pressed={isPasswordVisible}
+                  disabled={isCurrentUsernameLocked}
                   onClick={() => setIsPasswordVisible((visible) => !visible)}
                 >
                   {isPasswordVisible ? (
@@ -154,8 +168,29 @@ export function LoginPage() {
                 Lupa password?
               </Link>
             </div>
-            {auth.loginMutation.error && <ErrorState error={auth.loginMutation.error} />}
-            <Button type="submit" className="login-submit" busy={auth.loginMutation.isPending}>
+            {loginError && loginError.status === 423 && isCurrentUsernameLocked && (
+              <div className="login-recovery-required">
+                <ErrorState error={auth.loginMutation.error} />
+                <Link
+                  className="login-link"
+                  to="/forgot-password"
+                  state={{ username: normalizedUsername }}
+                >
+                  Minta kode OTP untuk membuka akun →
+                </Link>
+              </div>
+            )}
+            {loginError &&
+              loginError.status !== 423 &&
+              !(loginError.status === 401 && loginError.fields.password) && (
+                <ErrorState error={auth.loginMutation.error} />
+              )}
+            <Button
+              type="submit"
+              className="login-submit"
+              busy={auth.loginMutation.isPending}
+              disabled={isCurrentUsernameLocked}
+            >
               Masuk
               <span className="login-submit-arrow" aria-hidden="true">→</span>
             </Button>

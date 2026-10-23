@@ -40,16 +40,22 @@ Remove-Item Env:DEMO_USER_PASSWORD
 Untuk fitur lupa password, isi alamat penerima OTP khusus di `backend/.env` dan konfigurasi SMTP sesuai penyedia email yang digunakan:
 
 ```dotenv
+SUPERADMIN_EMAIL=superadmin@example.com
 PASSWORD_RESET_SUPERADMIN_EMAIL=admin-pemulihan@example.com
 MAIL_MAILER=smtp
-MAIL_HOST=127.0.0.1
-MAIL_PORT=2525
-MAIL_USERNAME=null
-MAIL_PASSWORD=null
-MAIL_FROM_ADDRESS="no-reply@example.com"
+MAIL_SCHEME=null
+MAIL_HOST=smtp.example.com
+MAIL_PORT=587
+MAIL_USERNAME=superadmin@example.com
+MAIL_PASSWORD="password-aplikasi"
+MAIL_FROM_ADDRESS="superadmin@example.com"
 ```
 
-Alamat penerima tidak disimpan di kode. OTP berlaku selama 10 menit, hanya dapat dicoba tiga kali, dan permintaan ulang dibatasi satu kali setiap 60 detik untuk username yang sama.
+`SUPERADMIN_EMAIL` menentukan email akun Superadmin awal di database. Atur nilainya sebelum menjalankan `php artisan migrate` agar migrasi memperbarui akun lokal lama yang masih memakai `admin@pandansari.local`. `PASSWORD_RESET_SUPERADMIN_EMAIL` menentukan penerima OTP dan dapat memakai alamat yang berbeda.
+
+Alamat email operasional tidak disimpan di kode. OTP berlaku selama 10 menit, hanya dapat dicoba tiga kali, dan permintaan ulang dibatasi satu kali setiap 60 detik untuk username yang sama.
+
+Login dikunci per username setelah tiga kata sandi salah berturut-turut. Login sukses menghapus hitungan gagal. Jika sudah terkunci, permintaan OTP saja belum membuka akun; pengguna harus menyelesaikan reset kata sandi dengan OTP yang valid terlebih dahulu.
 
 ## Frontend
 

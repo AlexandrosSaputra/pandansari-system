@@ -17,7 +17,12 @@ import {
 import { FilterBar } from '../../components/ui/Filters'
 import { useFilters } from '../../hooks/useFilters'
 import { useList } from '../../lib/queries'
-import type { CatalogItem, OperationalUnit, UnitSummary } from '../../types/api'
+import type {
+  CatalogItem,
+  OperationalUnit,
+  UnitSummary,
+  UnitType,
+} from '../../types/api'
 import { formatCurrency, formatNumber } from '../../utils/format'
 import { useAuth } from '../auth/useAuth'
 import { UnitSelector } from '../inventory/UnitSelector'
@@ -26,7 +31,7 @@ import { CartPanel } from './CartPanel'
 const barcodeSchema = z.object({
   barcode: z.string().trim().min(1, 'Masukkan barcode.').max(255),
 })
-function PosWorkspace({ unit }: { unit: UnitSummary }) {
+function TransactionWorkspace({ unit }: { unit: UnitSummary }) {
   const auth = useAuth()
   const filters = useFilters()
   const pos = usePosCart(unit.id)
@@ -149,18 +154,36 @@ function PosWorkspace({ unit }: { unit: UnitSummary }) {
     </div>
   )
 }
-export function PosPage() {
+const workspaceCopy: Record<
+  UnitType,
+  { title: string; empty: string; description: string }
+> = {
+  OUTLET: {
+    title: 'POS',
+    empty: 'Pilih unit outlet',
+    description: 'Pilih unit outlet untuk memulai transaksi POS.',
+  },
+  TICKETING: {
+    title: 'Ticketing',
+    empty: 'Pilih unit ticketing',
+    description: 'Pilih unit ticketing untuk memulai transaksi tiket.',
+  },
+}
+
+function TransactionPage({ type }: { type: UnitType }) {
   const auth = useAuth()
   const [selected, setSelected] = useState<OperationalUnit>()
   const unit = auth.isSuperadmin ? selected : auth.user?.operational_unit
+  const copy = workspaceCopy[type]
+  const matchesWorkspace = unit?.type === type
   return (
     <>
       <PageHeader
-        title="POS / Ticketing"
+        title={copy.title}
         description={
           unit
             ? `${unit.name} · ${unit.code}`
-            : 'Pilih unit operasional untuk memulai transaksi.'
+            : copy.description
         }
       />
       {auth.isSuperadmin && (
@@ -168,17 +191,32 @@ export function PosPage() {
           <UnitSelector
             value={selected?.id}
             name={selected?.name}
+            type={type}
             onChange={setSelected}
           />
         </div>
       )}
-      {unit ? (
-        <PosWorkspace key={unit.id} unit={unit} />
+      {unit && matchesWorkspace ? (
+        <TransactionWorkspace key={unit.id} unit={unit} />
       ) : (
         <Card>
-          <EmptyState message="Pilih unit operasional" />
+          <EmptyState
+            message={
+              unit
+                ? `${copy.title} tidak tersedia untuk unit ${unit.name}`
+                : copy.empty
+            }
+          />
         </Card>
       )}
     </>
   )
+}
+
+export function PosPage() {
+  return <TransactionPage type="OUTLET" />
+}
+
+export function TicketingPage() {
+  return <TransactionPage type="TICKETING" />
 }

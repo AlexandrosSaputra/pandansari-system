@@ -161,6 +161,13 @@ export const router = createBrowserRouter([
                     .PosPage,
                 }),
               },
+              {
+                path: 'ticketing',
+                lazy: async () => ({
+                  Component: (await import('../features/transactions/PosPage'))
+                    .TicketingPage,
+                }),
+              },
             ],
           },
           {

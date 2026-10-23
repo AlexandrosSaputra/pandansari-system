@@ -1,14 +1,15 @@
 import logoKebun from '../../assets/logo-kebun.png'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../../features/auth/useAuth'
-import { navigation } from './navigation'
+import { isNavigationItemVisible, navigation } from './navigation'
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const auth = useAuth()
-  const items = navigation.filter(
-    (item) =>
-      auth.hasPermission(item.permission) &&
-      (!item.transaction ||
-        ['admin', 'superadmin'].includes(auth.user?.role?.slug ?? '')),
+  const items = navigation.filter((item) =>
+    isNavigationItemVisible(item, {
+      hasPermission: auth.hasPermission,
+      roleSlug: auth.user?.role?.slug,
+      unitType: auth.user?.operational_unit?.type,
+    }),
   )
   return (
     <div className="sidebar-content">

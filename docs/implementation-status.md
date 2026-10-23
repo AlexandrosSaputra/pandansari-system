@@ -8,10 +8,10 @@ Angka ini adalah estimasi penilaian fitur, bukan metrik terukur atau perhitungan
 
 | Area proposal | Status | Estimasi | Catatan |
 | --- | --- | ---: | --- |
-| Login, RBAC, pengguna, dan outlet | Tersedia | 90% | Role, permission, assignment unit, route guard, dan pemulihan kata sandi melalui OTP email superadmin tersedia. |
+| Login, RBAC, pengguna, dan outlet | Tersedia | 90% | Role, permission, assignment unit, route guard, penguncian setelah tiga kata sandi salah, dan pemulihan melalui OTP email superadmin tersedia. |
 | Produk dan lokasi | Tersedia | 85% | Item, barcode, harga per unit, lokasi inventori, dan unit operasional tersedia. |
 | Persediaan dan ledger | Tersedia | 80% | Saldo, stok masuk/keluar, transfer, dan riwayat mutasi tersedia. `ADJUSTMENT` dan `DAMAGED` belum tersedia. Stock opname di luar lingkup. |
-| POS dan ticketing | Tersedia | 80% | Keranjang, barcode manual, ticketing, checkout atomik, dan riwayat transaksi tersedia. |
+| POS dan ticketing | Tersedia | 80% | POS outlet dan Ticketing memiliki menu serta ruang transaksi terpisah dengan engine keranjang dan checkout yang sama; barcode manual dan riwayat transaksi tersedia. |
 | Dashboard dan laporan | Sebagian | 40% | Dashboard operasional dasar tersedia; laporan bisnis lengkap dan AI Insight belum tersedia. |
 | Kualitas dan kesiapan operasional | Sebagian | 75% | Backend dan frontend memiliki pemeriksaan otomatis serta alur API inti memiliki test integrasi. UAT browser pengguna dan suite browser E2E otomatis belum tersedia. |
 | IoT dan manajemen perangkat | Belum tersedia | 10% | Input barcode di POS ada, tetapi bukan integrasi ESP32. |
@@ -20,9 +20,11 @@ Angka ini adalah estimasi penilaian fitur, bukan metrik terukur atau perhitungan
 ## Alur yang telah memiliki implementasi
 
 - Kode menyediakan pengelolaan pengguna, unit, item, role, permission, dan audit log untuk Superadmin.
+- Email akun Superadmin awal dapat dikonfigurasi melalui `SUPERADMIN_EMAIL`; migrasi memperbarui akun lokal lama tanpa membuat akun kedua.
+- Kode mengunci login per username setelah tiga kata sandi salah. Penguncian hanya dibuka setelah reset kata sandi dengan OTP berhasil, bukan saat OTP baru diminta.
 - Kode menyediakan pemulihan kata sandi untuk seluruh role melalui OTP alfanumerik yang dikirim ke alamat email pemulihan khusus.
 - Kode menyediakan stok masuk/keluar Gudang dan transfer ke outlet.
-- Kode menyediakan POS outlet/ticketing, keranjang, dan checkout.
+- Kode menyediakan ruang POS outlet dan Ticketing yang terpisah sesuai tipe unit, dengan engine keranjang dan checkout yang sama.
 - Checkout mengunci saldo stok dan menolak penjualan yang melampaui stok tersedia.
 - Transfer menahan stok Gudang ketika dibuat dan memindahkan saldo setelah diterima.
 - Antarmuka menyediakan riwayat transaksi dan mutasi. Backend dapat dijalankan dengan database MySQL lokal dan endpoint health merespons; alur Gudang → transfer → Outlet → POS → checkout telah dicakup test integrasi dan menunggu UAT browser pengguna.

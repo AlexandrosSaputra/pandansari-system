@@ -17,7 +17,8 @@ Tanggal: 8 Oktober 2026. Implementasi menggunakan backend yang tersedia, tanpa p
 | `/inventory` | `inventory.view` | Saldo gudang/unit |
 | `/inventory/movements` | `inventory.view` | Pergerakan stok |
 | `/stock-transfers` | `transfer.view` | Daftar, buat, detail, respons transfer |
-| `/pos` | `transaction.create` | POS generik; role Admin/Superadmin |
+| `/pos` | `transaction.create` | POS untuk unit outlet; role Admin/Superadmin |
+| `/ticketing` | `transaction.create` | Transaksi untuk unit ticketing; role Admin/Superadmin |
 | `/transactions` | `transaction.view` | Riwayat dan detail; role Admin/Superadmin |
 
 `/` mengarah ke dashboard. Route aplikasi yang tidak dikenal menampilkan 404. Seluruh route aplikasi berada di dalam guard autentikasi.
@@ -25,7 +26,7 @@ Tanggal: 8 Oktober 2026. Implementasi menggunakan backend yang tersedia, tanpa p
 ## 2. Sidebar per permission
 
 - Ruang kerja: Dashboard (`dashboard.view`).
-- Transaksi: POS (`transaction.create`), Riwayat (`transaction.view`); Gudang tidak ditampilkan karena backend membatasi transaksi ke Admin/Superadmin.
+- Transaksi: POS outlet dan Ticketing (`transaction.create`), serta Riwayat (`transaction.view`). Admin hanya melihat ruang transaksi yang sesuai dengan tipe unitnya; Superadmin melihat keduanya. Gudang tidak ditampilkan karena backend membatasi transaksi ke Admin/Superadmin.
 - Inventori: Stok dan Pergerakan (`inventory.view`), Transfer (`transfer.view`).
 - Master data: Unit (`operational-unit.view`), Item (`item.view`), Pengguna (`user.view`).
 - Administrasi: RBAC (`rbac.view`), Audit (`audit.view`).
@@ -44,7 +45,7 @@ Pergantian akun/logout membersihkan cache privat. Query autentikasi dipertahanka
 
 ## 5. Dashboard per role
 
-- Admin: nama unit, akses POS, inventori unit, transfer menunggu, transaksi terakhir.
+- Admin: nama unit, akses POS atau Ticketing sesuai tipe unit, inventori unit, transfer menunggu, transaksi terakhir.
 - Gudang: Gudang Utama, jenis produk inventori, transfer menunggu, stok masuk/keluar, dan akses pergerakan stok.
 - Superadmin: ringkasan serta akses master, transaksi, inventori, transfer, audit, dan RBAC.
 
@@ -90,9 +91,9 @@ Kolom waktu/lokasi/item/arah/jenis/jumlah/pelaku/catatan/referensi. Filter lokas
 
 Daftar, filter status/tujuan/pembuat/tanggal/nomor, pagination, detail, prefetch detail saat hover/focus. Form baris dinamis mengambil produk aktif tujuan dari endpoint inventori unit, kemudian memeriksa saldo gudang; pilihan duplikat dinonaktifkan dan divalidasi. Respons menerima memakai konfirmasi; penolakan wajib alasan. Aksi respons hanya untuk transfer menunggu dan Admin tujuan/Superadmin dengan permission. Cache transfer, gudang, inventori tujuan, dan pergerakan diperbarui.
 
-## 16. POS / Ticketing
+## 16. POS dan Ticketing
 
-Satu engine transaksi. Admin memakai unit sendiri tanpa mengirim `operational_unit_id` yang dilarang backend. Superadmin memilih unit dan mengirim ID tersebut. Ticketing memakai judul katalog layanan; katalog tetap mengikuti hasil backend. Input Barcode hanya tampil jika scanner diaktifkan dan unit bukan Ticketing. Produk dengan available nol tidak dapat ditambahkan dari katalog.
+POS dan Ticketing memiliki menu, route, judul halaman, serta pilihan unit terpisah, tetapi tetap memakai satu engine transaksi. Admin memakai unit sendiri tanpa mengirim `operational_unit_id` yang dilarang backend dan hanya melihat ruang transaksi sesuai tipe unitnya. Superadmin melihat kedua menu; pemilih pada setiap halaman hanya memuat unit dengan tipe yang sesuai. Ticketing memakai judul katalog layanan; katalog tetap mengikuti hasil backend. Input Barcode hanya tampil jika scanner diaktifkan dan unit bukan Ticketing. Produk dengan available nol tidak dapat ditambahkan dari katalog.
 
 ## 17. Keranjang
 

@@ -44,12 +44,16 @@ try {
     operational_unit: unit,
     permissions: [],
   }
-  function session(role, permissions) {
+  function session(
+    role,
+    permissions,
+    operationalUnit = role === 'admin' ? unit : null,
+  ) {
     queryClient.clear()
     queryClient.setQueryData(keys.auth, {
       ...user,
       role: { ...user.role, slug: role },
-      operational_unit: role === 'admin' ? unit : null,
+      operational_unit: operationalUnit,
       permissions,
     })
   }
@@ -105,6 +109,24 @@ try {
     assert.match(html, /Dashboard/)
     assert.doesNotMatch(html, /href="\/users"|href="\/pos"/)
   })
+  session('admin', ['transaction.create'])
+  check('Ticketing admin sees Ticketing without the outlet POS', () => {
+    const html = render(h(Sidebar))
+    assert.match(html, /href="\/ticketing"[^>]*>.*Ticketing/)
+    assert.doesNotMatch(html, /href="\/pos"/)
+  })
+  session('admin', ['transaction.create'], { ...unit, type: 'OUTLET' })
+  check('Outlet admin sees POS without Ticketing', () => {
+    const html = render(h(Sidebar))
+    assert.match(html, /href="\/pos"[^>]*>.*POS/)
+    assert.doesNotMatch(html, /href="\/ticketing"/)
+  })
+  session('superadmin', ['transaction.create'])
+  check('Superadmin can open both transaction workspaces', () => {
+    const html = render(h(Sidebar))
+    assert.match(html, /href="\/pos"/)
+    assert.match(html, /href="\/ticketing"/)
+  })
   session('warehouse', ['transaction.create'])
   check('Warehouse cannot enter POS even with a mapped permission', () =>
     assert.match(guard('transaction.create', true), /Akses tidak diizinkan/),
@@ -137,6 +159,17 @@ try {
       'Nama wajib diisi.',
     ),
   )
+  check('Locked login shows the required OTP recovery instruction', () => {
+    const message =
+      'Login untuk username ini dikunci setelah tiga kali kata sandi salah. Gunakan Lupa password, minta kode OTP, lalu selesaikan reset kata sandi untuk membuka kembali akun.'
+    const error = {
+      isAxiosError: true,
+      response: { status: 423, data: { message } },
+    }
+
+    assert.equal(apiError(error).message, message)
+    assert.match(render(h(ErrorState, { error })), /minta kode OTP/)
+  })
   check('Forbidden refetch hides previously cached table rows', () => {
     const html = render(
       h(ListContent, {

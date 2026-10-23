@@ -1,4 +1,16 @@
-export const navigation = [
+import type { UnitType } from '../../types/api'
+
+export interface NavigationItem {
+  group: string
+  label: string
+  to: string
+  permission: string
+  icon: string
+  transaction?: boolean
+  workspaceType?: UnitType
+}
+
+export const navigation: NavigationItem[] = [
   {
     group: 'Ruang kerja',
     label: 'Dashboard',
@@ -8,11 +20,21 @@ export const navigation = [
   },
   {
     group: 'Transaksi',
-    label: 'POS / Ticketing',
+    label: 'POS',
     to: '/pos',
     permission: 'transaction.create',
     icon: '⊞',
     transaction: true,
+    workspaceType: 'OUTLET',
+  },
+  {
+    group: 'Transaksi',
+    label: 'Ticketing',
+    to: '/ticketing',
+    permission: 'transaction.create',
+    icon: '▤',
+    transaction: true,
+    workspaceType: 'TICKETING',
   },
   {
     group: 'Transaksi',
@@ -79,3 +101,25 @@ export const navigation = [
     icon: '☷',
   },
 ]
+
+export function isNavigationItemVisible(
+  item: NavigationItem,
+  context: {
+    hasPermission: (permission: string) => boolean
+    roleSlug?: string
+    unitType?: UnitType
+  },
+) {
+  if (!context.hasPermission(item.permission)) return false
+  if (
+    item.transaction &&
+    !['admin', 'superadmin'].includes(context.roleSlug ?? '')
+  )
+    return false
+
+  return (
+    !item.workspaceType ||
+    context.roleSlug === 'superadmin' ||
+    item.workspaceType === context.unitType
+  )
+}

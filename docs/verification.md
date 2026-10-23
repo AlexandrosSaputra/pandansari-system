@@ -5,12 +5,13 @@
 Pada pemeriksaan otomatis 23 Oktober 2026:
 
 - Frontend lulus `npm run lint`.
-- Frontend lulus `npm test` dengan 33 pemeriksaan SSR, termasuk regresi halaman pemulihan kata sandi dan pergantian assignment aktif.
+- Frontend lulus `npm test` dengan 34 pemeriksaan SSR, termasuk regresi instruksi pemulihan akun terkunci, halaman pemulihan kata sandi, dan pergantian assignment aktif.
 - Frontend lulus `npm run build`.
 - Build frontend menampilkan peringatan ukuran chunk pada bundle utama/login; ini bukan kegagalan build, tetapi perlu diperhatikan sebelum deployment produksi.
 - Koneksi MySQL pengembangan berhasil dan seluruh 20 migrasi berstatus `Ran`.
 - Endpoint backend `/api/health` merespons HTTP 200 ketika server dijalankan.
-- Backend lulus 123 test dengan 1.348 assertion pada database MySQL khusus pengujian.
+- Backend lulus 126 test dengan 1.368 assertion pada database MySQL khusus pengujian.
+- Autentikasi dan pemulihan kata sandi lulus 26 test dengan 168 assertion. Cakupan mencakup peringatan sisa percobaan, penguncian pada kesalahan ketiga, OTP request yang tidak langsung membuka akun, pembukaan kunci setelah reset berhasil, dan penghapusan hitungan gagal setelah login sukses.
 - Fitur lupa password lulus 7 test dengan 40 assertion pada MySQL testing: penerima email khusus, respons username generik, OTP satu kali pakai, reset akun superadmin, audit log, kedaluwarsa 10 menit, batas tiga percobaan, dan jeda kirim ulang 60 detik.
 - Test integrasi `CoreWorkflowApiTest` merangkai stok masuk Gudang, reservasi transfer, penerimaan outlet, input barcode ke keranjang, checkout, rekonsiliasi saldo terhadap ledger, riwayat transaksi, serta pembatasan role.
 - UAT browser resmi belum dicatat pada dokumen ini dan akan dilakukan langsung oleh pengguna.

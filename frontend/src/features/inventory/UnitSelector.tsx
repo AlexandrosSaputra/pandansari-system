@@ -1,14 +1,16 @@
 import { ResourcePicker } from '../../components/ui/ResourcePicker'
 import { FormField } from '../../components/ui'
-import type { OperationalUnit } from '../../types/api'
+import type { OperationalUnit, UnitType } from '../../types/api'
 import { useAuth } from '../auth/useAuth'
 export function UnitSelector({
   value,
   name,
+  type,
   onChange,
 }: {
   value?: number
   name?: string
+  type?: UnitType
   onChange: (unit: OperationalUnit) => void
 }) {
   const auth = useAuth()
@@ -23,7 +25,7 @@ export function UnitSelector({
     <FormField label="Unit operasional">
       <ResourcePicker<OperationalUnit>
         path="/operational-units"
-        params={{ is_active: 1 }}
+        params={{ is_active: 1, type }}
         value={value}
         selectedLabel={name}
         identify={(row) => row.id}

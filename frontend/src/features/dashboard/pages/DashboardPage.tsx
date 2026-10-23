@@ -3,7 +3,10 @@ import { RecentActivity } from '../components/RecentActivity'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button, Card, Notice, PageHeader } from '../../../components/ui'
-import { navigation } from '../../../components/common/navigation'
+import {
+  isNavigationItemVisible,
+  navigation,
+} from '../../../components/common/navigation'
 import { useList } from '../../../lib/queries'
 import type {
   InventoryBalance,
@@ -46,9 +49,13 @@ export function DashboardPage() {
   const shortcuts = navigation.filter(
     (item) =>
       item.to !== '/dashboard' &&
-      auth.hasPermission(item.permission) &&
-      (!item.transaction || canTransact),
+      isNavigationItemVisible(item, {
+        hasPermission: auth.hasPermission,
+        roleSlug: auth.user?.role?.slug,
+        unitType: unit?.type,
+      }),
   )
+  const transactionWorkspaces = shortcuts.filter((item) => item.workspaceType)
   return (
     <>
       <PageHeader
@@ -56,11 +63,11 @@ export function DashboardPage() {
         description={`Selamat datang, ${auth.user?.name}. Pantau aktivitas dan lanjutkan pekerjaan Anda.`}
         actions={
           <>
-            {canTransact && auth.hasPermission('transaction.create') && (
-              <Link className="btn btn-primary" to="/pos">
-                Buka POS / Ticketing ↗
+            {transactionWorkspaces.map((item) => (
+              <Link className="btn btn-primary" to={item.to} key={item.to}>
+                Buka {item.label} ↗
               </Link>
-            )}
+            ))}
             {auth.canWarehouse && auth.hasPermission('inventory.stock-in') && (
               <Button onClick={() => setStock('in')}>+ Stok Masuk</Button>
             )}

@@ -618,6 +618,8 @@
 .login-helper-row { display: flex; justify-content: flex-end; margin-top: -0.35rem; }
 .login-link { color: #164d94; font-size: 0.78rem; font-weight: 700; text-decoration: none; }
 .login-link:hover { text-decoration: underline; }
+.login-recovery-required { display: grid; gap: 0.65rem; }
+.login-recovery-required > .login-link { justify-self: start; }
 .login-secondary-actions { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.7rem; }
 .login-secondary-actions .btn { min-height: 2.2rem; padding-inline: 0; }
 .otp-input { text-transform: uppercase; letter-spacing: 0.35em; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 1rem !important; font-weight: 800 !important; }
