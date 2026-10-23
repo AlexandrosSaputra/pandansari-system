@@ -202,7 +202,7 @@ export function UnitItemsView({
 }) {
   const [search, setSearch] = useState('')
   const [type, setType] = useState('')
-  const [status, setStatus] = useState('')
+  const [status, setStatus] = useState('active')
   const units = useList<OperationalUnit>('/operational-units', {
     per_page: 100,
   })

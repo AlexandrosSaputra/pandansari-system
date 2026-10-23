@@ -261,7 +261,16 @@ try {
   })
   queryClient.setQueryData(
     keys.list('/operational-units', { per_page: 100 }),
-    page([{ ...unit, is_active: true }]),
+    page([
+      { ...unit, is_active: true },
+      {
+        ...unit,
+        id: 8,
+        code: 'ARCHIVED-UNIT',
+        name: 'Archived Unit Fixture',
+        is_active: false,
+      },
+    ]),
   )
   queryClient.setQueryData(
     keys.list('/operational-units/7/items', { per_page: 100 }),
@@ -292,6 +301,7 @@ try {
     assert.match(html, /Item per Unit Fixture/)
     assert.match(html, /12\.500/)
     assert.match(html, /Tambah Item/)
+    assert.doesNotMatch(html, /Archived Unit Fixture/)
   })
   queryClient.setQueryData(
     keys.list('/roles', { per_page: 100 }),

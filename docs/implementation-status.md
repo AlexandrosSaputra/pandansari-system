@@ -30,7 +30,7 @@ Angka ini adalah estimasi penilaian fitur, bukan metrik terukur atau perhitungan
 - Checkout mengunci saldo stok dan menolak penjualan yang melampaui stok tersedia.
 - Transfer menahan stok Gudang ketika dibuat dan memindahkan saldo setelah diterima.
 - Antarmuka menyediakan riwayat transaksi dan mutasi. Backend dapat dijalankan dengan database MySQL lokal dan endpoint health merespons; alur Gudang → transfer → Outlet → POS → checkout telah dicakup test integrasi dan menunggu UAT browser pengguna.
-- Seeder demo opt-in menyediakan akun tiga role, unit outlet dan ticketing, katalog, harga, serta stok awal tanpa menyimpan kata sandi di repositori. Seeder dan peralihan assignment aktif memiliki regression check yang relevan.
+- Seeder demo opt-in menyediakan akun tiga role, tiga parent outlet (`Outlet 1`, `Outlet 2`, dan `Outlet 3`), satu parent `Loket Ticket`, katalog 29 produk beserta harga dari data penjualan historis, satu layanan tiket, serta stok awal Gudang tanpa menyimpan kata sandi di repositori. Kelompok produk Baso, Minuman, dan Pop Mie masing-masing ditempatkan pada Outlet 1, Outlet 2, dan Outlet 3. Setiap kombinasi outlet–item dibuat unik, sedangkan satu master item dapat dipakai oleh lebih dari satu outlet. Loket tiket hanya memiliki item layanan tiket. Seeder juga mengonsolidasikan parent demo lama tanpa menghapus riwayat transaksi atau stok. Seeder dan peralihan assignment aktif memiliki regression check yang relevan.
 
 ## Kesenjangan utama terhadap proposal
 

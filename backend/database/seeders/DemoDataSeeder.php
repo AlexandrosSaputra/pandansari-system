@@ -12,13 +12,84 @@ use App\Models\OperationalUnit;
 use App\Models\Role;
 use App\Models\UnitItem;
 use App\Models\User;
+use App\Models\UserRoleAssignment;
 use App\Services\WarehouseStockService;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use LogicException;
 
 class DemoDataSeeder extends Seeder
 {
+    private const int DEFAULT_INITIAL_STOCK = 30;
+
+    private const int DEFAULT_MINIMUM_STOCK = 5;
+
+    /** @var array<int, string> */
+    private const array OBSOLETE_DEMO_UNIT_CODES = [
+        'OUT-BASO',
+        'TKT-PANDANSARI',
+    ];
+
+    /**
+     * Catalog extracted from the attached historical sales workbook.
+     *
+     * A product is stored once in the item master. Repeating an SKU in another
+     * outlet below will reuse the same item and create a separate unit item.
+     *
+     * @var array<int, array{code: string, name: string, items: array<int, array{name: string, price: string}>}>
+     */
+    private const array OUTLET_CATALOG = [
+        [
+            'code' => 'OUT-DEMO',
+            'name' => 'Outlet 1',
+            'items' => [
+                ['name' => 'AQUA 1,5 L', 'price' => '7000.00'],
+                ['name' => 'AQUA 600ML', 'price' => '5000.00'],
+                ['name' => 'BASO', 'price' => '10000.00'],
+                ['name' => 'BENG-BENG', 'price' => '2500.00'],
+                ['name' => 'BETTER', 'price' => '10000.00'],
+                ['name' => 'CHITATO', 'price' => '4000.00'],
+                ['name' => 'FRESH TEA 300ML', 'price' => '3000.00'],
+                ['name' => 'PIATOS', 'price' => '3500.00'],
+                ['name' => 'TEH PUCUK HARUM', 'price' => '4000.00'],
+            ],
+        ],
+        [
+            'code' => 'OUT-MINUMAN',
+            'name' => 'Outlet 2',
+            'items' => [
+                ['name' => 'BENG-BENG DRINK', 'price' => '5000.00'],
+                ['name' => 'CHOCOLATOS DRINK', 'price' => '5000.00'],
+                ['name' => 'ES JERUK', 'price' => '5000.00'],
+                ['name' => 'ES TEH', 'price' => '5000.00'],
+                ['name' => 'GOOD DAY CAPPUCINO', 'price' => '5000.00'],
+                ['name' => 'GOOD DAY FREEZE', 'price' => '5000.00'],
+                ['name' => 'JERUK HANGAT', 'price' => '5000.00'],
+                ['name' => 'NUTRISARI ANGGUR', 'price' => '5000.00'],
+                ['name' => 'NUTRISARI JERUK', 'price' => '5000.00'],
+                ['name' => 'TEH HANGAT', 'price' => '5000.00'],
+            ],
+        ],
+        [
+            'code' => 'OUT-POP-MIE',
+            'name' => 'Outlet 3',
+            'items' => [
+                ['name' => 'ICE CREAM CONTONG', 'price' => '5000.00'],
+                ['name' => 'ICE CREAM CUP', 'price' => '5000.00'],
+                ['name' => 'INDOMIE GORENG', 'price' => '8000.00'],
+                ['name' => 'INDOMIE GORENG GEPREK', 'price' => '8000.00'],
+                ['name' => 'INDOMIE GORENG KRIUK', 'price' => '8000.00'],
+                ['name' => 'INDOMIE GORENG RENDANG', 'price' => '8000.00'],
+                ['name' => 'POP MIE AYAM', 'price' => '10000.00'],
+                ['name' => 'POP MIE BASO', 'price' => '10000.00'],
+                ['name' => 'POP MIE KARE', 'price' => '10000.00'],
+                ['name' => 'POP MIE SOTO', 'price' => '10000.00'],
+            ],
+        ],
+    ];
+
     /**
      * Run the database seeds.
      */
@@ -35,42 +106,61 @@ class DemoDataSeeder extends Seeder
         $superadmin = User::where('email', config('auth.initial_superadmin_email'))->firstOrFail();
         $warehouseRole = Role::where('slug', 'warehouse')->firstOrFail();
         $adminRole = Role::where('slug', 'admin')->firstOrFail();
+        $outlets = [];
+        $products = [];
 
-        $outlet = $this->upsertUnit('OUT-DEMO', 'Outlet Demo Pandansari', OperationalUnitType::Outlet, $superadmin);
-        $ticketing = $this->upsertUnit('TKT-DEMO', 'Loket Tiket Demo Pandansari', OperationalUnitType::Ticketing, $superadmin);
+        foreach (self::OUTLET_CATALOG as $outletData) {
+            $outlet = $this->upsertUnit(
+                $outletData['code'],
+                $outletData['name'],
+                OperationalUnitType::Outlet,
+                $superadmin,
+            );
+            $outlets[] = $outlet;
+            $outletItemIds = [];
 
-        $water = $this->upsertItem(
-            'PROD-WATER',
-            '8990000000001',
-            'Air Mineral Demo',
-            ItemType::Product,
-            'botol',
-            0,
-            $superadmin,
-        );
-        $snack = $this->upsertItem(
-            'PROD-SNACK',
-            '8990000000002',
-            'Makanan Ringan Demo',
-            ItemType::Product,
-            'bungkus',
-            0,
+            foreach ($outletData['items'] as $itemData) {
+                $item = $this->upsertItem(
+                    $this->productCode($itemData['name']),
+                    null,
+                    $itemData['name'],
+                    ItemType::Product,
+                    'pcs',
+                    0,
+                    $superadmin,
+                );
+                $products[$item->id] = $item;
+                $outletItemIds[] = $item->id;
+
+                $this->upsertUnitItem(
+                    $outlet,
+                    $item,
+                    $itemData['price'],
+                    self::DEFAULT_MINIMUM_STOCK,
+                    $superadmin,
+                );
+            }
+
+            $this->removeUnexpectedUnitItems($outlet, $outletItemIds);
+        }
+
+        $ticketing = $this->upsertUnit(
+            'TKT-DEMO',
+            'Loket Ticket',
+            OperationalUnitType::Ticketing,
             $superadmin,
         );
         $ticket = $this->upsertItem(
             'SERVICE-TICKET',
             null,
-            'Tiket Masuk Demo',
+            'Tiket Masuk',
             ItemType::Service,
             'tiket',
             1,
             $superadmin,
         );
-
-        $this->upsertUnitItem($outlet, $water, '8000.00', 5, $superadmin);
-        $this->upsertUnitItem($outlet, $snack, '12000.00', 3, $superadmin);
-        $this->upsertUnitItem($ticketing, $water, '10000.00', 5, $superadmin);
         $this->upsertUnitItem($ticketing, $ticket, '15000.00', 0, $superadmin);
+        $this->removeUnexpectedUnitItems($ticketing, [$ticket->id]);
 
         $warehouseUser = $this->upsertUser(
             'warehouse.demo@pandansari.local',
@@ -85,16 +175,93 @@ class DemoDataSeeder extends Seeder
             'admin-demo',
             'Petugas Outlet dan Ticketing Demo',
             $adminRole,
-            $outlet,
+            $outlets[0],
             $password,
         );
-        $adminUser->assignments()->updateOrCreate([
-            'role_id' => $adminRole->id,
-            'operational_unit_id' => $ticketing->id,
-        ], ['is_active' => true]);
 
-        $this->topUpWarehouse($warehouseStock, $warehouseUser, $water, 30);
-        $this->topUpWarehouse($warehouseStock, $warehouseUser, $snack, 8);
+        foreach ([...$outlets, $ticketing] as $unit) {
+            $adminUser->assignments()->updateOrCreate([
+                'role_id' => $adminRole->id,
+                'operational_unit_id' => $unit->id,
+            ], ['is_active' => true]);
+        }
+
+        $this->removeObsoleteDemoUnits();
+
+        foreach ($products as $product) {
+            $this->topUpWarehouse(
+                $warehouseStock,
+                $warehouseUser,
+                $product,
+                self::DEFAULT_INITIAL_STOCK,
+            );
+        }
+    }
+
+    private function productCode(string $name): string
+    {
+        return 'PROD-'.Str::upper(Str::slug($name));
+    }
+
+    /**
+     * @param  array<int, int>  $expectedItemIds
+     */
+    private function removeUnexpectedUnitItems(OperationalUnit $unit, array $expectedItemIds): void
+    {
+        $unit->unitItems()
+            ->whereNotIn('item_id', $expectedItemIds)
+            ->delete();
+    }
+
+    private function removeObsoleteDemoUnits(): void
+    {
+        $obsoleteUnits = OperationalUnit::query()
+            ->whereIn('code', self::OBSOLETE_DEMO_UNIT_CODES)
+            ->with('inventoryLocation')
+            ->get();
+
+        foreach ($obsoleteUnits as $unit) {
+            if ($this->hasOperationalHistory($unit)) {
+                $this->archiveUnit($unit);
+
+                continue;
+            }
+
+            DB::transaction(function () use ($unit): void {
+                UserRoleAssignment::where('operational_unit_id', $unit->id)->delete();
+                $unit->unitItems()->delete();
+                $unit->inventoryLocation?->delete();
+                $unit->delete();
+            });
+        }
+    }
+
+    private function hasOperationalHistory(OperationalUnit $unit): bool
+    {
+        if ($unit->transactions()->exists() || $unit->users()->exists()) {
+            return true;
+        }
+
+        $location = $unit->inventoryLocation;
+
+        return $location !== null && (
+            $location->inventoryBalances()->exists()
+            || $location->stockMovements()->exists()
+            || $location->outgoingTransfers()->exists()
+            || $location->incomingTransfers()->exists()
+        );
+    }
+
+    private function archiveUnit(OperationalUnit $unit): void
+    {
+        $unit->forceFill([
+            'scanner_enabled' => false,
+            'is_active' => false,
+        ])->save();
+        $unit->inventoryLocation()->update(['is_active' => false]);
+        $unit->unitItems()->update(['is_active' => false]);
+        UserRoleAssignment::where('operational_unit_id', $unit->id)
+            ->update(['is_active' => false]);
     }
 
     private function upsertUnit(
