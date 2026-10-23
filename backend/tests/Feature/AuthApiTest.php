@@ -3,11 +3,13 @@
 namespace Tests\Feature;
 
 use App\Enums\OperationalUnitType;
+use App\Mail\PasswordResetOtpMail;
 use App\Models\OperationalUnit;
 use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
@@ -57,7 +59,7 @@ class AuthApiTest extends TestCase
     }
 
     #[DataProvider('invalidAccounts')]
-    public function test_invalid_or_unusable_account_gets_the_same_generic_401(string $scenario): void
+    public function test_invalid_or_unusable_account_is_rejected(string $scenario): void
     {
         $unit = $this->createUnit('OUT-A');
         $user = $this->createAccount('admin', $unit);
@@ -79,9 +81,15 @@ class AuthApiTest extends TestCase
             'password' => $scenario === 'wrong_password' ? 'incorrect' : 'password',
         ]);
 
-        $response->assertUnauthorized()->assertExactJson([
-            'message' => 'The provided credentials are invalid.',
-        ]);
+        if (in_array($scenario, ['unknown_username', 'wrong_password'], true)) {
+            $response->assertUnauthorized()
+                ->assertJsonPath('message', 'Username atau kata sandi tidak sesuai.')
+                ->assertJsonPath('errors.password.0', 'Kata sandi salah. Tersisa 2 percobaan sebelum login dikunci.');
+        } else {
+            $response->assertUnauthorized()->assertExactJson([
+                'message' => 'The provided credentials are invalid.',
+            ]);
+        }
         $this->assertGuest('web');
     }
 
@@ -213,13 +221,95 @@ class AuthApiTest extends TestCase
         $this->getJson('/api/auth/me')->assertUnauthorized();
     }
 
-    public function test_login_is_limited_to_five_attempts_per_username_and_ip(): void
+    public function test_three_wrong_passwords_lock_username_until_otp_reset_succeeds(): void
     {
-        for ($attempt = 0; $attempt < 5; $attempt++) {
+        Mail::fake();
+        config(['password-reset.superadmin_email' => 'recovery@example.test']);
+        $user = $this->createAccount('warehouse');
+        $payload = [
+            'username' => $user->username,
+            'password' => 'wrong-password',
+        ];
+
+        $this->postJson('/api/auth/login', $payload)
+            ->assertUnauthorized()
+            ->assertJsonPath('errors.password.0', 'Kata sandi salah. Tersisa 2 percobaan sebelum login dikunci.');
+        $this->postJson('/api/auth/login', $payload)
+            ->assertUnauthorized()
+            ->assertJsonPath('errors.password.0', 'Kata sandi salah. Tersisa 1 percobaan sebelum login dikunci.');
+        $this->postJson('/api/auth/login', $payload)
+            ->assertStatus(423)
+            ->assertJsonPath('message', 'Login untuk username ini dikunci setelah tiga kali kata sandi salah. Gunakan Lupa password, minta kode OTP, lalu selesaikan reset kata sandi untuk membuka kembali akun.');
+
+        $this->assertDatabaseHas('activity_logs', [
+            'actor_id' => $user->id,
+            'action' => 'AUTH_LOGIN_LOCKED',
+            'subject_type' => 'User',
+            'subject_id' => $user->id,
+        ]);
+
+        $this->postJson('/api/auth/password/forgot', [
+            'username' => $user->username,
+        ])->assertOk();
+
+        $this->postJson('/api/auth/login', [
+            'username' => $user->username,
+            'password' => 'password',
+        ])->assertStatus(423);
+
+        /** @var PasswordResetOtpMail $mail */
+        $mail = Mail::sent(PasswordResetOtpMail::class)->first();
+
+        $this->postJson('/api/auth/password/reset', [
+            'username' => $user->username,
+            'otp' => $mail->otp,
+            'password' => 'NewStrongPass1234',
+            'password_confirmation' => 'NewStrongPass1234',
+        ])->assertOk();
+
+        $this->withHeader('Origin', 'http://localhost:5173')
+            ->postJson('/api/auth/login', [
+                'username' => $user->username,
+                'password' => 'NewStrongPass1234',
+            ])->assertOk();
+    }
+
+    public function test_successful_login_clears_previous_password_failures(): void
+    {
+        $user = $this->createAccount('warehouse');
+        $wrongCredentials = [
+            'username' => $user->username,
+            'password' => 'wrong-password',
+        ];
+
+        $this->postJson('/api/auth/login', $wrongCredentials)->assertUnauthorized();
+        $this->postJson('/api/auth/login', $wrongCredentials)->assertUnauthorized();
+        $this->withHeader('Origin', 'http://localhost:5173')
+            ->postJson('/api/auth/login', [
+                'username' => $user->username,
+                'password' => 'password',
+            ])->assertOk();
+        $this->postJson('/api/auth/logout')->assertOk();
+
+        $this->postJson('/api/auth/login', $wrongCredentials)
+            ->assertUnauthorized()
+            ->assertJsonPath('errors.password.0', 'Kata sandi salah. Tersisa 2 percobaan sebelum login dikunci.');
+    }
+
+    public function test_login_endpoint_is_limited_to_five_requests_per_username_and_ip(): void
+    {
+        for ($attempt = 0; $attempt < 3; $attempt++) {
             $this->withHeader('Origin', 'http://localhost:5173')->postJson('/api/auth/login', [
                 'username' => 'rate-limit-user',
                 'password' => 'wrong',
-            ])->assertUnauthorized();
+            ])->assertStatus($attempt < 2 ? 401 : 423);
+        }
+
+        for ($attempt = 0; $attempt < 2; $attempt++) {
+            $this->postJson('/api/auth/login', [
+                'username' => 'rate-limit-user',
+                'password' => 'wrong',
+            ])->assertStatus(423);
         }
 
         $this->postJson('/api/auth/login', [

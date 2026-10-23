@@ -14,7 +14,7 @@ abstract class TestCase extends BaseTestCase
         $this->seed(DatabaseSeeder::class);
 
         if ($roleSlug === 'superadmin') {
-            $user = User::where('email', 'admin@pandansari.local')->firstOrFail();
+            $user = User::where('email', config('auth.initial_superadmin_email'))->firstOrFail();
         } else {
             $user = User::factory()->create();
             $user->forceFill(['role_id' => Role::where('slug', $roleSlug)->firstOrFail()->id])->save();

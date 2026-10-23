@@ -32,7 +32,7 @@ class DemoDataSeeder extends Seeder
 
         $this->call(DatabaseSeeder::class);
 
-        $superadmin = User::where('email', 'admin@pandansari.local')->firstOrFail();
+        $superadmin = User::where('email', config('auth.initial_superadmin_email'))->firstOrFail();
         $warehouseRole = Role::where('slug', 'warehouse')->firstOrFail();
         $adminRole = Role::where('slug', 'admin')->firstOrFail();
 

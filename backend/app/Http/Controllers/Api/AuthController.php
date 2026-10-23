@@ -8,6 +8,7 @@ use App\Http\Resources\AuthenticatedUserResource;
 use App\Models\User;
 use App\Models\UserRoleAssignment;
 use App\Services\ActivityLogger;
+use App\Services\LoginAttemptService;
 use App\Support\OperationalUnitAccess;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,11 +16,42 @@ use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
-    public function login(LoginRequest $request, ActivityLogger $logger): AuthenticatedUserResource|JsonResponse
-    {
-        if (! Auth::guard('web')->attempt($request->validated())) {
-            return response()->json(['message' => 'The provided credentials are invalid.'], 401);
+    public function login(
+        LoginRequest $request,
+        ActivityLogger $logger,
+        LoginAttemptService $loginAttempts,
+    ): AuthenticatedUserResource|JsonResponse {
+        $credentials = $request->validated();
+        $username = $credentials['username'];
+
+        if ($loginAttempts->isLocked($username)) {
+            return $this->passwordRecoveryRequiredResponse();
         }
+
+        if (! Auth::guard('web')->attempt($credentials)) {
+            $remainingAttempts = $loginAttempts->recordFailure($username);
+
+            if ($remainingAttempts === 0) {
+                $user = User::query()->where('username', $username)->first();
+
+                if ($user instanceof User) {
+                    $logger->log($user, 'AUTH_LOGIN_LOCKED', $user, [
+                        'failed_attempts' => 3,
+                    ]);
+                }
+
+                return $this->passwordRecoveryRequiredResponse();
+            }
+
+            return response()->json([
+                'message' => 'Username atau kata sandi tidak sesuai.',
+                'errors' => [
+                    'password' => ["Kata sandi salah. Tersisa {$remainingAttempts} percobaan sebelum login dikunci."],
+                ],
+            ], 401);
+        }
+
+        $loginAttempts->clear($username);
 
         $user = Auth::guard('web')->user();
 
@@ -122,5 +154,12 @@ class AuthController extends Controller
     private function userResource(User $user): AuthenticatedUserResource
     {
         return new AuthenticatedUserResource($user);
+    }
+
+    private function passwordRecoveryRequiredResponse(): JsonResponse
+    {
+        return response()->json([
+            'message' => 'Login untuk username ini dikunci setelah tiga kali kata sandi salah. Gunakan Lupa password, minta kode OTP, lalu selesaikan reset kata sandi untuk membuka kembali akun.',
+        ], 423);
     }
 }

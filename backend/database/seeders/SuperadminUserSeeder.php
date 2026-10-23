@@ -16,9 +16,10 @@ class SuperadminUserSeeder extends Seeder
     public function run(): void
     {
         $role = Role::where('slug', 'superadmin')->firstOrFail();
+        $email = config('auth.initial_superadmin_email');
 
         $user = User::firstOrCreate(
-            ['email' => 'admin@pandansari.local'],
+            ['email' => $email],
             [
                 'name' => 'Superadmin',
                 'username' => 'admin',

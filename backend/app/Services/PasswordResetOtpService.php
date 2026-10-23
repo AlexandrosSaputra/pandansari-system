@@ -17,7 +17,10 @@ class PasswordResetOtpService
 {
     private const OTP_CHARACTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
-    public function __construct(private ActivityLogger $activityLogger) {}
+    public function __construct(
+        private ActivityLogger $activityLogger,
+        private LoginAttemptService $loginAttempts,
+    ) {}
 
     public function requestOtp(string $username): void
     {
@@ -92,6 +95,7 @@ class PasswordResetOtpService
                 $this->activityLogger->log($user, 'AUTH_PASSWORD_RESET', $user);
             });
             Cache::forget($this->challengeKey($username));
+            $this->loginAttempts->clear($username);
         });
     }
 

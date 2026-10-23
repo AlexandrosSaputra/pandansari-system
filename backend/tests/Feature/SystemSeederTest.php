@@ -131,6 +131,18 @@ class SystemSeederTest extends TestCase
         $this->assertDatabaseCount('stock_movements', 0);
     }
 
+    public function test_database_seeder_uses_the_configured_initial_superadmin_email(): void
+    {
+        config(['auth.initial_superadmin_email' => 'owner@example.test']);
+
+        $this->seed(DatabaseSeeder::class);
+
+        $this->assertDatabaseHas('users', [
+            'username' => 'admin',
+            'email' => 'owner@example.test',
+        ]);
+    }
+
     /**
      * @return list<string>
      */

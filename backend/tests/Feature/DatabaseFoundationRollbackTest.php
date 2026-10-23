@@ -60,7 +60,7 @@ class DatabaseFoundationRollbackTest extends TestCase
         ]);
         $this->assertTrue(Schema::hasTable('activity_logs'));
 
-        $this->artisan('migrate:rollback', ['--step' => 17, '--no-interaction' => true])->assertSuccessful();
+        $this->artisan('migrate:rollback', ['--step' => 18, '--no-interaction' => true])->assertSuccessful();
 
         $this->assertSame($originalUser, (array) DB::table('users')->find($userId));
         $this->assertFalse(Schema::hasColumn('users', 'role_id'));
@@ -75,7 +75,7 @@ class DatabaseFoundationRollbackTest extends TestCase
 
         $this->artisan('migrate', ['--no-interaction' => true])->assertSuccessful();
 
-        $this->assertDatabaseCount('migrations', 21);
+        $this->assertDatabaseCount('migrations', 22);
         $this->assertDatabaseHas('users', [...$originalUser, 'is_active' => true]);
         $this->assertTrue(Schema::hasColumn('users', 'username'));
         $this->assertTrue(Schema::hasTable('activity_logs'));

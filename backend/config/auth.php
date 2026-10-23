@@ -20,6 +20,8 @@ return [
         'passwords' => env('AUTH_PASSWORD_BROKER', 'users'),
     ],
 
+    'initial_superadmin_email' => env('SUPERADMIN_EMAIL', 'admin@pandansari.local'),
+
     /*
     |--------------------------------------------------------------------------
     | Authentication Guards
