@@ -27,7 +27,7 @@ export function ItemsPage() {
     <>
       <PageHeader
         title="Master Item"
-        description="Produk dan layanan untuk seluruh unit operasional."
+        description="Produk dan layanan untuk seluruh outlet dan ticketing."
         actions={
           manage && (
             <Button

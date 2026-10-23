@@ -25,12 +25,16 @@ const schema = z.object({
 type Values = z.infer<typeof schema>
 export function UnitItemForm({
   unitId,
+  unitName,
   item,
+  excludedItemIds = [],
   onClose,
   onSaved,
 }: {
   unitId: number
+  unitName?: string
   item?: UnitItem
+  excludedItemIds?: number[]
   onClose: () => void
   onSaved: () => void
 }) {
@@ -63,7 +67,7 @@ export function UnitItemForm({
   }
   return (
     <Modal
-      title={item ? 'Edit Child / Item' : 'Tambah Child / Item'}
+      title={`${item ? 'Edit' : 'Tambah'} Item Unit${unitName ? ` · ${unitName}` : ''}`}
       onClose={onClose}
       busy={save.isPending}
     >
@@ -88,6 +92,7 @@ export function UnitItemForm({
               selectedLabel={selected?.name}
               identify={(row) => row.id}
               describe={(row) => `${row.item_code} · ${row.name}`}
+              isOptionDisabled={(row) => excludedItemIds.includes(row.id)}
               onChange={(row) => {
                 setSelected(row)
                 form.setValue('item_id', row.id, { shouldValidate: true })

@@ -260,6 +260,40 @@ try {
     links: {},
   })
   queryClient.setQueryData(
+    keys.list('/operational-units', { per_page: 100 }),
+    page([{ ...unit, is_active: true }]),
+  )
+  queryClient.setQueryData(
+    keys.list('/operational-units/7/items', { per_page: 100 }),
+    page([
+      {
+        id: 9,
+        operational_unit: unit,
+        item: {
+          id: 2,
+          item_code: 'UNIT-ITEM',
+          name: 'Item per Unit Fixture',
+          type: 'PRODUCT',
+        },
+        selling_price: '12500.00',
+        minimum_stock: 5,
+        is_active: true,
+      },
+    ]),
+  )
+  const { UnitItemsView } = await server.ssrLoadModule(
+    '/src/features/items/UnitItemsView.tsx',
+  )
+  check('Outlet view groups editable items below their parent outlet', () => {
+    const html = render(
+      h(UnitItemsView, { manage: true, onSaved() {} }),
+    )
+    assert.match(html, /Unit Fixture/)
+    assert.match(html, /Item per Unit Fixture/)
+    assert.match(html, /12\.500/)
+    assert.match(html, /Tambah Item/)
+  })
+  queryClient.setQueryData(
     keys.list('/roles', { per_page: 100 }),
     page([
       { id: 1, name: 'Admin', slug: 'admin', is_active: true, permissions: [] },
@@ -271,7 +305,7 @@ try {
       'operational-units/UnitForm',
       'UnitForm',
       { unit: { ...unit, is_active: true } },
-      'Edit Unit Operasional',
+      'Edit Outlet / Ticketing',
     ],
     [
       'operational-units/UnitItemForm',

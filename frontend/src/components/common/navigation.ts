@@ -67,17 +67,17 @@ export const navigation: NavigationItem[] = [
   },
   {
     group: 'Master data',
-    label: 'Unit Operasional',
-    to: '/operational-units',
-    permission: 'operational-unit.view',
-    icon: 'unit',
-  },
-  {
-    group: 'Master data',
     label: 'Item',
     to: '/items',
     permission: 'item.view',
     icon: 'item',
+  },
+  {
+    group: 'Master data',
+    label: 'Outlet',
+    to: '/operational-units',
+    permission: 'operational-unit.view',
+    icon: 'unit',
   },
   {
     group: 'Master data',

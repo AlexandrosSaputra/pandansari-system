@@ -40,11 +40,16 @@ const paths: Record<string, ReactNode> = {
   transfer: <path d="M7 17 17 7M7 7h10v10" />,
   unit: (
     <>
-      <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" />
-      <path d="M10 6h4M10 10h4M10 14h4M10 18h4" />
+      <path d="M3 10h18M5 10v10h14V10" />
+      <path d="m4 10 2-6h12l2 6M9 20v-5h6v5" />
     </>
   ),
-  item: <path d="M2.7 10.3a2.41 2.41 0 0 0 0 3.41l7.59 7.59a2.41 2.41 0 0 0 3.41 0l7.59-7.59a2.41 2.41 0 0 0 0-3.41l-7.59-7.59a2.41 2.41 0 0 0-3.41 0Z" />,
+  item: (
+    <>
+      <path d="m3 8 9-5 9 5v8l-9 5-9-5Z" />
+      <path d="m3 8 9 5 9-5M12 13v8" />
+    </>
+  ),
   user: (
     <>
       <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />

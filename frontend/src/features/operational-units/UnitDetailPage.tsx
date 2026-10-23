@@ -61,7 +61,7 @@ export function UnitDetailPage() {
             variant={tab === 'items' ? 'primary' : 'secondary'}
             onClick={() => setTab('items')}
           >
-            Child / Item
+            Item Unit
           </Button>
         )}
       </div>
@@ -90,7 +90,7 @@ export function UnitDetailPage() {
         </Card>
       ) : (
         <>
-          {saved && <Notice>Child / Item berhasil disimpan.</Notice>}
+          {saved && <Notice>Item unit berhasil disimpan.</Notice>}
           {manage && (
             <Button
               onClick={() => {
@@ -98,7 +98,7 @@ export function UnitDetailPage() {
                 setEditing('new')
               }}
             >
-              + Tambah Child
+              + Tambah Item
             </Button>
           )}
           <FilterBar filters={filters} definitions={[statusFilter]} />
@@ -142,7 +142,9 @@ export function UnitDetailPage() {
       {editing && (
         <UnitItemForm
           unitId={data.id}
+          unitName={data.name}
           item={editing === 'new' ? undefined : editing}
+          excludedItemIds={items.data?.data.map((row) => row.item.id)}
           onClose={() => setEditing(null)}
           onSaved={() => {
             setEditing(null)

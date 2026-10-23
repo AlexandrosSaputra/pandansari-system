@@ -39,7 +39,7 @@ export function UnitForm({
   )
   return (
     <Modal
-      title={unit ? 'Edit Unit Operasional' : 'Tambah Unit Operasional'}
+      title={unit ? 'Edit Outlet / Ticketing' : 'Tambah Outlet / Ticketing'}
       onClose={onClose}
       busy={mutation.isPending}
     >
