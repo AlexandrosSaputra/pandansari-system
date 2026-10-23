@@ -84,6 +84,39 @@ class UnitItemApiTest extends TestCase
         $this->assertSame(1, UnitItem::count());
     }
 
+    public function test_index_filters_unit_items_by_item_type(): void
+    {
+        $this->actingAsSystemUser();
+        $unit = $this->unit('OUT-A');
+        $product = $this->item('WATER', ItemType::Product);
+        $service = $this->item('TICKET', ItemType::Service);
+
+        UnitItem::create([
+            'operational_unit_id' => $unit->id,
+            'item_id' => $product->id,
+            'selling_price' => 5000,
+        ]);
+        UnitItem::create([
+            'operational_unit_id' => $unit->id,
+            'item_id' => $service->id,
+            'selling_price' => 15000,
+        ]);
+
+        $url = '/api/operational-units/'.$unit->id.'/items';
+
+        $this->getJson($url.'?type=PRODUCT')
+            ->assertOk()
+            ->assertJsonPath('meta.total', 1)
+            ->assertJsonPath('data.0.item.id', $product->id);
+        $this->getJson($url.'?type=SERVICE')
+            ->assertOk()
+            ->assertJsonPath('meta.total', 1)
+            ->assertJsonPath('data.0.item.id', $service->id);
+        $this->getJson($url.'?type=UNKNOWN')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('type');
+    }
+
     public function test_unit_item_api_requires_authentication_and_permission(): void
     {
         $this->getJson('/api/operational-units/1/items')->assertUnauthorized();

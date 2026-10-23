@@ -4,6 +4,24 @@ import type { OperationalUnit } from '../../types/api'
 import { useAuth } from '../auth/useAuth'
 import { UnitItemsView } from '../items/UnitItemsView'
 import { UnitForm } from './UnitForm'
+
+function PlusIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="size-4"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      viewBox="0 0 24 24"
+    >
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  )
+}
+
 export function UnitsPage() {
   const auth = useAuth()
   const [editing, setEditing] = useState<OperationalUnit | 'new' | null>(null)
@@ -13,14 +31,16 @@ export function UnitsPage() {
   return (
     <>
       <PageHeader
-        title="Outlet"
-        description="Kelola outlet, ticketing, dan item yang tersedia pada setiap lokasi."
+        title="Outlet & Loket"
+        description="Kelola outlet, ticketing, dan item produk/layanan yang tersedia pada setiap lokasi operasional."
         actions={
           manageUnits && (
             <Button
+              className="rounded-xl px-4 shadow-sm shadow-emerald-700/20"
               onClick={() => setEditing('new')}
             >
-              + Tambah Outlet
+              <PlusIcon />
+              Tambah Outlet
             </Button>
           )
         }

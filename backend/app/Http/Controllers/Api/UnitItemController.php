@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\ItemType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UnitItemRequest;
 use App\Http\Resources\UnitItemResource;
@@ -13,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class UnitItemController extends Controller
 {
@@ -20,6 +22,7 @@ class UnitItemController extends Controller
     {
         $filters = $request->validate([
             'search' => ['sometimes', 'string', 'max:255'],
+            'type' => ['sometimes', Rule::enum(ItemType::class)],
             'is_active' => ['sometimes', 'boolean'],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
         ]);
@@ -29,6 +32,10 @@ class UnitItemController extends Controller
                 fn (Builder $item) => $item->where('item_code', 'like', "%{$search}%")
                     ->orWhere('barcode', 'like', "%{$search}%")
                     ->orWhere('name', 'like', "%{$search}%"),
+            ))
+            ->when($filters['type'] ?? null, fn (Builder $query, string $type) => $query->whereHas(
+                'item',
+                fn (Builder $item) => $item->where('type', $type),
             ))
             ->when(array_key_exists('is_active', $filters), fn (Builder $query) => $query->where('is_active', filter_var($filters['is_active'], FILTER_VALIDATE_BOOLEAN)))
             ->orderByDesc('id')

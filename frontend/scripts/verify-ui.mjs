@@ -304,6 +304,16 @@ try {
       },
     ]),
   )
+  queryClient.setQueryData(
+    keys.list('/operational-units/8/items', { per_page: 100 }),
+    page([]),
+  )
+  const masterItemsPage = page([])
+  masterItemsPage.meta.total = 30
+  queryClient.setQueryData(
+    keys.list('/items', { per_page: 1 }),
+    masterItemsPage,
+  )
   const { UnitItemsView } = await server.ssrLoadModule(
     '/src/features/items/UnitItemsView.tsx',
   )
@@ -315,6 +325,10 @@ try {
     assert.match(html, /Item per Unit Fixture/)
     assert.match(html, /12\.500/)
     assert.match(html, /Tambah Item/)
+    assert.match(html, /aria-label="Lihat rincian Item per Unit Fixture"/)
+    assert.match(html, /Total item yang ada/i)
+    assert.match(html, /Total item diplot/i)
+    assert.match(html, />30</)
     assert.doesNotMatch(html, /Archived Unit Fixture/)
   })
   queryClient.setQueryData(
