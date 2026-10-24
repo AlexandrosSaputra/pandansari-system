@@ -192,6 +192,7 @@ function TransactionPage({ type }: { type: UnitType }) {
             value={selected?.id}
             name={selected?.name}
             type={type}
+            showCode={type !== 'OUTLET'}
             onChange={setSelected}
           />
         </div>

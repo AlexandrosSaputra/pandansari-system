@@ -4,7 +4,7 @@ interface StatusBadgeProps {
 }
 
 const toneClasses: Record<StatusBadgeProps['tone'], string> = {
-  success: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
+  success: 'bg-green-50 text-green-700 ring-green-600/20',
   danger: 'bg-rose-50 text-rose-700 ring-rose-600/20',
 }
 

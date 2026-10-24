@@ -1,6 +1,13 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 
+// Read the same palette as the forms so the WebGL illustration stays in sync.
+function themeColor(token: string) {
+  return new THREE.Color(
+    getComputedStyle(document.documentElement).getPropertyValue(token).trim(),
+  )
+}
+
 function addParcelLabel(group: THREE.Group, size: number) {
   const label = new THREE.Mesh(
     new THREE.BoxGeometry(size * 0.34, size * 0.24, 0.025),
@@ -9,7 +16,7 @@ function addParcelLabel(group: THREE.Group, size: number) {
   label.position.set(-size * 0.16, -size * 0.13, size / 2 + 0.014)
   group.add(label)
 
-  const ink = new THREE.MeshStandardMaterial({ color: 0x61708c, roughness: 0.58 })
+  const ink = new THREE.MeshStandardMaterial({ color: themeColor('--color-text-muted'), roughness: 0.58 })
   ;[
     { width: 0.24, x: -0.16, y: -0.07 },
     { width: 0.24, x: -0.16, y: -0.13 },
@@ -32,7 +39,7 @@ function parcel(size: number, material: THREE.Material) {
   group.add(box)
 
   const tapeMaterial = new THREE.MeshStandardMaterial({
-    color: 0x16345f,
+    color: themeColor('--color-primary-strong'),
     roughness: 0.5,
   })
   const tapeTop = new THREE.Mesh(
@@ -70,8 +77,8 @@ export function LoginScene() {
     keyLight.shadow.mapSize.set(1024, 1024)
     keyLight.shadow.radius = 8
     scene.add(keyLight)
-    scene.add(new THREE.HemisphereLight(0xf3f7ff, 0x1b4380, 2.1))
-    const rimLight = new THREE.PointLight(0x8fc0ff, 14, 12)
+    scene.add(new THREE.HemisphereLight(themeColor('--color-canvas'), themeColor('--color-primary-strong'), 2.1))
+    const rimLight = new THREE.PointLight(themeColor('--color-herb-soft'), 14, 12)
     rimLight.position.set(-4, 3, 1)
     scene.add(rimLight)
 
@@ -93,15 +100,15 @@ export function LoginScene() {
     pedestal.add(base)
     const disc = new THREE.Mesh(
       new THREE.CylinderGeometry(1.63, 1.63, 0.14, 64),
-      new THREE.MeshStandardMaterial({ color: 0xe9eff8, roughness: 0.8 }),
+      new THREE.MeshStandardMaterial({ color: themeColor('--palette-linen'), roughness: 0.8 }),
     )
     disc.position.y = -1.08
     pedestal.add(disc)
     scene.add(pedestal)
 
     const stock = new THREE.Group()
-    const carton = new THREE.MeshStandardMaterial({ color: 0x4f8ff7, roughness: 0.52 })
-    const cartonLight = new THREE.MeshStandardMaterial({ color: 0x78adef, roughness: 0.5 })
+    const carton = new THREE.MeshStandardMaterial({ color: themeColor('--palette-jade'), roughness: 0.52 })
+    const cartonLight = new THREE.MeshStandardMaterial({ color: themeColor('--palette-herb'), roughness: 0.5 })
     const size = 1.08
     const packages = [
       { position: [-0.7, -0.53, -0.48], rotation: 0.22, material: carton },
@@ -123,7 +130,7 @@ export function LoginScene() {
     const wallThickness = 0.045
     const half = size / 2
     const innerWall = new THREE.MeshStandardMaterial({
-      color: 0x548bcf,
+      color: themeColor('--color-herb-ink'),
       roughness: 0.72,
       side: THREE.DoubleSide,
     })
@@ -154,13 +161,13 @@ export function LoginScene() {
 
     const interior = new THREE.Mesh(
       new THREE.BoxGeometry(size - 2 * wallThickness, wallThickness, size - 2 * wallThickness),
-      new THREE.MeshStandardMaterial({ color: 0x173b73, roughness: 0.85 }),
+      new THREE.MeshStandardMaterial({ color: themeColor('--color-primary-strong'), roughness: 0.85 }),
     )
     interior.position.y = half - 0.27
     interior.receiveShadow = true
     topParcel.add(interior)
 
-    const glow = new THREE.PointLight(0xa9ccff, 0, 4)
+    const glow = new THREE.PointLight(themeColor('--color-herb-soft'), 0, 4)
     glow.position.set(0, size / 2 + 0.34, 0)
     topParcel.add(glow)
 
@@ -170,7 +177,7 @@ export function LoginScene() {
     // can show through at the fold as the flap moves.
     const innerFlapHeight = half - 0.022
     const outerFlapHeight = half + 0.002
-    const flapMaterial = new THREE.MeshStandardMaterial({ color: 0x69a2ec, roughness: 0.52 })
+    const flapMaterial = new THREE.MeshStandardMaterial({ color: themeColor('--palette-herb'), roughness: 0.52 })
     const makeFlap = (
       width: number,
       depth: number,
@@ -196,8 +203,8 @@ export function LoginScene() {
 
     const popMaterials = [
       new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.28 }),
-      new THREE.MeshStandardMaterial({ color: 0x9fc2ff, roughness: 0.28 }),
-      new THREE.MeshStandardMaterial({ color: 0x2f7bff, roughness: 0.28 }),
+      new THREE.MeshStandardMaterial({ color: themeColor('--palette-mist'), roughness: 0.28 }),
+      new THREE.MeshStandardMaterial({ color: themeColor('--palette-aqua'), roughness: 0.28 }),
     ]
     const popData = [
       { x: -0.18, z: 0.2, size: 0.2, rise: 0.82 },
@@ -218,7 +225,7 @@ export function LoginScene() {
     scene.add(stock)
 
     const ringMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0x2f7bff,
+      color: themeColor('--palette-jade'),
       roughness: 0.2,
       metalness: 0.12,
       clearcoat: 1,
@@ -230,16 +237,16 @@ export function LoginScene() {
     ring.position.y = 0.08
     scene.add(ring)
     const outerRing = new THREE.Mesh(new THREE.TorusGeometry(2.48, 0.036, 16, 96), ringMaterial.clone())
-    outerRing.material.color.set(0xa9caff)
+    outerRing.material.color.copy(themeColor('--palette-herb'))
     outerRing.rotation.set(Math.PI / 1.82, 0.42, 0)
     outerRing.position.y = 0.1
     scene.add(outerRing)
 
     const floating = new THREE.Group()
     const miniMaterials = [
-      new THREE.MeshStandardMaterial({ color: 0x2f7bff, roughness: 0.3 }),
+      new THREE.MeshStandardMaterial({ color: themeColor('--palette-jade'), roughness: 0.3 }),
       new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 }),
-      new THREE.MeshStandardMaterial({ color: 0x9fc2ff, roughness: 0.3 }),
+      new THREE.MeshStandardMaterial({ color: themeColor('--palette-mist'), roughness: 0.3 }),
     ]
     ;[
       [-2.8, 1.9, -0.8, 0.28],

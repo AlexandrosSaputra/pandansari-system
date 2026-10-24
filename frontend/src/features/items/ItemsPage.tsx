@@ -73,7 +73,7 @@ function MetricCard({
   detail,
   icon,
 }: {
-  tone: 'emerald' | 'blue' | 'violet' | 'amber'
+  tone: 'jade' | 'aqua' | 'herb' | 'violet'
   title: string
   value: string
   detail: string
@@ -342,31 +342,31 @@ export function ItemsPage() {
 
       <section className="items-metrics" aria-label="Ringkasan master item">
         <MetricCard
-          tone="emerald"
+          tone="jade"
           title="Total item"
           value={total == null ? '—' : formatNumber(total)}
           detail="Katalog master"
           icon="box"
         />
         <MetricCard
-          tone="blue"
+          tone="herb"
           title="Item aktif"
           value={active == null ? '—' : formatNumber(active)}
           detail={activeRate == null ? 'Status aktif' : `${activeRate}% aktif`}
           icon="check"
         />
         <MetricCard
-          tone="violet"
+          tone="aqua"
           title="Kategori item"
           value="2"
           detail="Produk & layanan"
           icon="category"
         />
         <MetricCard
-          tone="amber"
-          title="Outlet terhubung"
-          value="All"
-          detail="Semua outlet sinkron"
+          tone="violet"
+          title="Cakupan outlet"
+          value="Semua"
+          detail="Katalog global"
           icon="building"
         />
       </section>

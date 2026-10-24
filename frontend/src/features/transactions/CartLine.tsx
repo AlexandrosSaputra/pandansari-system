@@ -69,6 +69,7 @@ export function CartLine({
         </div>
         <Button
           variant="ghost"
+          className="text-red-700 hover:bg-red-50 hover:text-red-800"
           disabled={disabled}
           aria-label={`Hapus ${item.item.name}`}
           onClick={remove}

@@ -139,7 +139,7 @@ function ItemIcon({ type }: { type: UnitItem['item']['type'] }) {
     <span
       className={`grid size-9 shrink-0 place-items-center rounded-lg ${
         type === 'SERVICE'
-          ? 'bg-violet-50 text-violet-700'
+          ? 'bg-blue-50 text-blue-700'
           : 'bg-emerald-50 text-emerald-700'
       }`}
     >
@@ -170,12 +170,17 @@ function MetricCard({
 }) {
   const toneClasses = {
     slate: 'text-slate-400',
-    emerald: 'text-emerald-600',
-    amber: 'text-amber-600',
+    emerald: 'text-green-700',
+    amber: 'text-amber-700',
+  }
+  const valueClasses = {
+    slate: 'text-slate-900',
+    emerald: 'text-green-700',
+    amber: 'text-amber-700',
   }
 
   return (
-    <div className="unit-detail-metric">
+    <div className={`unit-detail-metric unit-detail-metric-${tone}`}>
       <div className="unit-detail-metric-label">
         <span>
           {title}
@@ -183,10 +188,10 @@ function MetricCard({
         <span className={toneClasses[tone]}>{children}</span>
       </div>
       <div className="unit-detail-metric-value">
-        <strong className={`text-base font-bold ${tone === 'emerald' ? 'text-emerald-700' : 'text-slate-900'}`}>
+        <strong className={`text-base font-bold ${valueClasses[tone]}`}>
           {value}
         </strong>
-        {detail && <span className={`text-xs font-medium ${tone === 'emerald' ? 'text-emerald-700' : 'text-slate-500'}`}>{detail}</span>}
+        {detail && <span className={`text-xs font-medium ${tone === 'slate' ? 'text-slate-500' : valueClasses[tone]}`}>{detail}</span>}
       </div>
     </div>
   )
@@ -212,12 +217,12 @@ function ItemStatus({ active }: { active: boolean }) {
     <span
       className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${
         active
-          ? 'border-emerald-100 bg-emerald-50 text-emerald-700'
-          : 'border-red-100 bg-red-50 text-red-700'
+          ? 'border-green-100 bg-green-50 text-green-700'
+          : 'border-slate-200 bg-slate-100 text-slate-600'
       }`}
     >
       <span
-        className={`size-1.5 rounded-full ${active ? 'bg-emerald-500' : 'bg-red-500'}`}
+        className={`size-1.5 rounded-full ${active ? 'bg-green-500' : 'bg-slate-400'}`}
       />
       {active ? 'Aktif' : 'Nonaktif'}
     </span>
@@ -349,9 +354,9 @@ export function UnitDetailPage() {
           <div className="min-w-0">
             <div className="unit-detail-info-title-row">
               <h2 className="unit-detail-info-title">Informasi Outlet</h2>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2 py-0.5 text-[0.65rem] font-bold text-emerald-800">
-                <span className="size-1.5 rounded-full bg-emerald-600" />
-                Operasional
+              <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[0.65rem] font-bold ${data.is_active ? 'bg-green-50 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
+                <span className={`size-1.5 rounded-full ${data.is_active ? 'bg-green-500' : 'bg-slate-400'}`} />
+                {data.is_active ? 'Operasional' : 'Nonaktif'}
               </span>
             </div>
             <p className="unit-detail-info-copy">
@@ -379,15 +384,15 @@ export function UnitDetailPage() {
           </InfoCell>
           <InfoCell label="Status sistem">
             <span className="flex items-center gap-2 text-sm font-semibold text-slate-800">
-              <span className="grid size-7 place-items-center rounded-md bg-emerald-100 text-emerald-700">
-                <CheckIcon />
+              <span className={`grid size-7 place-items-center rounded-md ${data.is_active ? 'bg-green-50 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
+                {data.is_active ? <CheckIcon /> : <span aria-hidden="true">—</span>}
               </span>
               {data.is_active ? 'Aktif (POS & Kasir)' : 'Nonaktif'}
             </span>
           </InfoCell>
           <InfoCell label="Hardware scanner">
             <span className="flex items-center gap-2 text-sm font-semibold text-slate-800">
-              <span className="grid size-7 place-items-center rounded-md bg-emerald-50 text-emerald-700">
+              <span className={`grid size-7 place-items-center rounded-md ${data.scanner_enabled ? 'bg-green-50 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
                 <ScannerIcon />
               </span>
               {data.scanner_enabled
@@ -425,7 +430,7 @@ export function UnitDetailPage() {
                   </span>
                   <Input
                     type="search"
-                    className="h-10 rounded-lg border-slate-200 bg-slate-50 pr-9 pl-9 text-sm focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-500/20"
+                    className="h-10 rounded-lg border-slate-300 bg-slate-50 pr-9 pl-9 text-sm focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-500/20"
                     placeholder="Cari SKU, nama produk…"
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
@@ -610,7 +615,7 @@ export function UnitDetailPage() {
                     <span>Baris:</span>
                     <Select
                       aria-label="Jumlah baris per halaman"
-                      className="h-7 min-h-7 w-20 rounded-md border-slate-200 bg-[#f4f4ff] py-0 text-xs"
+                      className="h-7 min-h-7 w-20 rounded-md border-slate-300 bg-slate-50 py-0 text-xs"
                       value={String(items.data.meta.per_page)}
                       onChange={(event) =>
                         filters.set('per_page', event.target.value)

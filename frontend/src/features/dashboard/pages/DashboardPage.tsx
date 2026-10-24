@@ -86,14 +86,14 @@ export function DashboardPage() {
           </SummaryCard>
         )}
         {auth.hasPermission('transfer.view') && (
-          <SummaryCard title="Transfer menunggu respons" query={transfers}>
+          <SummaryCard title="Transfer menunggu respons" tone="attention" query={transfers}>
             <Link className="link" to="/stock-transfers?status=PENDING">
               Lihat transfer
             </Link>
           </SummaryCard>
         )}
         {canTransact && auth.hasPermission('transaction.view') && (
-          <SummaryCard title="Transaksi dibayar" query={transactions}>
+          <SummaryCard title="Transaksi dibayar" tone="success" query={transactions}>
             Seluruh periode ? sesuai lingkup akses
           </SummaryCard>
         )}

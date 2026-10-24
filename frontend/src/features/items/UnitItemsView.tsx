@@ -146,7 +146,7 @@ function SummaryCard({
   tag,
   icon,
 }: {
-  tone: 'emerald' | 'blue' | 'violet' | 'amber'
+  tone: 'jade' | 'aqua' | 'herb' | 'violet'
   label: string
   value: string | number
   tag: string
@@ -203,28 +203,28 @@ function OutletSummary({
       className="items-metrics"
     >
       <SummaryCard
-        tone="emerald"
+        tone="violet"
         label="Total lokasi"
         value={units.length}
         tag={`${activeUnits} titik aktif`}
         icon="location"
       />
       <SummaryCard
-        tone="blue"
+        tone="jade"
         label="Total item yang ada"
         value={masterItemTotal ?? '…'}
         tag="Master item"
         icon="item"
       />
       <SummaryCard
-        tone="violet"
+        tone="herb"
         label="Total item diplot"
         value={plottedTotal}
         tag="Teralokasi"
         icon="plotted"
       />
       <SummaryCard
-        tone="amber"
+        tone="aqua"
         label="Tiket masuk reguler"
         value={ticketPrice === undefined ? '—' : formatCurrency(ticketPrice)}
         tag={ticketPrice === undefined ? 'Belum diatur' : 'Tarif aktif'}
@@ -258,10 +258,10 @@ function UnitItemPanel({
   return (
     <Card className="overflow-hidden rounded-2xl border-slate-200/90 shadow-sm transition hover:border-slate-300">
       <div
-        className={`flex flex-col gap-4 border-l-4 border-l-emerald-500 px-4 py-4 transition-colors sm:px-6 md:flex-row md:items-center md:justify-between ${
+        className={`flex flex-col gap-4 border-l-4 border-l-violet-500 px-4 py-4 transition-colors sm:px-6 md:flex-row md:items-center md:justify-between ${
           open
-            ? 'border-b border-b-emerald-200/80 bg-emerald-50/80'
-            : 'bg-emerald-50/40 hover:bg-emerald-50/70'
+            ? 'border-b border-b-violet-100/80 bg-violet-50/80'
+            : 'bg-violet-50/40 hover:bg-violet-50/70'
         }`}
       >
         <button
@@ -291,14 +291,14 @@ function UnitItemPanel({
               <span
                 className={`inline-flex rounded-md border px-2 py-0.5 text-[0.68rem] font-medium ${
                   open
-                    ? 'border-emerald-200/70 bg-emerald-50 text-emerald-700'
+                    ? 'border-violet-100/70 bg-violet-50 text-violet-700'
                     : 'border-slate-200/70 bg-slate-100 text-slate-600'
                 }`}
               >
                 {items.isPending ? '…' : `${items.data?.meta.total ?? 0} item`}
               </span>
               {!unit.is_active && (
-                <span className="inline-flex rounded-md border border-red-200 bg-red-50 px-2 py-0.5 text-[0.68rem] font-medium text-red-700">
+                <span className="inline-flex rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 text-[0.68rem] font-medium text-slate-600">
                   Nonaktif
                 </span>
               )}
@@ -417,12 +417,12 @@ function UnitItemPanel({
                           <span
                             className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium ${
                               row.is_active
-                                ? 'border-emerald-100 bg-emerald-50 text-emerald-700'
-                                : 'border-red-100 bg-red-50 text-red-700'
+                                ? 'border-green-100 bg-green-50 text-green-700'
+                                : 'border-slate-200 bg-slate-100 text-slate-600'
                             }`}
                           >
                             <span
-                              className={`size-1.5 rounded-full ${row.is_active ? 'bg-emerald-500' : 'bg-red-500'}`}
+                              className={`size-1.5 rounded-full ${row.is_active ? 'bg-green-500' : 'bg-slate-400'}`}
                             />
                             {row.is_active ? 'Aktif' : 'Nonaktif'}
                           </span>
@@ -445,7 +445,7 @@ function UnitItemPanel({
                           {manage && (
                             <Button
                               variant="secondary"
-                              className="min-h-7 rounded-lg border-amber-200/70 bg-amber-50 px-2.5 py-1 text-xs text-amber-700 hover:bg-amber-100"
+                              className="min-h-7 rounded-lg border-emerald-200/70 bg-emerald-50 px-2.5 py-1 text-xs text-emerald-700 hover:bg-emerald-100"
                               onClick={(event) => {
                                 event.stopPropagation()
                                 setEditing(row)
@@ -521,12 +521,12 @@ function UnitItemPanel({
                 <span
                   className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium ${
                     detail.is_active
-                      ? 'border-emerald-100 bg-emerald-50 text-emerald-700'
-                      : 'border-red-100 bg-red-50 text-red-700'
+                      ? 'border-green-100 bg-green-50 text-green-700'
+                      : 'border-slate-200 bg-slate-100 text-slate-600'
                   }`}
                 >
                   <span
-                    className={`size-1.5 rounded-full ${detail.is_active ? 'bg-emerald-500' : 'bg-red-500'}`}
+                    className={`size-1.5 rounded-full ${detail.is_active ? 'bg-green-500' : 'bg-slate-400'}`}
                   />
                   {detail.is_active ? 'Aktif' : 'Nonaktif'}
                 </span>
@@ -625,7 +625,7 @@ export function UnitItemsView({
             </span>
             <Input
               type="search"
-              className="rounded-xl border-slate-200 bg-slate-50 py-2.5 pr-4 pl-10 placeholder:text-slate-400 focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-500/20"
+              className="rounded-xl border-slate-300 bg-slate-50 py-2.5 pr-4 pl-10 placeholder:text-slate-400 focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-500/20"
               placeholder="Cari outlet atau ticketing…"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
@@ -634,7 +634,7 @@ export function UnitItemsView({
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <Select
               aria-label="Filter jenis outlet"
-              className="rounded-xl border-slate-200 bg-slate-50 font-medium sm:w-56"
+              className="rounded-xl border-slate-300 bg-slate-50 font-medium sm:w-56"
               value={type}
               onChange={(event) => setType(event.target.value)}
             >
@@ -644,7 +644,7 @@ export function UnitItemsView({
             </Select>
             <Select
               aria-label="Filter status outlet"
-              className="rounded-xl border-slate-200 bg-slate-50 font-medium sm:w-48"
+              className="rounded-xl border-slate-300 bg-slate-50 font-medium sm:w-48"
               value={status}
               onChange={(event) => setStatus(event.target.value)}
             >

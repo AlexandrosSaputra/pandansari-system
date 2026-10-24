@@ -128,7 +128,7 @@ function TransferLine({
           />
         </FormField>
         <Button
-          className="self-end"
+          className="self-end text-red-700 hover:bg-red-50 hover:text-red-800"
           variant="ghost"
           aria-label={`Hapus produk ${index + 1}`}
           onClick={remove}

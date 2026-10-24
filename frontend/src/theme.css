@@ -1,0 +1,96 @@
+/* Pandansari light palette. Brand, category, and state colors have separate roles. */
+@layer base {
+  :root {
+    color-scheme: light;
+    --palette-jade: #03695e;
+    --palette-herb: #6daa5f;
+    --palette-aqua: #239dca;
+    --palette-mist: #a5c6db;
+    --palette-linen: #e7e9d8;
+    --palette-mantis: #5dbb63;
+
+    --color-canvas: #f6f7f1;
+    --color-surface: #ffffff;
+    --color-surface-subtle: #f0f3ec;
+    --color-surface-hover: #e9eee5;
+    --color-border: #dce3d8;
+    --color-border-strong: #7c8f82;
+    --color-text: #172d29;
+    --color-text-secondary: #3f554e;
+    --color-text-muted: #5e7067;
+
+    --color-primary: var(--palette-jade);
+    --color-primary-hover: #02564d;
+    --color-primary-strong: #01483f;
+    --color-primary-soft: #e5f2ef;
+    --color-primary-tint: #cce5de;
+    --color-primary-border: #a7cec1;
+    --color-herb-ink: #365e2e;
+    --color-herb-soft: #eff5eb;
+    --color-herb-border: #c9ddbf;
+    --color-success: #398457;
+    --color-success-ink: #27643e;
+    --color-success-soft: #e9f5eb;
+    --color-success-border: #b9d9bf;
+    --color-info: var(--palette-aqua);
+    --color-info-ink: #126482;
+    --color-info-soft: #e8f4f9;
+    --color-info-border: var(--palette-mist);
+    --color-location: #6d5c92;
+    --color-location-soft: #f3f0f8;
+    --color-location-border: #d9d0e8;
+    --color-linen-ink: #535d38;
+    --color-linen-soft: #f3f4e9;
+    --color-danger: #b91c1c;
+    --color-danger-soft: #fef2f2;
+    --color-danger-border: #fecaca;
+    --color-warning: #92400e;
+    --color-warning-soft: #fffbeb;
+    --color-warning-border: #fde68a;
+  }
+}
+
+/* Bridge existing utility classes to the same tokens used by component CSS.
+   Keep emerald-500/600 dark enough for focus outlines and white button text. */
+@theme inline {
+  --color-emerald-50: var(--color-primary-soft);
+  --color-emerald-100: var(--color-primary-tint);
+  --color-emerald-200: var(--color-primary-border);
+  --color-emerald-300: #79b8a5;
+  --color-emerald-400: #398575;
+  --color-emerald-500: var(--color-primary);
+  --color-emerald-600: var(--color-primary);
+  --color-emerald-700: var(--color-primary-hover);
+  --color-emerald-800: var(--color-primary-strong);
+  --color-emerald-900: #103b32;
+  --color-emerald-950: #092b25;
+
+  --color-slate-50: var(--color-canvas);
+  --color-slate-100: var(--color-surface-subtle);
+  --color-slate-200: var(--color-border);
+  --color-slate-300: var(--color-border-strong);
+  --color-slate-400: var(--color-text-muted);
+  --color-slate-500: var(--color-text-muted);
+  --color-slate-600: var(--color-text-secondary);
+  --color-slate-700: var(--color-text-secondary);
+  --color-slate-800: var(--color-text);
+  --color-slate-900: var(--color-text);
+
+  --color-blue-50: var(--color-info-soft);
+  --color-blue-100: #d7eaf3;
+  --color-blue-200: var(--color-info-border);
+  --color-blue-600: var(--color-info-ink);
+  --color-blue-700: var(--color-info-ink);
+
+  --color-green-50: var(--color-success-soft);
+  --color-green-100: var(--color-success-border);
+  --color-green-500: var(--color-success);
+  --color-green-600: var(--color-success-ink);
+  --color-green-700: var(--color-success-ink);
+
+  --color-violet-50: var(--color-location-soft);
+  --color-violet-100: var(--color-location-border);
+  --color-violet-500: var(--color-location);
+  --color-violet-600: var(--color-location);
+  --color-violet-700: var(--color-location);
+}

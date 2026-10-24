@@ -82,13 +82,15 @@ export function Card({
 export function Badge({ value }: { value: string | boolean }) {
   const text =
     typeof value === 'boolean' ? (value ? 'Aktif' : 'Nonaktif') : label(value)
-  const tone = [true, 'PAID', 'ACCEPTED', 'Normal', 'IN'].includes(value)
+  const tone = [true, 'Aktif', 'PAID', 'ACCEPTED', 'Normal', 'IN'].includes(value)
     ? 'success'
-    : ['REJECTED', 'OUT'].includes(value as string)
+    : value === 'REJECTED'
       ? 'danger'
       : ['PENDING', 'Stok Rendah'].includes(value as string)
         ? 'warning'
-        : value === 'CART'
+        : value === 'OUTLET'
+          ? 'location'
+          : ['CART', 'TICKETING'].includes(value as string)
           ? 'info'
           : 'neutral'
   return <span className={`badge badge-${tone}`}>{text}</span>

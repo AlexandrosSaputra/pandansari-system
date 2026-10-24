@@ -14,9 +14,10 @@ Pada pemeriksaan otomatis 23 Oktober 2026:
 - Autentikasi dan pemulihan kata sandi lulus 26 test dengan 168 assertion. Cakupan mencakup peringatan sisa percobaan, penguncian pada kesalahan ketiga, OTP request yang tidak langsung membuka akun, pembukaan kunci setelah reset berhasil, dan penghapusan hitungan gagal setelah login sukses.
 - Fitur lupa password lulus 7 test dengan 40 assertion pada MySQL testing: penerima email khusus, respons username generik, OTP satu kali pakai, reset akun superadmin, audit log, kedaluwarsa 10 menit, batas tiga percobaan, dan jeda kirim ulang 60 detik.
 - Test integrasi `CoreWorkflowApiTest` merangkai stok masuk Gudang, reservasi transfer, penerimaan outlet, input barcode ke keranjang, checkout, rekonsiliasi saldo terhadap ledger, riwayat transaksi, serta pembatasan role.
+- Endpoint scan eksternal memiliki pemeriksaan feature untuk Bearer token ber-ability `transaction:scan`, pencocokan barcode pada katalog unit, kepemilikan keranjang, status scanner unit, validasi input, dan jaminan bahwa scan belum membuat mutasi stok.
 - UAT browser resmi belum dicatat pada dokumen ini dan akan dilakukan langsung oleh pengguna.
 
-Tidak ada klaim UAT dari pemeriksaan otomatis. Perangkat ESP32, WebSocket, stock opname, dan forecasting tetap berada di luar milestone ini.
+Tidak ada klaim UAT dari pemeriksaan otomatis. Firmware/perangkat ESP32, pairing perangkat, idempotensi retry, WebSocket, stock opname, dan forecasting tetap berada di luar milestone ini.
 
 ## Status UAT browser
 

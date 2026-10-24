@@ -2,7 +2,7 @@
   min-height: calc(100dvh - 4rem);
   margin: -2rem;
   padding: 2rem;
-  background: #faf9ff;
+  background: var(--color-canvas);
 }
 
 .unit-detail-shell {
@@ -21,7 +21,7 @@
 }
 
 .unit-detail-title {
-  color: #0f172a;
+  color: var(--color-text);
   font-size: 1.75rem;
   font-weight: 750;
   letter-spacing: -0.035em;
@@ -31,7 +31,7 @@
 .unit-detail-description {
   max-width: 42rem;
   margin-top: 0.35rem;
-  color: #526178;
+  color: var(--color-text-secondary);
   font-size: 0.8rem;
   line-height: 1.5;
 }
@@ -42,10 +42,10 @@
   gap: 0.4rem;
   width: 25rem;
   padding: 0.4rem;
-  border: 1px solid #e6e8f3;
+  border: 1px solid var(--color-border);
   border-radius: 0.75rem;
-  background: #fff;
-  box-shadow: 0 1px 2px rgb(15 23 42 / 4%);
+  background: var(--color-surface);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--color-text) 4%, transparent);
 }
 
 .unit-detail-metric-wide {
@@ -56,9 +56,17 @@
   width: 100%;
   min-height: 3.4rem;
   padding: 0.55rem 0.75rem;
-  border: 1px solid #ececf6;
+  border: 1px solid var(--color-border);
   border-radius: 0.55rem;
-  background: #f6f6ff;
+  background: var(--color-surface-subtle);
+}
+.unit-detail-metric-emerald {
+  border-color: var(--color-success-border);
+  background: var(--color-success-soft);
+}
+.unit-detail-metric-amber {
+  border-color: var(--color-warning-border);
+  background: var(--color-warning-soft);
 }
 
 .unit-detail-metric-label {
@@ -66,7 +74,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 0.6rem;
   font-weight: 750;
   letter-spacing: 0.075em;
@@ -83,10 +91,10 @@
 
 .unit-detail-info,
 .unit-detail-items {
-  border: 1px solid #e7e9f2;
+  border: 1px solid var(--color-border);
   border-radius: 0.8rem;
-  background: #fff;
-  box-shadow: 0 1px 3px rgb(15 23 42 / 5%);
+  background: var(--color-surface);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--color-text) 5%, transparent);
 }
 
 .unit-detail-info {
@@ -99,7 +107,7 @@
   gap: 0.75rem;
   margin-bottom: 1rem;
   padding-bottom: 0.9rem;
-  border-bottom: 1px solid #eceef5;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .unit-detail-info-icon {
@@ -109,8 +117,8 @@
   height: 2.5rem;
   place-items: center;
   border-radius: 0.65rem;
-  color: #047857;
-  background: #ecfdf5;
+  color: var(--color-location);
+  background: var(--color-location-soft);
 }
 
 .unit-detail-info-title-row {
@@ -121,14 +129,14 @@
 }
 
 .unit-detail-info-title {
-  color: #0f172a;
+  color: var(--color-text);
   font-size: 0.95rem;
   font-weight: 700;
 }
 
 .unit-detail-info-copy {
   margin-top: 0.15rem;
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 0.68rem;
 }
 
@@ -141,13 +149,13 @@
 .unit-detail-info-cell {
   min-width: 0;
   padding: 0.75rem;
-  border: 1px solid #ececf6;
+  border: 1px solid var(--color-border);
   border-radius: 0.55rem;
-  background: #f6f6ff;
+  background: var(--color-surface-subtle);
 }
 
 .unit-detail-info-cell dt {
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 0.58rem;
   font-weight: 750;
   letter-spacing: 0.075em;
@@ -170,7 +178,7 @@
   justify-content: space-between;
   gap: 1rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid #eceef5;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .unit-detail-toolbar-filters {
@@ -192,9 +200,9 @@
 .unit-detail-filter.input {
   height: 2.5rem;
   min-height: 2.5rem;
-  border-color: #dfe3ec;
-  background: #fff;
-  box-shadow: 0 1px 2px rgb(15 23 42 / 3%);
+  border-color: var(--color-border-strong);
+  background: var(--color-surface);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--color-text) 3%, transparent);
 }
 
 .unit-detail-search .input {
@@ -218,10 +226,10 @@
   width: 2.5rem;
   height: 2.5rem;
   place-items: center;
-  border: 1px solid #dfe3ec;
+  border: 1px solid var(--color-border-strong);
   border-radius: 0.5rem;
-  color: #64748b;
-  background: #fff;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
 }
 
 .unit-detail-add {
@@ -255,13 +263,13 @@
 }
 
 .unit-detail-table thead tr {
-  color: #56647a;
-  background: #f3f3ff;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-subtle);
 }
 
 .unit-detail-table th {
   padding: 0.7rem 0.75rem;
-  border-bottom-color: #e8eaf3;
+  border-bottom-color: var(--color-border);
   background: transparent;
   font-size: 0.6rem;
   font-weight: 700;
@@ -272,7 +280,7 @@
 .unit-detail-table td {
   height: 3.35rem;
   padding: 0.55rem 0.75rem;
-  border-bottom-color: #edf0f5;
+  border-bottom-color: var(--color-border);
 }
 
 .unit-detail-pagination {
@@ -281,7 +289,7 @@
   justify-content: space-between;
   gap: 1rem;
   padding-top: 0.8rem;
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 0.68rem;
 }
 

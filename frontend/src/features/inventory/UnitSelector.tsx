@@ -6,11 +6,13 @@ export function UnitSelector({
   value,
   name,
   type,
+  showCode = true,
   onChange,
 }: {
   value?: number
   name?: string
   type?: UnitType
+  showCode?: boolean
   onChange: (unit: OperationalUnit) => void
 }) {
   const auth = useAuth()
@@ -29,7 +31,7 @@ export function UnitSelector({
         value={value}
         selectedLabel={name}
         identify={(row) => row.id}
-        describe={(row) => `${row.code} · ${row.name}`}
+        describe={(row) => (showCode ? `${row.code} · ${row.name}` : row.name)}
         onChange={onChange}
       />
     </FormField>

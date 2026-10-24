@@ -3,10 +3,12 @@ import { Card, ErrorState, Skeleton } from '../../../components/ui'
 import { formatNumber } from '../../../utils/format'
 export function SummaryCard({
   title,
+  tone = 'inventory',
   query,
   children,
 }: {
   title: string
+  tone?: 'inventory' | 'attention' | 'success'
   query: {
     data?: { meta: { total: number } }
     isPending: boolean
@@ -16,8 +18,8 @@ export function SummaryCard({
   children: ReactNode
 }) {
   return (
-    <Card className="p-5">
-      <p className="text-sm text-slate-500">{title}</p>
+    <Card className={`dashboard-summary dashboard-summary-${tone} p-5`}>
+      <p className="dashboard-summary-label text-sm font-semibold">{title}</p>
       {query.isPending ? (
         <Skeleton rows={1} />
       ) : query.error ? (
