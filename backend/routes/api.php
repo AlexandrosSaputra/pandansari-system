@@ -84,6 +84,7 @@ Route::middleware('auth:sanctum')->name('api.')->group(function (): void {
     Route::post('transactions/{transaction}/items', [TransactionItemController::class, 'store'])->middleware('permission:transaction.create')->name('transactions.items.store');
     Route::post('transactions/{transaction}/scans', [TransactionScanController::class, 'store'])->middleware('permission:transaction.create')->name('transactions.scans.store');
     Route::patch('transactions/{transaction}/items/{transactionItem}', [TransactionItemController::class, 'update'])->middleware('permission:transaction.create')->name('transactions.items.update');
+    Route::delete('transactions/{transaction}/items', [TransactionItemController::class, 'clear'])->middleware('permission:transaction.create')->name('transactions.items.clear');
     Route::delete('transactions/{transaction}/items/{transactionItem}', [TransactionItemController::class, 'destroy'])->middleware('permission:transaction.create')->name('transactions.items.destroy');
     Route::post('transactions/{transaction}/checkout', [TransactionController::class, 'checkout'])->middleware('permission:transaction.create')->name('transactions.checkout');
 });

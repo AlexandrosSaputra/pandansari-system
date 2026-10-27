@@ -66,7 +66,7 @@
   overflow-wrap: anywhere;
 }
 
-.pos-header-badge { max-width: 12rem; min-width: 0; }
+.pos-header-badge { display: flex; align-items: center; justify-content: flex-end; gap: .375rem; max-width: 12rem; min-width: 0; }
 
 .pos-unit-label,
 .pos-cart-count {
@@ -83,6 +83,14 @@
 .pos-unit-label { color: #6b4c9a; background: #f3effb; }
 .pos-cart-count { color: #1e3a8a; background: #edf3fc; }
 .pos-cart-count { flex-shrink: 0; }
+.pos-workspace .pos-clear-cart-button {
+  flex-shrink: 0;
+  width: 2rem;
+  min-height: 2rem;
+  padding: .375rem;
+  color: var(--color-text-muted);
+}
+.pos-workspace .pos-clear-cart-button:hover:not(:disabled) { color: var(--color-danger); background: var(--color-danger-soft); }
 .pos-cart .pos-panel-header { margin-bottom: 1rem; }
 
 .pos-catalog .filter-bar {

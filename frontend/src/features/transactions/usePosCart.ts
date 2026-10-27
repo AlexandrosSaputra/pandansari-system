@@ -9,6 +9,7 @@ type CartAction =
   | { type: 'add'; item_id: number }
   | { type: 'quantity'; id: number; quantity: number }
   | { type: 'remove'; id: number }
+  | { type: 'clear' }
   | { type: 'checkout' }
 export function usePosCart(unitId: number) {
   const auth = useAuth()
@@ -59,6 +60,9 @@ export function usePosCart(unitId: number) {
               `${path}/items/${operation.id}`,
             )
           ).data.data
+        case 'clear':
+          return (await api.delete<Resource<Transaction>>(`${path}/items`))
+            .data.data
         case 'checkout':
           return (await api.post<Resource<Transaction>>(`${path}/checkout`))
             .data.data

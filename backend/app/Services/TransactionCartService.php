@@ -168,6 +168,23 @@ class TransactionCartService
         }, 3);
     }
 
+    public function clearItems(User $actor, Transaction $transaction): Transaction
+    {
+        return DB::transaction(function () use ($actor, $transaction): Transaction {
+            $transaction = $this->lockMutableCart($actor, $transaction);
+            $this->lockActiveUnit($transaction);
+
+            TransactionItem::query()
+                ->where('transaction_id', $transaction->id)
+                ->lockForUpdate()
+                ->delete();
+
+            $this->recalculate($transaction);
+
+            return $this->loadTransaction($transaction);
+        }, 3);
+    }
+
     private function lockMutableCart(User $actor, Transaction $transaction): Transaction
     {
         $transaction = Transaction::query()->whereKey($transaction->id)->lockForUpdate()->firstOrFail();

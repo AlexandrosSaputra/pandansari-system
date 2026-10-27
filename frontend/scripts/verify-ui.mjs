@@ -728,6 +728,23 @@ try {
     check('Remove targets the transaction item with DELETE', () =>
       assert.equal(requests.at(-1).method, 'delete'),
     )
+    responseCart = {
+      ...cart,
+      subtotal: '0.00',
+      total: '0.00',
+      visitor_count: 0,
+      items: [],
+    }
+    await pos.action.mutateAsync({ type: 'clear' })
+    check('Clear removes every cart item with one DELETE request', () =>
+      assert.deepEqual(requests.at(-1), {
+        method: 'delete',
+        url: '/transactions/88/items',
+        data: undefined,
+      }),
+    )
+    responseCart = cart
+    queryClient.setQueryData(keys.cart(user.id, unit.id), cart)
     conflict = true
     await assert.rejects(pos.action.mutateAsync({ type: 'checkout' }))
     check('Checkout conflict preserves cart identity and lines', () =>

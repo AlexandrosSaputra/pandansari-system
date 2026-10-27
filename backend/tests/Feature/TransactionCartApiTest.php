@@ -172,6 +172,33 @@ class TransactionCartApiTest extends TestCase
             ->assertJsonCount(0, 'data.items');
     }
 
+    public function test_clear_deletes_all_cart_items_and_recalculates_totals(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        [$unit] = $this->unit('TICKET', OperationalUnitType::Ticketing);
+        $ticket = $this->item('TICKET', ItemType::Service, visitorFactor: 1);
+        $parking = $this->item('PARKING', ItemType::Service);
+        $this->unitItem($unit, $ticket, '25000.00');
+        $this->unitItem($unit, $parking, '5000.00');
+        $admin = $this->account('admin', $unit);
+        $cartId = $this->actingAs($admin, 'web')->postJson('/api/transactions/cart')->assertCreated()->json('data.id');
+
+        $this->add($cartId, $ticket, 2);
+        $this->add($cartId, $parking, 3)
+            ->assertJsonPath('data.total', '65000.00')
+            ->assertJsonPath('data.visitor_count', 2);
+
+        $this->deleteJson('/api/transactions/'.$cartId.'/items')
+            ->assertOk()
+            ->assertJsonPath('data.status', 'CART')
+            ->assertJsonPath('data.subtotal', '0.00')
+            ->assertJsonPath('data.total', '0.00')
+            ->assertJsonPath('data.visitor_count', 0)
+            ->assertJsonCount(0, 'data.items');
+
+        $this->assertDatabaseCount('transaction_items', 0);
+    }
+
     public function test_cart_mutation_is_creator_only_even_for_same_unit_or_superadmin(): void
     {
         $this->seed(DatabaseSeeder::class);

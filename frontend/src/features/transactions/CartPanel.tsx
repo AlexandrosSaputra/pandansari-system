@@ -17,6 +17,7 @@ import { PosSectionHeader } from './PosSectionHeader'
 
 export function CartPanel({ pos }: { pos: ReturnType<typeof usePosCart> }) {
   const [confirm, setConfirm] = useState(false)
+  const [clearConfirm, setClearConfirm] = useState(false)
   const data = pos.cart.data
   const busy = pos.action.isPending || pos.newCart.isPending
   const itemCount =
@@ -27,11 +28,30 @@ export function CartPanel({ pos }: { pos: ReturnType<typeof usePosCart> }) {
         kind="cart"
         title="Keranjang"
         description={data?.transaction_number}
-        badge={data?.status === 'PAID' ? (
-          <Badge value={data.status} />
-        ) : (
-          <span className="pos-cart-count">{formatNumber(itemCount)} item</span>
-        )}
+        badge={
+          data?.status === 'PAID' ? (
+            <Badge value={data.status} />
+          ) : (
+            <>
+              <Button
+                variant="ghost"
+                className="pos-clear-cart-button"
+                disabled={busy || !data?.items?.length}
+                aria-label="Hapus semua barang dari keranjang"
+                title="Hapus semua barang"
+                onClick={() => {
+                  pos.action.reset()
+                  setClearConfirm(true)
+                }}
+              >
+                <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6M14 10v6" />
+                </svg>
+              </Button>
+              <span className="pos-cart-count">{formatNumber(itemCount)} item</span>
+            </>
+          )
+        }
       />
       {pos.cart.isPending ? (
         <Skeleton rows={4} />
@@ -144,6 +164,23 @@ export function CartPanel({ pos }: { pos: ReturnType<typeof usePosCart> }) {
           }
         >
           Pastikan pelanggan telah menunjukkan bukti pembayaran.
+        </ConfirmDialog>
+      )}
+      {clearConfirm && (
+        <ConfirmDialog
+          title="Hapus Semua Barang"
+          busy={pos.action.isPending}
+          error={pos.action.error}
+          danger
+          onClose={() => setClearConfirm(false)}
+          onConfirm={() =>
+            pos.action.mutate(
+              { type: 'clear' },
+              { onSuccess: () => setClearConfirm(false) },
+            )
+          }
+        >
+          Semua barang pada keranjang akan dihapus. Tindakan ini tidak dapat dibatalkan.
         </ConfirmDialog>
       )}
     </Card>

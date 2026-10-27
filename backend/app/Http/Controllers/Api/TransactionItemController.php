@@ -62,4 +62,15 @@ class TransactionItemController extends Controller
 
         return new TransactionResource($carts->removeItem($user, $transaction, $transactionItem));
     }
+
+    public function clear(
+        Request $request,
+        Transaction $transaction,
+        TransactionCartService $carts,
+    ): TransactionResource {
+        $user = $request->user();
+        abort_unless($user instanceof User, 401, 'Unauthenticated.');
+
+        return new TransactionResource($carts->clearItems($user, $transaction));
+    }
 }

@@ -200,6 +200,7 @@ class TransactionCheckoutApiTest extends TestCase
             'input_method' => 'MANUAL', 'item_id' => $product->id,
         ])->assertConflict();
         $this->patchJson('/api/transactions/'.$cartId.'/items/'.$lineId, ['quantity' => 3])->assertConflict();
+        $this->deleteJson('/api/transactions/'.$cartId.'/items')->assertConflict();
         $this->deleteJson('/api/transactions/'.$cartId.'/items/'.$lineId)->assertConflict();
         $this->postJson('/api/transactions/'.$cartId.'/checkout')->assertConflict();
 
