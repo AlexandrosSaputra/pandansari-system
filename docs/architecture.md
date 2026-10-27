@@ -71,7 +71,7 @@ Laravel scan API ---- event real-time ---- POS aktif
                                   Dashboard Super Admin
 ```
 
-Komponen ESP32 dan forecasting belum tersedia di repositori. Ketika dibangun, keduanya harus menambah integrasi di atas tanpa memindahkan aturan harga, stok, atau transaksi dari Laravel.
+Komponen ESP32 penuh dan layanan forecasting Python belum tersedia. MVP forecasting saat ini berjalan di Laravel dengan tabel `historical_sales`, `forecast_runs`, dan `forecast_results`. Baseline dipilih per SKU melalui backtest berurutan waktu; hasil hanya menjadi rekomendasi dan tidak memindahkan aturan harga, stok, atau transaksi dari Laravel. OpenAI atau Ollama hanya menghasilkan penjelasan terstruktur atas angka yang sudah dihitung sistem.
 
 ## Keputusan desain yang masih diperlukan
 
@@ -79,5 +79,5 @@ Komponen ESP32 dan forecasting belum tersedia di repositori. Ketika dibangun, ke
 - Format dan masa berlaku token perangkat.
 - Penyimpanan unik untuk `scan_id` dan respons idempoten terhadap retry perangkat.
 - Mekanisme WebSocket/broadcasting untuk mengirim hasil scan ke POS.
-- Sumber dan kualitas data riil untuk forecasting.
-- Horizon rekomendasi, lead time pemasok, dan safety stock. Stock opname berada di luar lingkup website.
+- Lead time pemasok, service level, ukuran kemasan, dan kalibrasi safety stock. MVP memakai `minimum_stock` katalog unit sebagai safety stock.
+- Kandidat model lanjutan serta fitur pengunjung, hari libur, promosi, dan kejadian kehabisan stok. Stock opname berada di luar lingkup website.

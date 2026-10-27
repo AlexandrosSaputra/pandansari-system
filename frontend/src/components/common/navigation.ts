@@ -9,6 +9,7 @@ export interface NavigationItem {
   icon: string
   transaction?: boolean
   workspaceType?: UnitType
+  superadminOnly?: boolean
 }
 
 export const navigation: NavigationItem[] = [
@@ -74,6 +75,15 @@ export const navigation: NavigationItem[] = [
     icon: 'transfer',
   },
   {
+    group: 'Analitik',
+    label: 'AI Insight',
+    description: 'Prediksi kebutuhan produk dan rekomendasi restock.',
+    to: '/forecasts',
+    permission: 'ai.view',
+    icon: 'forecast',
+    superadminOnly: true,
+  },
+  {
     group: 'Master data',
     label: 'Item',
     description: 'Kelola referensi produk, layanan, dan inventaris.',
@@ -124,6 +134,7 @@ export function isNavigationItemVisible(
   },
 ) {
   if (!context.hasPermission(item.permission)) return false
+  if (item.superadminOnly && context.roleSlug !== 'superadmin') return false
   if (
     item.transaction &&
     !['admin', 'superadmin'].includes(context.roleSlug ?? '')

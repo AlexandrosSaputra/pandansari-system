@@ -190,6 +190,60 @@ export interface ActivityLog {
   metadata: unknown
   created_at: string | null
 }
+export type ForecastHorizon = 'next_week' | 'next_month' | 'custom'
+export interface ForecastOptionUnit extends UnitSummary {
+  history_start: string
+  history_end: string
+  history_weeks: number
+  product_count: number
+}
+export interface ForecastOptions {
+  units: ForecastOptionUnit[]
+  explanation_provider: 'none' | 'openai' | 'ollama'
+}
+export interface ForecastExplanation {
+  summary: string
+  risks: string[]
+  actions: string[]
+}
+export interface ForecastResult {
+  id: number
+  item: Pick<ItemSummary, 'id' | 'item_code' | 'name' | 'uom'>
+  model: 'lag_1' | 'seasonal_52'
+  history_weeks: number
+  predicted_units: number
+  available_quantity: number
+  minimum_stock: number
+  incoming_quantity: number
+  recommended_restock: number
+  mae: number
+  rmse: number
+  wape: number
+}
+export interface ForecastRun {
+  id: number
+  operational_unit: UnitSummary
+  requester: Person
+  horizon: ForecastHorizon
+  target_date: string
+  forecast_start: string
+  forecast_end: string
+  history_through: string
+  forecast_weeks: number
+  method: string
+  metrics: {
+    mae: number
+    rmse: number
+    wape: number
+    evaluation_weeks: number
+    model_counts: Record<string, number>
+  }
+  explanation_provider: 'none' | 'openai' | 'ollama'
+  explanation_status: 'disabled' | 'pending' | 'generated' | 'fallback'
+  explanation: ForecastExplanation | null
+  created_at: string | null
+  results: ForecastResult[]
+}
 export interface PageMeta {
   current_page: number
   last_page: number

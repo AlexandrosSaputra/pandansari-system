@@ -100,6 +100,18 @@ export const router = createBrowserRouter([
             ],
           },
           {
+            element: <PermissionGuard permission="ai.view" superadminOnly />,
+            children: [
+              {
+                path: 'forecasts',
+                lazy: async () => ({
+                  Component: (await import('../features/forecasts/ForecastsPage'))
+                    .ForecastsPage,
+                }),
+              },
+            ],
+          },
+          {
             element: <PermissionGuard permission="item.view" />,
             children: [
               {

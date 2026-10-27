@@ -52,6 +52,16 @@ class Item extends Model
         return $this->hasMany(TransactionItem::class);
     }
 
+    public function historicalSales(): HasMany
+    {
+        return $this->hasMany(HistoricalSale::class);
+    }
+
+    public function forecastResults(): HasMany
+    {
+        return $this->hasMany(ForecastResult::class);
+    }
+
     #[Scope]
     protected function active(Builder $query): Builder
     {

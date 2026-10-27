@@ -32,6 +32,9 @@ class DatabaseFoundationTest extends TestCase
             'transactions' => ['status', 'visitor_count', 'subtotal', 'total', 'paid_by', 'paid_at'],
             'transaction_items' => ['unit_price', 'subtotal', 'input_method'],
             'activity_logs' => ['actor_id', 'action', 'subject_type', 'subject_id', 'metadata', 'created_at'],
+            'historical_sales' => ['operational_unit_id', 'item_id', 'week_start', 'units_sold', 'source_file'],
+            'forecast_runs' => ['requested_by', 'operational_unit_id', 'horizon', 'forecast_start', 'forecast_end', 'metrics', 'explanation'],
+            'forecast_results' => ['forecast_run_id', 'item_id', 'predicted_units', 'available_quantity', 'recommended_restock', 'wape'],
         ];
 
         foreach ($tables as $table => $columns) {
@@ -65,6 +68,8 @@ class DatabaseFoundationTest extends TestCase
             ['stock_transfers', ['transfer_number']],
             ['stock_transfer_items', ['stock_transfer_id', 'item_id']],
             ['transactions', ['transaction_number']],
+            ['historical_sales', ['operational_unit_id', 'item_id', 'week_start']],
+            ['forecast_results', ['forecast_run_id', 'item_id']],
         ];
 
         foreach ($constraints as [$table, $columns]) {
@@ -92,6 +97,9 @@ class DatabaseFoundationTest extends TestCase
             'transactions' => ['operational_unit_id' => ['operational_units', 'restrict'], 'created_by' => ['users', 'restrict'], 'paid_by' => ['users', 'restrict']],
             'transaction_items' => ['transaction_id' => ['transactions', 'cascade'], 'item_id' => ['items', 'restrict']],
             'activity_logs' => ['actor_id' => ['users', 'set null']],
+            'historical_sales' => ['operational_unit_id' => ['operational_units', 'restrict'], 'item_id' => ['items', 'restrict']],
+            'forecast_runs' => ['requested_by' => ['users', 'restrict'], 'operational_unit_id' => ['operational_units', 'restrict']],
+            'forecast_results' => ['forecast_run_id' => ['forecast_runs', 'cascade'], 'operational_unit_id' => ['operational_units', 'restrict'], 'item_id' => ['items', 'restrict']],
         ];
 
         foreach ($relations as $table => $columns) {
@@ -118,6 +126,9 @@ class DatabaseFoundationTest extends TestCase
             'stock_transfers' => [['status'], ['created_at']],
             'transactions' => [['status'], ['created_at'], ['paid_at']],
             'activity_logs' => [['action'], ['subject_type', 'subject_id'], ['created_at']],
+            'historical_sales' => [['operational_unit_id', 'week_start']],
+            'forecast_runs' => [['operational_unit_id', 'created_at']],
+            'forecast_results' => [['operational_unit_id', 'recommended_restock']],
         ];
 
         foreach ($indexes as $table => $columnSets) {

@@ -98,6 +98,11 @@ class User extends Authenticatable
         return $this->hasMany(ActivityLog::class, 'actor_id');
     }
 
+    public function requestedForecastRuns(): HasMany
+    {
+        return $this->hasMany(ForecastRun::class, 'requested_by');
+    }
+
     public function hasPermission(string $permission): bool
     {
         $role = $this->activeRole();

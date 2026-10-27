@@ -2,7 +2,7 @@
 
 ## Ringkasan
 
-Per 23 Oktober 2026, proyek berada pada sekitar **60% dari keseluruhan target proposal capstone**. Jika IoT ESP32 dan AI dikeluarkan dari perhitungan, inti website berada pada sekitar **75%**.
+Per 27 Oktober 2026, proyek berada pada sekitar **60% dari keseluruhan target proposal capstone**. Jika IoT ESP32 dan AI dikeluarkan dari perhitungan, inti website berada pada sekitar **75%**.
 
 Angka ini adalah estimasi penilaian fitur, bukan metrik terukur atau perhitungan jumlah file. Bobot area belum disepakati tim, sehingga angka keseluruhan tidak boleh dipakai sebagai laporan kemajuan formal. Status di bawah dinilai dari implementasi dan test otomatis yang tersedia; UAT browser resmi menunggu pelaksanaan langsung oleh pengguna.
 
@@ -12,13 +12,14 @@ Angka ini adalah estimasi penilaian fitur, bukan metrik terukur atau perhitungan
 | Produk dan lokasi | Tersedia | 85% | Item, barcode, harga per unit, lokasi inventori, dan unit operasional tersedia. Kode Master Item dibuat otomatis oleh sistem; halaman memiliki ringkasan katalog, filter, tabel bernomor, dan pagination responsif. Superadmin dapat mengelola item per unit melalui tampilan parent–child yang dikelompokkan berdasarkan outlet atau ticketing. |
 | Persediaan dan ledger | Tersedia | 80% | Saldo, stok masuk/keluar, transfer, dan riwayat mutasi tersedia. `ADJUSTMENT` dan `DAMAGED` belum tersedia. Stock opname di luar lingkup. |
 | POS dan ticketing | Tersedia | 80% | POS outlet dan Ticketing memiliki menu serta ruang transaksi terpisah dengan engine keranjang dan checkout yang sama; barcode manual dan riwayat transaksi tersedia. |
-| Dashboard dan laporan | Sebagian | 40% | Dashboard operasional dasar tersedia; laporan bisnis lengkap dan AI Insight belum tersedia. |
+| Dashboard dan laporan | Sebagian | 50% | Dashboard operasional dasar dan halaman AI Insight forecasting tersedia; laporan bisnis lengkap belum tersedia. |
 | Kualitas dan kesiapan operasional | Sebagian | 75% | Backend dan frontend memiliki pemeriksaan otomatis serta alur API inti memiliki test integrasi. UAT browser pengguna dan suite browser E2E otomatis belum tersedia. |
 | IoT dan manajemen perangkat | Sebagian | 20% | Endpoint scan berbasis barcode untuk demonstrasi tersedia dan mendukung token Sanctum terbatas, tetapi registrasi perangkat, pairing, idempotensi, heartbeat, dan event real-time belum tersedia. |
-| Forecasting dan rekomendasi AI | Belum tersedia | 0% | Tidak ada dataset, model, tabel hasil, atau halaman AI Insight. |
+| Forecasting dan rekomendasi AI | Sebagian | 60% | Dataset riil mingguan 208 minggu dapat diimpor, baseline dipilih per SKU melalui backtest, hasil dan rekomendasi tersimpan terpisah, serta halaman AI Insight tersedia khusus Superadmin. Model pohon, lead time pemasok, dan kalibrasi safety stock belum tersedia. |
 
 ## Alur yang telah memiliki implementasi
 
+- Per 27 Oktober 2026, modul AI Insight khusus Superadmin dapat membuat prediksi untuk minggu depan, bulan depan, atau sampai tanggal tertentu. Data riil yang sudah dirapikan mencakup 6.032 observasi mingguan, 208 minggu, 29 SKU, dan tiga outlet; importer CSV idempoten memetakan sumber `Baso`, `Minuman`, dan `Pop Mie` ke Outlet 1–3. Setiap SKU memilih baseline `lag_1` atau `seasonal_52` berdasarkan holdout 52 minggu. Rekomendasi dihitung dari prediksi permintaan, stok minimum, dan stok tersedia, disimpan terpisah, serta tidak mengubah saldo, transfer, atau mutasi stok. Penjelasan opsional mendukung OpenAI Responses API atau Ollama; kegagalan provider memakai penjelasan deterministik tanpa menggagalkan forecast.
 - Header katalog dan keranjang memakai komponen bersama dengan ikon, judul, keterangan, badge, dan garis pemisah. Aksen lavender menandai katalog/unit, sedangkan biru menandai keranjang. Footer katalog memiliki rentang jumlah item, indikator halaman aktif, dan tombol panah berlabel aksesibel; tombol nonaktif pada batas halaman. Tampilan footer membungkus pada layar kecil. Perubahan ini belum diuji otomatis, build, atau browser sesuai arahan pengguna.
 - Ruang POS/Ticketing mengikuti tinggi viewport dinamis (`100dvh`) sehingga halaman transaksi tidak perlu digulir. Pada desktop, katalog dan keranjang berdampingan dengan tinggi sama; masing-masing daftar mengisi ruang tersisa dan dapat digulir secara internal. Header, pagination, total, dan tombol pembayaran berada di luar area gulir daftar. Pada lebar layar sampai 1100 piksel, tombol pilihan Katalog/Keranjang menampilkan satu panel agar tidak bertumpuk; kedua panel tetap terpasang sehingga perpindahan tampilan tidak menghapus keranjang. Padding dan jarak kartu dipadatkan. Panel tetap dapat digulir sebagai fallback jika tinggi layar terlalu pendek untuk kontrol tetapnya. Halaman lain mempertahankan perilaku gulir semula. Penyesuaian layout ini belum diuji otomatis, build, atau browser sesuai arahan pengguna.
 - Baris keranjang POS/Ticketing memiliki nomor urut `No. 01`, `No. 02`, dan seterusnya, yang mengikuti urutan item saat ini. Latar putih dan biru keabuan bergantian, disertai batas serta jarak antarbaris untuk memudahkan pemisahan visual. Perubahan tampilan ini belum diuji otomatis, build, atau browser sesuai arahan pengguna.
@@ -44,7 +45,7 @@ Angka ini adalah estimasi penilaian fitur, bukan metrik terukur atau perhitungan
 ## Kesenjangan utama terhadap proposal
 
 1. Belum ada tabel `devices`, penerbitan dan rotasi token perangkat melalui UI, `scan_id`, retry idempoten, pairing POS, status perangkat, atau event real-time. Endpoint scan dasar yang ada masih memerlukan ID keranjang dan token Sanctum milik pembuat keranjang.
-2. Tidak ada `visitor_daily`, `forecast_results`, `stock_recommendations`, layanan Python, eksperimen model, atau dashboard rekomendasi.
+2. Forecast baseline dan dashboard rekomendasi telah tersedia di Laravel, tetapi belum ada `visitor_daily`, layanan eksperimen Python, model pohon, kalender hari libur, pencatatan lead time pemasok, atau evaluasi kandidat model lanjutan.
 3. Jenis mutasi saat ini adalah `STOCK_IN`, `STOCK_OUT`, `TRANSFER_IN`, `TRANSFER_OUT`, dan `SALE`. Proposal juga memerlukan aturan untuk stok awal, penyesuaian, serta barang rusak.
 4. Dashboard belum menampilkan omzet per outlet, produk terlaris, penjualan per jam/hari, prakiraan, dan rekomendasi pengadaan sebagaimana target proposal.
 5. Bukti uji API end-to-end tersedia untuk alur inti, tetapi UAT browser pengguna dan suite browser end-to-end otomatis belum tersedia.

@@ -46,4 +46,4 @@ Endpoint scan dasar untuk demonstrasi sudah tersedia pada `POST /api/transaction
 
 Integrasi perangkat penuh masih memerlukan identitas perangkat, pengenal unik `scan_id`, penyimpanan idempoten agar retry tidak menggandakan item, mekanisme pairing ke POS aktif, serta event real-time. Scan Gudang juga harus mengikuti alur stok masuk yang disepakati.
 
-Hasil forecasting kelak disimpan terpisah dari transaksi dan saldo stok. Rekomendasi hanya tampil untuk Superadmin dan tidak membuat pembelian atau perubahan stok otomatis. Sumber data, horizon, dan perhitungan safety stock masih harus diputuskan.
+Hasil forecasting disimpan pada `forecast_runs` dan `forecast_results`, terpisah dari transaksi dan saldo stok. Rekomendasi hanya tampil untuk Superadmin dan tidak membuat pembelian, transfer, saldo, atau mutasi stok otomatis. Data sumber menggunakan agregasi mingguan riil yang sudah dirapikan; MVP memilih baseline `lag_1` atau `seasonal_52` per SKU melalui holdout 52 minggu. Stok minimum unit dipakai sebagai safety stock sementara. Lead time pemasok, service level, ukuran kemasan, dan model lanjutan masih harus diputuskan.

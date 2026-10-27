@@ -19,12 +19,15 @@ export function ProtectedRoute() {
 export function PermissionGuard({
   permission,
   transaction = false,
+  superadminOnly = false,
 }: {
   permission: string
   transaction?: boolean
+  superadminOnly?: boolean
 }) {
   const auth = useAuth()
   return auth.hasPermission(permission) &&
+    (!superadminOnly || auth.isSuperadmin) &&
     (!transaction ||
       ['admin', 'superadmin'].includes(auth.user?.role?.slug ?? '')) ? (
     <Outlet />

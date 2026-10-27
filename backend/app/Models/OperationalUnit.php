@@ -46,6 +46,16 @@ class OperationalUnit extends Model
         return $this->hasMany(Transaction::class);
     }
 
+    public function historicalSales(): HasMany
+    {
+        return $this->hasMany(HistoricalSale::class);
+    }
+
+    public function forecastRuns(): HasMany
+    {
+        return $this->hasMany(ForecastRun::class);
+    }
+
     #[Scope]
     protected function active(Builder $query): Builder
     {

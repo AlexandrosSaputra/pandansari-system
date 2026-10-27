@@ -16,6 +16,12 @@ export const formatDateTime = (value?: string | null) =>
         timeStyle: 'short',
       }).format(new Date(value))
     : '—'
+export const formatDate = (value?: string | null) =>
+  value
+    ? new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' }).format(
+        new Date(`${value}T00:00:00`),
+      )
+    : '—'
 export const labels: Record<string, string> = {
   PRODUCT: 'Produk',
   SERVICE: 'Layanan',

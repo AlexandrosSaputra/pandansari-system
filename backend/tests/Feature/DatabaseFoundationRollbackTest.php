@@ -60,7 +60,7 @@ class DatabaseFoundationRollbackTest extends TestCase
         ]);
         $this->assertTrue(Schema::hasTable('activity_logs'));
 
-        $this->artisan('migrate:rollback', ['--step' => 18, '--no-interaction' => true])->assertSuccessful();
+        $this->artisan('migrate:rollback', ['--step' => 22, '--no-interaction' => true])->assertSuccessful();
 
         $this->assertSame($originalUser, (array) DB::table('users')->find($userId));
         $this->assertFalse(Schema::hasColumn('users', 'role_id'));
@@ -68,14 +68,14 @@ class DatabaseFoundationRollbackTest extends TestCase
         $this->assertFalse(Schema::hasColumn('users', 'is_active'));
         $this->assertFalse(Schema::hasColumn('users', 'username'));
         $this->assertDatabaseCount('migrations', 4);
-        foreach (['roles', 'permissions', 'role_permissions', 'user_role_assignments', 'operational_units', 'items', 'unit_items', 'inventory_locations', 'inventory_balances', 'stock_movements', 'stock_transfers', 'stock_transfer_items', 'transactions', 'transaction_items', 'activity_logs'] as $table) {
+        foreach (['roles', 'permissions', 'role_permissions', 'user_role_assignments', 'operational_units', 'items', 'unit_items', 'inventory_locations', 'inventory_balances', 'stock_movements', 'stock_transfers', 'stock_transfer_items', 'transactions', 'transaction_items', 'activity_logs', 'historical_sales', 'forecast_runs', 'forecast_results'] as $table) {
             $this->assertFalse(Schema::hasTable($table), "Table remains after rollback: {$table}");
         }
         $this->assertTrue(Schema::hasTable('personal_access_tokens'));
 
         $this->artisan('migrate', ['--no-interaction' => true])->assertSuccessful();
 
-        $this->assertDatabaseCount('migrations', 22);
+        $this->assertDatabaseCount('migrations', 26);
         $this->assertDatabaseHas('users', [...$originalUser, 'is_active' => true]);
         $this->assertTrue(Schema::hasColumn('users', 'username'));
         $this->assertTrue(Schema::hasTable('activity_logs'));

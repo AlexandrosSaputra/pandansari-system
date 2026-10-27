@@ -18,6 +18,6 @@ export const permissionLabels: Record<string, string> = {
   'rbac.manage': 'Mengelola role dan permission',
   'audit.view': 'Melihat log aktivitas',
   'report.view': 'Melihat laporan',
-  'ai.view': 'Melihat hasil AI (permission backend)',
-  'ai.generate': 'Membuat hasil AI (permission backend)',
+  'ai.view': 'Melihat hasil prediksi stok',
+  'ai.generate': 'Membuat prediksi stok',
 }

@@ -48,6 +48,14 @@ Remove-Item Env:DEMO_USER_PASSWORD
 
 Semua akun operasional selain Superadmin memakai kata sandi dari `DEMO_USER_PASSWORD`. Akun dengan satu area kerja langsung masuk ke halaman kerjanya setelah login: POS, Ticketing, atau Inventori. Kredensial Superadmin awal tetap didefinisikan di `UserSeeder.php` dan wajib diganti sebelum lingkungan dipakai bersama.
 
+Setelah katalog demo tersedia, impor dataset forecasting mingguan yang sudah disertakan:
+
+```powershell
+php artisan forecast:import-sales
+```
+
+Perintah tersebut idempoten dan memvalidasi pemetaan outlet/SKU, kelengkapan minggu Senin–Minggu, duplikasi, serta kesesuaian `unit × harga = nilai penjualan`. Untuk penjelasan hasil, biarkan `FORECAST_EXPLANATION_PROVIDER=none` agar memakai fallback lokal, atau pilih `openai`/`ollama`. API key OpenAI hanya disimpan pada `backend/.env`; jangan menaruhnya di frontend atau repositori.
+
 Untuk fitur lupa password, isi alamat penerima OTP khusus di `backend/.env` dan konfigurasi SMTP sesuai penyedia email yang digunakan:
 
 ```dotenv

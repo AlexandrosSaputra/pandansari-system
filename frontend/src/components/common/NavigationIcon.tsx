@@ -38,6 +38,12 @@ const paths: Record<string, ReactNode> = {
   ),
   movement: <path d="m16 3 4 4-4 4M20 7H4M8 21l-4-4 4-4M4 17h16" />,
   transfer: <path d="M7 17 17 7M7 7h10v10" />,
+  forecast: (
+    <>
+      <path d="M4 19V9M10 19V5M16 19v-7M22 19H2" />
+      <path d="m3 8 6-4 6 6 6-5" />
+    </>
+  ),
   unit: (
     <>
       <path d="M3 10h18M5 10v10h14V10" />
