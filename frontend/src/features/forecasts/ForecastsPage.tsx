@@ -220,6 +220,15 @@ export function ForecastsPage() {
             <ErrorState error={generate.error} />
           </div>
         )}
+        {selectedUnit?.data_freshness.requires_warning && (
+          <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            <strong>Data penjualan perlu diperbarui.</strong>{' '}
+            Histori terakhir {formatDate(selectedUnit.history_end)} atau{' '}
+            {formatNumber(selectedUnit.data_freshness.age_days)} hari sebelum
+            hari ini. Hasil prediksi tetap dapat dibuat, tetapi harus ditinjau
+            lebih ketat sebelum pengadaan.
+          </div>
+        )}
       </Card>
 
       {history.isPending && !activeRun ? (
@@ -249,6 +258,16 @@ export function ForecastsPage() {
               value={formatNumber(totals.products)}
             />
           </div>
+
+          {activeRun.data_freshness.requires_warning && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+              <strong>Peringatan kualitas data:</strong> terdapat{' '}
+              {formatNumber(activeRun.data_freshness.gap_weeks)} minggu tanpa
+              observasi antara histori terakhir dan periode target. Perbarui
+              data penjualan dan buat ulang prediksi sebelum menyetujui
+              rekomendasi restock.
+            </div>
+          )}
 
           <Card className="p-5">
             <div className="mb-4 flex flex-wrap items-start justify-between gap-3">

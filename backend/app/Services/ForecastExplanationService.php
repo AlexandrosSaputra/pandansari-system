@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ForecastRun;
+use App\Support\ForecastDataFreshness;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -11,6 +12,8 @@ use Throwable;
 
 class ForecastExplanationService
 {
+    public function __construct(private ForecastDataFreshness $freshness) {}
+
     public function explain(ForecastRun $run): ForecastRun
     {
         $provider = (string) config('forecast.explanation.provider', 'none');
@@ -148,6 +151,7 @@ class ForecastExplanationService
                 'history_through' => $run->history_through->toDateString(),
             ],
             'metrics' => $run->metrics,
+            'data_freshness' => $this->freshness->forRun($run),
             'totals' => [
                 'predicted_units' => $run->results->sum('predicted_units'),
                 'recommended_restock' => $run->results->sum('recommended_restock'),
@@ -189,10 +193,19 @@ class ForecastExplanationService
         $run->loadMissing(['operationalUnit', 'results.item']);
         $restockItems = $run->results->where('recommended_restock', '>', 0);
         $highest = $restockItems->sortByDesc('recommended_restock')->first();
+        $freshness = $this->freshness->forRun($run);
         $risks = [
             sprintf('WAPE agregat backtest adalah %.2f%%; rekomendasi tetap perlu ditinjau sebelum pengadaan.', (float) ($run->metrics['wape'] ?? 0)),
             'Data historis mingguan tidak dapat menjelaskan permintaan harian atau penjualan yang hilang saat stok habis.',
         ];
+
+        if ($freshness['requires_warning']) {
+            array_unshift($risks, sprintf(
+                'Data terakhir berumur %d hari saat prediksi dibuat dan terdapat %d minggu tanpa observasi sebelum periode target.',
+                $freshness['age_days'],
+                $freshness['gap_weeks'],
+            ));
+        }
         $actions = [
             'Periksa stok fisik dan transfer yang sedang berjalan sebelum menyetujui jumlah pengadaan.',
             'Tinjau produk dengan WAPE tertinggi dan sesuaikan safety stock bila diperlukan.',

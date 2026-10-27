@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Support\ForecastDataFreshness;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -35,6 +36,7 @@ class ForecastRunResource extends JsonResource
             'forecast_start' => $this->forecast_start->toDateString(),
             'forecast_end' => $this->forecast_end->toDateString(),
             'history_through' => $this->history_through->toDateString(),
+            'data_freshness' => app(ForecastDataFreshness::class)->forRun($this->resource),
             'forecast_weeks' => $this->forecast_weeks,
             'method' => $this->method,
             'metrics' => $this->metrics,

@@ -191,11 +191,18 @@ export interface ActivityLog {
   created_at: string | null
 }
 export type ForecastHorizon = 'next_week' | 'next_month' | 'custom'
+export interface ForecastDataFreshness {
+  status: 'fresh' | 'aging' | 'stale'
+  age_days: number
+  gap_weeks: number
+  requires_warning: boolean
+}
 export interface ForecastOptionUnit extends UnitSummary {
   history_start: string
   history_end: string
   history_weeks: number
   product_count: number
+  data_freshness: ForecastDataFreshness
 }
 export interface ForecastOptions {
   units: ForecastOptionUnit[]
@@ -229,6 +236,7 @@ export interface ForecastRun {
   forecast_start: string
   forecast_end: string
   history_through: string
+  data_freshness: ForecastDataFreshness
   forecast_weeks: number
   method: string
   metrics: {

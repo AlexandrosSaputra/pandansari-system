@@ -56,6 +56,8 @@ php artisan forecast:import-sales
 
 Perintah tersebut idempoten dan memvalidasi pemetaan outlet/SKU, kelengkapan minggu Senin–Minggu, duplikasi, serta kesesuaian `unit × harga = nilai penjualan`. Untuk penjelasan hasil, biarkan `FORECAST_EXPLANATION_PROVIDER=none` agar memakai fallback lokal, atau pilih `openai`/`ollama`. API key OpenAI hanya disimpan pada `backend/.env`; jangan menaruhnya di frontend atau repositori.
 
+AI Insight menandai histori berumur paling lama 7 hari sebagai `fresh`, 8–28 hari sebagai `aging`, dan lebih dari 28 hari sebagai `stale`. Status `aging` dan `stale` memunculkan peringatan review manusia; prediksi tetap dapat dibuat agar tidak menghambat analisis, tetapi data penjualan sebaiknya diimpor ulang sebelum rekomendasi restock disetujui.
+
 Untuk fitur lupa password, isi alamat penerima OTP khusus di `backend/.env` dan konfigurasi SMTP sesuai penyedia email yang digunakan:
 
 ```dotenv

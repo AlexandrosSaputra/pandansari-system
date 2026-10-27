@@ -11,13 +11,15 @@ use App\Models\User;
 use App\Services\ActivityLogger;
 use App\Services\ForecastExplanationService;
 use App\Services\ForecastService;
+use App\Support\ForecastDataFreshness;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class ForecastController extends Controller
 {
-    public function options(): JsonResponse
+    public function options(ForecastDataFreshness $freshness): JsonResponse
     {
         $units = HistoricalSale::query()
             ->join('operational_units', 'operational_units.id', '=', 'historical_sales.operational_unit_id')
@@ -29,7 +31,22 @@ class ForecastController extends Controller
             ->where('operational_units.is_active', true)
             ->groupBy('operational_units.id', 'operational_units.code', 'operational_units.name')
             ->orderBy('operational_units.name')
-            ->get();
+            ->get()
+            ->map(function ($unit) use ($freshness): array {
+                $historyEnd = CarbonImmutable::parse($unit->history_end, config('forecast.timezone'));
+                $dataFreshness = $freshness->assess($historyEnd, $historyEnd->addDay());
+
+                return [
+                    'id' => $unit->id,
+                    'code' => $unit->code,
+                    'name' => $unit->name,
+                    'history_start' => $unit->history_start,
+                    'history_end' => $unit->history_end,
+                    'history_weeks' => (int) $unit->history_weeks,
+                    'product_count' => (int) $unit->product_count,
+                    'data_freshness' => $dataFreshness,
+                ];
+            });
 
         return response()->json([
             'data' => [

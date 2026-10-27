@@ -51,6 +51,8 @@ class ForecastApiTest extends TestCase
         $this->getJson('/api/forecasts/options')
             ->assertOk()
             ->assertJsonCount(3, 'data.units')
+            ->assertJsonPath('data.units.0.data_freshness.status', 'stale')
+            ->assertJsonPath('data.units.0.data_freshness.age_days', 58)
             ->assertJsonPath('data.explanation_provider', 'none');
 
         $response = $this->postJson('/api/forecasts', [
@@ -61,8 +63,17 @@ class ForecastApiTest extends TestCase
             ->assertJsonPath('data.forecast_start', '2026-11-02')
             ->assertJsonPath('data.forecast_end', '2026-11-08')
             ->assertJsonPath('data.history_through', '2026-08-30')
+            ->assertJsonPath('data.data_freshness.status', 'stale')
+            ->assertJsonPath('data.data_freshness.age_days', 58)
+            ->assertJsonPath('data.data_freshness.gap_weeks', 9)
+            ->assertJsonPath('data.data_freshness.requires_warning', true)
             ->assertJsonPath('data.explanation_status', 'disabled')
             ->assertJsonCount(9, 'data.results');
+
+        $this->assertStringContainsString(
+            'Data terakhir berumur 58 hari',
+            $response->json('data.explanation.risks.0'),
+        );
 
         $results = collect($response->json('data.results'));
         $this->assertTrue($results->every(

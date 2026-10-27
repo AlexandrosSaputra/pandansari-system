@@ -19,7 +19,7 @@ Pada pemeriksaan otomatis 27 Oktober 2026:
 
 Tidak ada klaim UAT dari pemeriksaan otomatis. Firmware/perangkat ESP32, pairing perangkat, idempotensi retry, WebSocket, stock opname, dan model forecasting lanjutan tetap berada di luar milestone ini. MVP baseline forecasting sudah tersedia.
 
-Verifikasi terfokus forecasting pada MySQL testing lulus 13 test dengan 393 assertion. Cakupannya meliputi importer dataset 6.032 baris yang idempoten, skema dan foreign key baru, akses khusus Superadmin, validasi tanggal target, pemilihan baseline per SKU, adapter structured output OpenAI/Ollama, pencatatan audit, serta bukti bahwa pembuatan forecast tidak mengubah saldo atau mutasi stok. Build dan lint frontend berhasil.
+Verifikasi terfokus forecasting pada MySQL testing lulus 17 test dengan 408 assertion. Cakupannya meliputi importer dataset 6.032 baris yang idempoten, skema dan foreign key baru, akses khusus Superadmin, validasi tanggal target, pemilihan baseline per SKU, klasifikasi kesegaran data dan jeda observasi, adapter structured output OpenAI/Ollama, pencatatan audit, serta bukti bahwa pembuatan forecast tidak mengubah saldo atau mutasi stok. Build dan lint frontend berhasil.
 
 Suite backend penuh terbaru menjalankan 153 test: 144 lulus dan 9 gagal. Kegagalan berada pada test lama di luar modul forecasting: satu assertion mengasumsikan nomor auto-increment item tertentu, sedangkan test keranjang/checkout/scan menambahkan produk tanpa saldo yang cukup lalu mengharapkan HTTP 200 walaupun aturan backend saat ini menolak stok tidak cukup dengan HTTP 409. Aturan stok tidak dilonggarkan untuk membuat test tersebut lulus; fixture dan assertion test lama perlu diselaraskan secara terpisah.
 
