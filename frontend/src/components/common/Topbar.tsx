@@ -4,6 +4,7 @@ import { useAuth } from '../../features/auth/useAuth'
 import { Button, ErrorState } from '../ui'
 import { navigation } from './navigation'
 import { NotificationDrawer } from './NotificationDrawer'
+import type { TopbarOverride } from './topbarOverride'
 
 function ChevronIcon() {
   return (
@@ -66,7 +67,13 @@ function ProfileMenuIcon({ name }: { name: 'profile' | 'settings' | 'log' | 'log
   )
 }
 
-export function Topbar({ onMenu }: { onMenu: () => void }) {
+export function Topbar({
+  onMenu,
+  override,
+}: {
+  onMenu: () => void
+  override?: TopbarOverride
+}) {
   const auth = useAuth()
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const { pathname } = useLocation()
@@ -75,14 +82,43 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
     .sort((a, b) => b.to.length - a.to.length)
     .find((item) => pathname === item.to || pathname.startsWith(`${item.to}/`))
   const accountPage = {
-    '/account/profile': { group: 'Akun', label: 'Profil Saya' },
-    '/account/settings': { group: 'Akun', label: 'Pengaturan Akun' },
-    '/account/activity': { group: 'Akun', label: 'Log Aktivitas Saya' },
+    '/account/profile': {
+      group: 'Akun',
+      label: 'Profil Saya',
+      description: 'Informasi identitas dan cakupan akses akun Anda.',
+    },
+    '/account/settings': {
+      group: 'Akun',
+      label: 'Pengaturan Akun',
+      description: 'Kelola informasi akun dan keamanan kata sandi Anda.',
+    },
+    '/account/activity': {
+      group: 'Akun',
+      label: 'Log Aktivitas Saya',
+      description: 'Riwayat aktivitas keamanan dan operasional akun Anda.',
+    },
   }[pathname]
-  const currentGroup = accountPage?.group ?? current?.group
-  const currentLabel = accountPage?.label ?? (current?.to === '/dashboard'
+  const unitDetailPage = /^\/operational-units\/[^/]+$/.test(pathname)
+    ? {
+        group: 'Master data',
+        label: 'Detail Outlet',
+        description: 'Kelola konfigurasi, katalog, dan batas stok unit operasional.',
+      }
+    : undefined
+  const pageContext = accountPage ?? unitDetailPage
+  const currentGroup = pageContext?.group ?? current?.group
+  const currentLabel =
+    override?.label ??
+    pageContext?.label ??
+    (current?.to === '/dashboard'
       ? 'Ringkasan Operasional'
       : (current?.label ?? 'Pandansari'))
+  const currentDescription =
+    override?.description ??
+    pageContext?.description ??
+    (current?.to === '/dashboard'
+      ? `Selamat datang, ${auth.user?.name ?? 'Pengguna'}. ${current.description}`
+      : current?.description)
   const userName = auth.user?.name ?? 'Pengguna'
   const roleName = auth.user?.role?.name ?? 'Akun'
   const unitName =
@@ -115,18 +151,23 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
           </svg>
         </button>
 
-        <nav aria-label="Breadcrumb" className="topbar-breadcrumb">
-          {currentGroup && currentGroup !== 'Ruang kerja' && (
-            <>
-              <span className="text-slate-500">{currentGroup}</span>
-              <ChevronIcon />
-            </>
+        <div className="topbar-context">
+          <nav aria-label="Breadcrumb" className="topbar-breadcrumb">
+            {currentGroup && currentGroup !== 'Ruang kerja' && (
+              <>
+                <span>{currentGroup}</span>
+                <ChevronIcon />
+              </>
+            )}
+            <span className="topbar-current">
+              <span aria-hidden="true" className="topbar-current-dot" />
+              <span className="truncate">{currentLabel}</span>
+            </span>
+          </nav>
+          {currentDescription && (
+            <p className="topbar-description">{currentDescription}</p>
           )}
-          <span className="topbar-current">
-            <span aria-hidden="true" className="topbar-current-dot" />
-            <span className="truncate">{currentLabel}</span>
-          </span>
-        </nav>
+        </div>
       </div>
 
       <div className="flex flex-none items-center gap-2 sm:gap-3">

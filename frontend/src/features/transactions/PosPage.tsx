@@ -10,7 +10,6 @@ import {
   ErrorState,
   FormField,
   Input,
-  PageHeader,
   Pagination,
   Skeleton,
 } from '../../components/ui'
@@ -26,6 +25,7 @@ import type {
 import { formatCurrency, formatNumber } from '../../utils/format'
 import { useAuth } from '../auth/useAuth'
 import { UnitSelector } from '../inventory/UnitSelector'
+import { useTopbarOverride } from '../../components/common/topbarOverride'
 import { usePosCart } from './usePosCart'
 import { CartPanel } from './CartPanel'
 const barcodeSchema = z.object({
@@ -176,16 +176,12 @@ function TransactionPage({ type }: { type: UnitType }) {
   const unit = auth.isSuperadmin ? selected : auth.user?.operational_unit
   const copy = workspaceCopy[type]
   const matchesWorkspace = unit?.type === type
+  useTopbarOverride({
+    label: copy.title,
+    description: unit ? `${unit.name} · ${unit.code}` : copy.description,
+  })
   return (
     <>
-      <PageHeader
-        title={copy.title}
-        description={
-          unit
-            ? `${unit.name} · ${unit.code}`
-            : copy.description
-        }
-      />
       {auth.isSuperadmin && (
         <div className="mb-5 max-w-md">
           <UnitSelector

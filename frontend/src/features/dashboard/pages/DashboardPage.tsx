@@ -2,7 +2,7 @@ import { SummaryCard } from '../components/SummaryCard'
 import { RecentActivity } from '../components/RecentActivity'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Button, Card, PageHeader } from '../../../components/ui'
+import { Button, Card } from '../../../components/ui'
 import {
   isNavigationItemVisible,
   navigation,
@@ -17,6 +17,7 @@ import type {
 import { useAuth } from '../../auth/useAuth'
 import { StockForm } from '../../inventory/StockForm'
 import { HealthStatusCard } from '../components/HealthStatusCard'
+import { useTopbarOverride } from '../../../components/common/topbarOverride'
 export function DashboardPage() {
   const auth = useAuth()
   const unit = auth.user?.operational_unit
@@ -46,6 +47,10 @@ export function DashboardPage() {
     : auth.canWarehouse
       ? 'Gudang Utama'
       : (unit?.name ?? 'Dashboard')
+  useTopbarOverride({
+    label: title,
+    description: `Selamat datang, ${auth.user?.name ?? 'Pengguna'}. Pantau aktivitas dan lanjutkan pekerjaan Anda.`,
+  })
   const shortcuts = navigation.filter(
     (item) =>
       item.to !== '/dashboard' &&
@@ -58,27 +63,26 @@ export function DashboardPage() {
   const transactionWorkspaces = shortcuts.filter((item) => item.workspaceType)
   return (
     <>
-      <PageHeader
-        title={title}
-        description={`Selamat datang, ${auth.user?.name}. Pantau aktivitas dan lanjutkan pekerjaan Anda.`}
-        actions={
-          <>
-            {transactionWorkspaces.map((item) => (
-              <Link className="btn btn-primary" to={item.to} key={item.to}>
-                Buka {item.label} ↗
-              </Link>
-            ))}
-            {auth.canWarehouse && auth.hasPermission('inventory.stock-in') && (
-              <Button onClick={() => setStock('in')}>+ Stok Masuk</Button>
-            )}
-            {auth.canWarehouse && auth.hasPermission('inventory.stock-out') && (
-              <Button variant="secondary" onClick={() => setStock('out')}>
-                Stok Keluar
-              </Button>
-            )}
-          </>
-        }
-      />
+      {(transactionWorkspaces.length > 0 ||
+        (auth.canWarehouse &&
+          (auth.hasPermission('inventory.stock-in') ||
+            auth.hasPermission('inventory.stock-out')))) && (
+        <div className="page-actions" aria-label="Aksi halaman">
+          {transactionWorkspaces.map((item) => (
+            <Link className="btn btn-primary" to={item.to} key={item.to}>
+              Buka {item.label} ↗
+            </Link>
+          ))}
+          {auth.canWarehouse && auth.hasPermission('inventory.stock-in') && (
+            <Button onClick={() => setStock('in')}>+ Stok Masuk</Button>
+          )}
+          {auth.canWarehouse && auth.hasPermission('inventory.stock-out') && (
+            <Button variant="secondary" onClick={() => setStock('out')}>
+              Stok Keluar
+            </Button>
+          )}
+        </div>
+      )}
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {auth.hasPermission('inventory.view') && (
           <SummaryCard title="Jenis produk dalam inventori" query={inventory}>

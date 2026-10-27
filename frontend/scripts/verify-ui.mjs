@@ -32,6 +32,9 @@ try {
   const { Sidebar } = await server.ssrLoadModule(
     '/src/components/common/Sidebar.tsx',
   )
+  const { Topbar } = await server.ssrLoadModule(
+    '/src/components/common/Topbar.tsx',
+  )
   const { ErrorState, ListContent } = await server.ssrLoadModule(
     '/src/components/ui/index.tsx',
   )
@@ -77,7 +80,7 @@ try {
       permissions,
     })
   }
-  function render(element) {
+  function render(element, initialEntries = ['/']) {
     return renderToStaticMarkup(
       h(
         QueryClientProvider,
@@ -85,7 +88,7 @@ try {
         h(
           LazyMotion,
           { features: domAnimation },
-          h(MemoryRouter, null, element),
+          h(MemoryRouter, { initialEntries }, element),
         ),
       ),
     )
@@ -136,6 +139,28 @@ try {
     const html = render(h(Sidebar))
     assert.match(html, /Dashboard/)
     assert.doesNotMatch(html, /href="\/users"|href="\/pos"/)
+  })
+  check('Topbar owns the page title and description', () => {
+    const html = render(
+      h(Topbar, { onMenu() {} }),
+      ['/activity-logs'],
+    )
+    assert.match(html, /Log Aktivitas/)
+    assert.match(html, /Tinjau jejak perubahan dan aktivitas pengguna/)
+    assert.doesNotMatch(html, /page-header/)
+  })
+  check('Topbar accepts dynamic workspace context', () => {
+    const html = render(
+      h(Topbar, {
+        onMenu() {},
+        override: {
+          label: 'POS',
+          description: 'Outlet 1 · OU0001',
+        },
+      }),
+      ['/pos'],
+    )
+    assert.match(html, /Outlet 1 · OU0001/)
   })
   session('admin', ['transaction.create'])
   check('Ticketing admin sees Ticketing without the outlet POS', () => {
@@ -509,7 +534,7 @@ try {
     session(role, ['dashboard.view'])
     check(`Dashboard renders role ${role} without invented totals`, () => {
       const html = render(h(DashboardPage))
-      assert.match(html, /Selamat datang/)
+      assert.match(html, /Akses Cepat/)
       assert.doesNotMatch(html, /NaN|undefined|Rp/)
     })
   }
@@ -519,7 +544,7 @@ try {
   )
   check('Profile page renders the signed-in identity and assignments', () => {
     const html = render(h(ProfilePage))
-    assert.match(html, /Profil Saya/)
+    assert.match(html, /Akses aktif/)
     assert.match(html, /fixture@example\.test/)
     assert.match(html, /Seluruh role dan unit/)
   })
@@ -537,8 +562,8 @@ try {
   )
   check('Personal activity page renders without global audit permission', () => {
     const html = render(h(MyActivityPage))
-    assert.match(html, /Log Aktivitas Saya/)
-    assert.match(html, /Riwayat aktivitas keamanan dan operasional/)
+    assert.match(html, /Aksi/)
+    assert.match(html, /Jenis subjek/)
   })
   const { api, sessionApi } = await server.ssrLoadModule('/src/lib/api.ts')
   const { usePosCart } = await server.ssrLoadModule(

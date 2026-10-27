@@ -19,6 +19,7 @@ import { formatCurrency, formatNumber } from '../../utils/format'
 import { useAuth } from '../auth/useAuth'
 import { UnitItemForm } from './UnitItemForm'
 import './UnitDetailPage.css'
+import { useTopbarOverride } from '../../components/common/topbarOverride'
 
 function SvgIcon({
   children,
@@ -269,6 +270,11 @@ export function UnitDetailPage() {
     { per_page: 100 },
     auth.hasPermission('inventory.view'),
   )
+  useTopbarOverride({
+    label: unit.data?.name ?? 'Detail Outlet',
+    description:
+      'Kelola konfigurasi, katalog, dan batas stok unit operasional.',
+  })
   const [editing, setEditing] = useState<UnitItem | 'new' | null>(null)
   const manage = auth.isSuperadmin && auth.hasPermission('item.manage')
   if (unit.isPending) return <Skeleton />
@@ -297,56 +303,48 @@ export function UnitDetailPage() {
   return (
     <div className="unit-detail-page">
       <div className="unit-detail-shell">
-        <header className="unit-detail-header">
-          <div className="min-w-0">
-            <h1 className="unit-detail-title">{data.name}</h1>
-            <p className="unit-detail-description">
-              Kelola katalog produk, konfigurasi scanner barcode, dan batas stok minimum untuk titik kasir ini.
-            </p>
-          </div>
-          {canReadItems && (
-            <div className="unit-detail-metrics">
+        {canReadItems && (
+          <section className="unit-detail-metrics" aria-label="Ringkasan outlet">
+            <MetricCard
+              label="Total SKU"
+              value={totalItems ?? '…'}
+              detail="item"
+            >
+              <ListIcon />
+            </MetricCard>
+            <MetricCard
+              label="Stok kritis"
+              value={criticalStock ?? '—'}
+              detail={
+                criticalStock === undefined
+                  ? 'Akses inventori'
+                  : criticalStock === 0
+                    ? 'Aman'
+                    : 'Perlu tindak'
+              }
+              tone={
+                criticalStock === undefined
+                  ? 'slate'
+                  : criticalStock === 0
+                    ? 'emerald'
+                    : 'amber'
+              }
+            >
+              <CheckIcon />
+            </MetricCard>
+            <div className="unit-detail-metric-wide">
               <MetricCard
-                label="Total SKU"
-                value={totalItems ?? '…'}
-                detail="item"
-              >
-                <ListIcon />
-              </MetricCard>
-              <MetricCard
-                label="Stok kritis"
-                value={criticalStock ?? '—'}
-                detail={
-                  criticalStock === undefined
-                    ? 'Akses inventori'
-                    : criticalStock === 0
-                      ? 'Aman'
-                      : 'Perlu tindak'
-                }
-                tone={
-                  criticalStock === undefined
-                    ? 'slate'
-                    : criticalStock === 0
-                      ? 'emerald'
-                      : 'amber'
-                }
+                label="Koleksi aktif"
+                value={activePercent}
+                tone="emerald"
               >
                 <CheckIcon />
               </MetricCard>
-              <div className="unit-detail-metric-wide">
-                <MetricCard
-                  label="Koleksi aktif"
-                  value={activePercent}
-                  tone="emerald"
-                >
-                  <CheckIcon />
-                </MetricCard>
-              </div>
             </div>
-          )}
-        </header>
+          </section>
+        )}
 
-      <section className="unit-detail-info">
+        <section className="unit-detail-info">
         <div className="unit-detail-info-header">
           <span className="unit-detail-info-icon">
             <StoreIcon />

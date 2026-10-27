@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Badge, Card, PageHeader } from '../../components/ui'
+import { Badge, Card } from '../../components/ui'
 import { useAuth } from '../auth/useAuth'
 
 export function ProfilePage() {
@@ -11,15 +11,11 @@ export function ProfilePage() {
 
   return (
     <>
-      <PageHeader
-        title="Profil Saya"
-        description="Informasi identitas dan cakupan akses akun Anda."
-        actions={
-          <Link className="btn btn-primary" to="/account/settings">
-            Edit profil
-          </Link>
-        }
-      />
+      <div className="page-actions" aria-label="Aksi halaman">
+        <Link className="btn btn-primary" to="/account/settings">
+          Edit profil
+        </Link>
+      </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
         <Card className="overflow-hidden">

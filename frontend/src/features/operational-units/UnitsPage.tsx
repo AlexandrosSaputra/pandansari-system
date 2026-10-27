@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button, PageHeader } from '../../components/ui'
+import { Button } from '../../components/ui'
 import type { OperationalUnit } from '../../types/api'
 import { useAuth } from '../auth/useAuth'
 import { UnitItemsView } from '../items/UnitItemsView'
@@ -30,21 +30,17 @@ export function UnitsPage() {
   const manageItems = auth.isSuperadmin && auth.hasPermission('item.manage')
   return (
     <>
-      <PageHeader
-        title="Outlet & Loket"
-        description="Kelola outlet, ticketing, dan item produk/layanan yang tersedia pada setiap lokasi operasional."
-        actions={
-          manageUnits && (
-            <Button
-              className="rounded-xl px-4 shadow-sm shadow-emerald-700/20"
-              onClick={() => setEditing('new')}
-            >
-              <PlusIcon />
-              Tambah Outlet
-            </Button>
-          )
-        }
-      />
+      {manageUnits && (
+        <div className="page-actions" aria-label="Aksi halaman">
+          <Button
+            className="rounded-xl px-4 shadow-sm shadow-emerald-700/20"
+            onClick={() => setEditing('new')}
+          >
+            <PlusIcon />
+            Tambah Outlet
+          </Button>
+        </div>
+      )}
       <UnitItemsView
         manage={manageItems}
         manageUnits={manageUnits}

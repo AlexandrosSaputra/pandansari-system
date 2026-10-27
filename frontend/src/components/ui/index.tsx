@@ -7,7 +7,6 @@ export {
   FormField,
   Input,
   Notice,
-  PageHeader,
   Select,
   Skeleton,
   Textarea,

@@ -1,4 +1,4 @@
-import { Badge, ListContent, PageHeader } from '../../components/ui'
+import { Badge, ListContent } from '../../components/ui'
 import { FilterBar } from '../../components/ui/Filters'
 import { dateFilters, enumOptions } from '../../components/ui/filterDefinitions'
 import { useFilters } from '../../hooks/useFilters'
@@ -10,10 +10,6 @@ export function MovementsPage() {
   const query = useList<StockMovement>('/inventory/movements', filters.params)
   return (
     <>
-      <PageHeader
-        title="Pergerakan Stok"
-        description="Catatan perubahan stok sesuai lingkup akses Anda."
-      />
       <FilterBar
         filters={filters}
         search={false}

@@ -7,7 +7,6 @@ import {
   Card,
   FormField,
   Input,
-  PageHeader,
 } from '../../components/ui'
 import { api } from '../../lib/api'
 import { apiError, setFormErrors } from '../../lib/errors'
@@ -94,11 +93,6 @@ export function AccountSettingsPage() {
 
   return (
     <>
-      <PageHeader
-        title="Pengaturan Akun"
-        description="Kelola informasi akun dan keamanan kata sandi Anda."
-      />
-
       <div className="grid items-start gap-6 xl:grid-cols-2">
         <Card className="p-6">
           <h2>Informasi akun</h2>

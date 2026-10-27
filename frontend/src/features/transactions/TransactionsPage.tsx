@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { AppLoadingScreen } from '../../components/common/AppLoadingScreen'
-import { Badge, Button, ListContent, PageHeader } from '../../components/ui'
+import { Badge, Button, ListContent } from '../../components/ui'
 import { FilterBar } from '../../components/ui/Filters'
 import { dateFilters, enumOptions } from '../../components/ui/filterDefinitions'
 import { useFilters } from '../../hooks/useFilters'
@@ -17,10 +17,6 @@ export function TransactionsPage() {
 
   return (
     <>
-      <PageHeader
-        title="Riwayat Transaksi"
-        description="Keranjang dan transaksi pembayaran sesuai lingkup akses Anda."
-      />
       <FilterBar
         filters={filters}
         definitions={[

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button, ListContent, Modal, PageHeader } from '../../components/ui'
+import { Button, ListContent, Modal } from '../../components/ui'
 import { FilterBar } from '../../components/ui/Filters'
 import { dateFilters } from '../../components/ui/filterDefinitions'
 import { useFilters } from '../../hooks/useFilters'
@@ -12,10 +12,6 @@ export function ActivityLogsPage() {
   const [selected, setSelected] = useState<ActivityLog | null>(null)
   return (
     <>
-      <PageHeader
-        title="Log Aktivitas"
-        description="Jejak perubahan dan aktivitas pengguna."
-      />
       <FilterBar
         filters={filters}
         search={false}

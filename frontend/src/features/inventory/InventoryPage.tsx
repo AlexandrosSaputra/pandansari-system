@@ -4,7 +4,6 @@ import {
   Button,
   EmptyState,
   ListContent,
-  PageHeader,
   type Column,
 } from '../../components/ui'
 import { FilterBar } from '../../components/ui/Filters'
@@ -19,6 +18,7 @@ import {
 import { useAuth } from '../auth/useAuth'
 import { StockForm } from './StockForm'
 import { UnitSelector } from './UnitSelector'
+import { useTopbarOverride } from '../../components/common/topbarOverride'
 export function InventoryPage() {
   const auth = useAuth()
   const filters = useFilters()
@@ -42,6 +42,12 @@ export function InventoryPage() {
     tab === 'warehouse' || !!unitId,
   )
   const [stock, setStock] = useState<'in' | 'out' | null>(null)
+  useTopbarOverride({
+    description:
+      tab === 'warehouse'
+        ? 'Gudang Utama · Saldo stok produk terkini.'
+        : `${auth.user?.operational_unit?.name ?? unit?.name ?? 'Unit operasional'} · Inventori produk aktif.`,
+  })
   const columns: Column<InventoryBalance>[] = [
     { title: 'Kode', render: (row) => row.item.item_code },
     { title: 'Item', render: (row) => <strong>{row.item.name}</strong> },
@@ -84,29 +90,21 @@ export function InventoryPage() {
   })
   return (
     <>
-      <PageHeader
-        title="Inventori"
-        description={
-          tab === 'warehouse'
-            ? 'Gudang Utama · Saldo stok produk terkini.'
-            : `${auth.user?.operational_unit?.name ?? unit?.name ?? 'Unit operasional'} · Inventori produk aktif.`
-        }
-        actions={
-          auth.canWarehouse &&
-          tab === 'warehouse' && (
-            <>
-              {auth.hasPermission('inventory.stock-in') && (
-                <Button onClick={() => setStock('in')}>+ Stok Masuk</Button>
-              )}
-              {auth.hasPermission('inventory.stock-out') && (
-                <Button variant="secondary" onClick={() => setStock('out')}>
-                  Stok Keluar
-                </Button>
-              )}
-            </>
-          )
-        }
-      />
+      {auth.canWarehouse &&
+        tab === 'warehouse' &&
+        (auth.hasPermission('inventory.stock-in') ||
+          auth.hasPermission('inventory.stock-out')) && (
+          <div className="page-actions" aria-label="Aksi halaman">
+            {auth.hasPermission('inventory.stock-in') && (
+              <Button onClick={() => setStock('in')}>+ Stok Masuk</Button>
+            )}
+            {auth.hasPermission('inventory.stock-out') && (
+              <Button variant="secondary" onClick={() => setStock('out')}>
+                Stok Keluar
+              </Button>
+            )}
+          </div>
+        )}
       {auth.canWarehouse && (
         <div className="tabs">
           <Button

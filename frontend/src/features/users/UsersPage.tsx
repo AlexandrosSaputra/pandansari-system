@@ -3,7 +3,6 @@ import {
   Badge,
   Button,
   ListContent,
-  PageHeader,
 } from '../../components/ui'
 import { FilterBar } from '../../components/ui/Filters'
 import { statusFilter } from '../../components/ui/filterDefinitions'
@@ -20,19 +19,11 @@ export function UsersPage() {
   const manage = auth.isSuperadmin && auth.hasPermission('user.manage')
   return (
     <>
-      <PageHeader
-        title="Pengguna"
-        description="Akun, peran, dan penempatan unit operasional."
-        actions={
-          manage && (
-            <Button
-              onClick={() => setEditing('new')}
-            >
-              + Tambah Pengguna
-            </Button>
-          )
-        }
-      />
+      {manage && (
+        <div className="page-actions" aria-label="Aksi halaman">
+          <Button onClick={() => setEditing('new')}>+ Tambah Pengguna</Button>
+        </div>
+      )}
       <FilterBar
         filters={filters}
         definitions={[

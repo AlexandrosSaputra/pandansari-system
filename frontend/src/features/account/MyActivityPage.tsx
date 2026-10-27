@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button, ListContent, Modal, PageHeader } from '../../components/ui'
+import { Button, ListContent, Modal } from '../../components/ui'
 import { FilterBar } from '../../components/ui/Filters'
 import { dateFilters } from '../../components/ui/filterDefinitions'
 import { useFilters } from '../../hooks/useFilters'
@@ -15,10 +15,6 @@ export function MyActivityPage() {
 
   return (
     <>
-      <PageHeader
-        title="Log Aktivitas Saya"
-        description="Riwayat aktivitas keamanan dan operasional yang dilakukan oleh akun Anda."
-      />
       <FilterBar
         filters={filters}
         search={false}

@@ -3,6 +3,7 @@ import type { UnitType } from '../../types/api'
 export interface NavigationItem {
   group: string
   label: string
+  description: string
   to: string
   permission: string
   icon: string
@@ -14,6 +15,7 @@ export const navigation: NavigationItem[] = [
   {
     group: 'Ruang kerja',
     label: 'Dashboard',
+    description: 'Pantau aktivitas dan lanjutkan pekerjaan operasional Anda.',
     to: '/dashboard',
     permission: 'dashboard.view',
     icon: 'dashboard',
@@ -21,6 +23,7 @@ export const navigation: NavigationItem[] = [
   {
     group: 'Transaksi',
     label: 'POS',
+    description: 'Kelola transaksi penjualan pada outlet aktif.',
     to: '/pos',
     permission: 'transaction.create',
     icon: 'pos',
@@ -30,6 +33,7 @@ export const navigation: NavigationItem[] = [
   {
     group: 'Transaksi',
     label: 'Ticketing',
+    description: 'Kelola transaksi layanan ticketing pada unit aktif.',
     to: '/ticketing',
     permission: 'transaction.create',
     icon: 'ticket',
@@ -39,6 +43,7 @@ export const navigation: NavigationItem[] = [
   {
     group: 'Transaksi',
     label: 'Riwayat Transaksi',
+    description: 'Tinjau keranjang dan transaksi pembayaran sesuai lingkup akses Anda.',
     to: '/transactions',
     permission: 'transaction.view',
     icon: 'history',
@@ -47,6 +52,7 @@ export const navigation: NavigationItem[] = [
   {
     group: 'Inventori',
     label: 'Stok',
+    description: 'Pantau saldo stok produk pada gudang dan unit operasional.',
     to: '/inventory',
     permission: 'inventory.view',
     icon: 'stock',
@@ -54,6 +60,7 @@ export const navigation: NavigationItem[] = [
   {
     group: 'Inventori',
     label: 'Pergerakan Stok',
+    description: 'Telusuri setiap perubahan stok sesuai lingkup akses Anda.',
     to: '/inventory/movements',
     permission: 'inventory.view',
     icon: 'movement',
@@ -61,6 +68,7 @@ export const navigation: NavigationItem[] = [
   {
     group: 'Inventori',
     label: 'Transfer Stok',
+    description: 'Kelola distribusi produk dari gudang ke unit operasional.',
     to: '/stock-transfers',
     permission: 'transfer.view',
     icon: 'transfer',
@@ -68,6 +76,7 @@ export const navigation: NavigationItem[] = [
   {
     group: 'Master data',
     label: 'Item',
+    description: 'Kelola referensi produk, layanan, dan inventaris.',
     to: '/items',
     permission: 'item.view',
     icon: 'item',
@@ -75,6 +84,7 @@ export const navigation: NavigationItem[] = [
   {
     group: 'Master data',
     label: 'Outlet',
+    description: 'Kelola outlet, ticketing, dan katalog setiap lokasi operasional.',
     to: '/operational-units',
     permission: 'operational-unit.view',
     icon: 'unit',
@@ -82,6 +92,7 @@ export const navigation: NavigationItem[] = [
   {
     group: 'Master data',
     label: 'Pengguna',
+    description: 'Kelola akun, peran, dan penempatan unit operasional.',
     to: '/users',
     permission: 'user.view',
     icon: 'user',
@@ -89,6 +100,7 @@ export const navigation: NavigationItem[] = [
   {
     group: 'Administrasi',
     label: 'Role & Permission',
+    description: 'Atur akses aplikasi berdasarkan tanggung jawab pengguna.',
     to: '/rbac',
     permission: 'rbac.view',
     icon: 'roles',
@@ -96,6 +108,7 @@ export const navigation: NavigationItem[] = [
   {
     group: 'Administrasi',
     label: 'Log Aktivitas',
+    description: 'Tinjau jejak perubahan dan aktivitas pengguna.',
     to: '/activity-logs',
     permission: 'audit.view',
     icon: 'log',

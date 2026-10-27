@@ -327,18 +327,14 @@ export function ItemsPage() {
 
   return (
     <div className="items-page">
-      <header className="items-page-header">
-        <div>
-          <h1>Master Item</h1>
-          <p>Kelola data referensi produk, layanan, dan inventaris untuk seluruh outlet dan sistem ticketing.</p>
-        </div>
-        {manage && (
+      {manage && (
+        <div className="page-actions" aria-label="Aksi halaman">
           <Button className="items-add-button" onClick={() => setEditing('new')}>
             <span aria-hidden="true">+</span>
             Tambah Item
           </Button>
-        )}
-      </header>
+        </div>
+      )}
 
       <section className="items-metrics" aria-label="Ringkasan master item">
         <MetricCard

@@ -4,7 +4,6 @@ import {
   Badge,
   Button,
   ListContent,
-  PageHeader,
 } from '../../components/ui'
 import { FilterBar } from '../../components/ui/Filters'
 import { dateFilters, enumOptions } from '../../components/ui/filterDefinitions'
@@ -31,20 +30,11 @@ export function TransfersPage() {
   }
   return (
     <>
-      <PageHeader
-        title="Transfer Stok"
-        description="Distribusi produk dari Gudang Utama ke unit operasional."
-        actions={
-          auth.canWarehouse &&
-          auth.hasPermission('transfer.create') && (
-            <Button
-              onClick={() => setCreating(true)}
-            >
-              + Buat Transfer
-            </Button>
-          )
-        }
-      />
+      {auth.canWarehouse && auth.hasPermission('transfer.create') && (
+        <div className="page-actions" aria-label="Aksi halaman">
+          <Button onClick={() => setCreating(true)}>+ Buat Transfer</Button>
+        </div>
+      )}
       <FilterBar
         filters={filters}
         definitions={[

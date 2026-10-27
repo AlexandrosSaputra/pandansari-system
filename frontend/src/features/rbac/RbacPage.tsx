@@ -5,7 +5,6 @@ import {
   Card,
   ConfirmDialog,
   ErrorState,
-  PageHeader,
   Pagination,
   Skeleton,
 } from '../../components/ui'
@@ -154,10 +153,6 @@ export function RbacPage() {
     roles.data?.data.find((role) => role.id === roleId) ?? roles.data?.data[0]
   return (
     <>
-      <PageHeader
-        title="Role & Permission"
-        description="Akses aplikasi berdasarkan tanggung jawab setiap pengguna."
-      />
       {roles.error && (
         <ErrorState
           error={roles.error}

@@ -3,10 +3,15 @@ import { m } from 'motion/react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { Sidebar } from '../components/common/Sidebar'
 import { Topbar } from '../components/common/Topbar'
+import {
+  TopbarOverrideProvider,
+} from '../components/common/TopbarContext'
+import type { TopbarOverride } from '../components/common/topbarOverride'
 import { Drawer } from '../components/ui'
 export function AppLayout() {
   const { pathname } = useLocation()
   const [drawer, setDrawer] = useState(false)
+  const [topbarOverride, setTopbarOverride] = useState<TopbarOverride>()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() =>
     typeof window === 'undefined'
       ? false
@@ -36,7 +41,10 @@ export function AppLayout() {
         </Drawer>
       )}
       <div className="app-main min-h-screen">
-        <Topbar onMenu={() => setDrawer(true)} />
+        <Topbar
+          override={topbarOverride}
+          onMenu={() => setDrawer(true)}
+        />
         <m.main
           key={pathname}
           initial={{ opacity: 0, y: 5 }}
@@ -44,7 +52,9 @@ export function AppLayout() {
           transition={{ duration: 0.18 }}
           className="mx-auto max-w-[1600px] p-4 sm:p-6 lg:p-8"
         >
-          <Outlet />
+          <TopbarOverrideProvider setOverride={setTopbarOverride}>
+            <Outlet />
+          </TopbarOverrideProvider>
         </m.main>
       </div>
     </div>

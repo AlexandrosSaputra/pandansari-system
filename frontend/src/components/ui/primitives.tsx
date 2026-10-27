@@ -95,27 +95,6 @@ export function Badge({ value }: { value: string | boolean }) {
           : 'neutral'
   return <span className={`badge badge-${tone}`}>{text}</span>
 }
-export function PageHeader({
-  title,
-  description,
-  actions,
-}: {
-  title: string
-  description?: string
-  actions?: ReactNode
-}) {
-  return (
-    <div className="page-header">
-      <div>
-        <h1>{title}</h1>
-        {description && (
-          <p className="mt-1 text-sm text-slate-500">{description}</p>
-        )}
-      </div>
-      <div className="flex flex-wrap gap-2">{actions}</div>
-    </div>
-  )
-}
 export function EmptyState({
   message = 'Belum ada data',
   children,
