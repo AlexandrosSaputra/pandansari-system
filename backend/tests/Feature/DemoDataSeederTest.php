@@ -38,7 +38,7 @@ class DemoDataSeederTest extends TestCase
         $this->seed(DemoDataSeeder::class);
         $this->seed(DemoDataSeeder::class);
 
-        $this->assertDatabaseCount('users', 3);
+        $this->assertDatabaseCount('users', 6);
         $this->assertDatabaseCount('operational_units', 4);
         $this->assertDatabaseCount('inventory_locations', 5);
         $this->assertDatabaseCount('items', 30);
@@ -55,12 +55,13 @@ class DemoDataSeederTest extends TestCase
             $this->unitId('Outlet 3'),
         ];
         $ticketingId = $this->unitId('Loket Ticket');
-        $warehouseUser = User::where('email', 'warehouse.demo@pandansari.local')->firstOrFail();
-        $adminUser = User::where('email', 'admin.demo@pandansari.local')->firstOrFail();
+        $warehouseUser = User::where('username', 'gudang')->firstOrFail();
+        $ticketingUser = User::where('username', 'loket')->firstOrFail();
+        $outletUsers = collect(['outlet-1', 'outlet-2', 'outlet-3'])
+            ->map(fn (string $username): User => User::where('username', $username)->firstOrFail());
 
-        $this->assertSame('warehouse-demo', $warehouseUser->username);
-        $this->assertSame('admin-demo', $adminUser->username);
-        $this->assertSame($outletIds[0], $adminUser->operational_unit_id);
+        $this->assertSame('Petugas Gudang', $warehouseUser->name);
+        $this->assertSame('Petugas Loket', $ticketingUser->name);
         $this->assertSame(
             ['Loket Ticket', 'Outlet 1', 'Outlet 2', 'Outlet 3'],
             OperationalUnit::query()->orderBy('name')->pluck('name')->all(),
@@ -69,7 +70,6 @@ class DemoDataSeederTest extends TestCase
             $this->assertMatchesRegularExpression('/^[A-Z]{2}\d{4}$/', $code);
         }
         $this->assertTrue(Hash::check('DemoPassword123!', $warehouseUser->password));
-        $this->assertTrue(Hash::check('DemoPassword123!', $adminUser->password));
         $this->assertDatabaseHas('user_role_assignments', [
             'user_id' => $warehouseUser->id,
             'role_id' => $warehouseRoleId,
@@ -77,11 +77,24 @@ class DemoDataSeederTest extends TestCase
             'is_active' => true,
         ]);
 
-        foreach ([...$outletIds, $ticketingId] as $unitId) {
+        $this->assertTrue(Hash::check('DemoPassword123!', $ticketingUser->password));
+        $this->assertSame($ticketingId, $ticketingUser->operational_unit_id);
+        $this->assertDatabaseHas('user_role_assignments', [
+            'user_id' => $ticketingUser->id,
+            'role_id' => $adminRoleId,
+            'operational_unit_id' => $ticketingId,
+            'is_active' => true,
+        ]);
+
+        foreach ($outletUsers as $index => $outletUser) {
+            $this->assertSame('Petugas Outlet '.($index + 1), $outletUser->name);
+            $this->assertTrue(Hash::check('DemoPassword123!', $outletUser->password));
+            $this->assertSame($outletIds[$index], $outletUser->operational_unit_id);
+            $this->assertCount(1, $outletUser->assignments);
             $this->assertDatabaseHas('user_role_assignments', [
-                'user_id' => $adminUser->id,
+                'user_id' => $outletUser->id,
                 'role_id' => $adminRoleId,
-                'operational_unit_id' => $unitId,
+                'operational_unit_id' => $outletIds[$index],
                 'is_active' => true,
             ]);
         }
@@ -138,11 +151,59 @@ class DemoDataSeederTest extends TestCase
         ]);
     }
 
+    public function test_each_demo_account_logs_in_directly_to_its_own_workspace(): void
+    {
+        config(['demo.user_password' => 'DemoPassword123!']);
+        $this->seed(DemoDataSeeder::class);
+
+        $accounts = [
+            ['admin', 'Password123!', 'superadmin', null],
+            ['loket', 'DemoPassword123!', 'admin', 'Loket Ticket'],
+            ['outlet-1', 'DemoPassword123!', 'admin', 'Outlet 1'],
+            ['outlet-2', 'DemoPassword123!', 'admin', 'Outlet 2'],
+            ['outlet-3', 'DemoPassword123!', 'admin', 'Outlet 3'],
+            ['gudang', 'DemoPassword123!', 'warehouse', null],
+        ];
+
+        foreach ($accounts as [$username, $password, $role, $unitName]) {
+            $response = $this->withHeader('Origin', 'http://localhost:5173')
+                ->postJson('/api/auth/login', [
+                    'username' => $username,
+                    'password' => $password,
+                ])->assertOk()
+                ->assertJsonPath('data.role.slug', $role)
+                ->assertJsonCount(1, 'data.assignments');
+
+            if ($unitName === null) {
+                $response->assertJsonPath('data.operational_unit', null);
+            } else {
+                $response->assertJsonPath('data.operational_unit.name', $unitName);
+            }
+
+            $this->app['auth']->guard('web')->logout();
+            $this->app['auth']->forgetGuards();
+            $this->flushSession();
+        }
+
+        $outletOne = User::where('username', 'outlet-1')->firstOrFail();
+        $outletTwo = OperationalUnit::where('name', 'Outlet 2')->firstOrFail();
+        $foreignAssignment = User::where('username', 'outlet-2')
+            ->firstOrFail()
+            ->assignments()
+            ->sole();
+
+        $this->actingAs($outletOne, 'web')
+            ->getJson('/api/operational-units/'.$outletTwo->id.'/inventory')
+            ->assertForbidden();
+        $this->postJson('/api/auth/assignment', ['assignment_id' => $foreignAssignment->id])
+            ->assertUnprocessable();
+    }
+
     public function test_removes_empty_duplicate_parents_created_by_the_previous_demo_seeder(): void
     {
         config(['demo.user_password' => 'DemoPassword123!']);
         $this->seed(DemoDataSeeder::class);
-        $adminUser = User::where('email', 'admin.demo@pandansari.local')->firstOrFail();
+        $adminUser = User::where('username', 'outlet-1')->firstOrFail();
         $adminRole = Role::where('slug', 'admin')->firstOrFail();
 
         foreach ([
@@ -181,7 +242,7 @@ class DemoDataSeederTest extends TestCase
     {
         config(['demo.user_password' => 'DemoPassword123!']);
         $this->seed(DemoDataSeeder::class);
-        $adminUser = User::where('email', 'admin.demo@pandansari.local')->firstOrFail();
+        $adminUser = User::where('username', 'outlet-1')->firstOrFail();
         $legacyUnit = OperationalUnit::create([
             'code' => 'OUT-BASO',
             'name' => 'Baso',

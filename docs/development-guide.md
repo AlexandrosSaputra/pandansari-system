@@ -35,7 +35,18 @@ php artisan db:seed --class=DemoDataSeeder --no-interaction
 Remove-Item Env:DEMO_USER_PASSWORD
 ```
 
-`DemoDataSeeder` idempoten untuk data master dan hanya menambah stok Gudang hingga target demo jika saldonya masih kurang. Seeder tidak dipanggil oleh `DatabaseSeeder`, sehingga tidak berjalan tanpa perintah eksplisit.
+`DemoDataSeeder` idempoten untuk data master dan hanya menambah stok Gudang hingga target demo jika saldonya masih kurang. Seeder tidak dipanggil oleh `DatabaseSeeder`, sehingga tidak berjalan tanpa perintah eksplisit. Akun yang tersedia setelah seeding adalah:
+
+| Area kerja | Username | Akses |
+| --- | --- | --- |
+| Superadmin | `admin` | Seluruh sistem |
+| Loket | `loket` | Hanya Loket Ticket |
+| Outlet 1 | `outlet-1` | Hanya Outlet 1 |
+| Outlet 2 | `outlet-2` | Hanya Outlet 2 |
+| Outlet 3 | `outlet-3` | Hanya Outlet 3 |
+| Gudang | `gudang` | Operasional Gudang |
+
+Semua akun operasional selain Superadmin memakai kata sandi dari `DEMO_USER_PASSWORD`. Akun dengan satu area kerja langsung masuk ke halaman kerjanya setelah login: POS, Ticketing, atau Inventori. Kredensial Superadmin awal tetap didefinisikan di `UserSeeder.php` dan wajib diganti sebelum lingkungan dipakai bersama.
 
 Untuk fitur lupa password, isi alamat penerima OTP khusus di `backend/.env` dan konfigurasi SMTP sesuai penyedia email yang digunakan:
 

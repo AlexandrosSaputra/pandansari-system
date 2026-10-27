@@ -13,6 +13,7 @@ import {
 import { AppLoadingScreen } from '../../components/common/AppLoadingScreen'
 import { apiError, setFormErrors } from '../../lib/errors'
 import { LoginScene } from './LoginScene'
+import { landingRouteFor } from './landingRoute'
 import { useAuth } from './useAuth'
 
 const schema = z.object({
@@ -36,7 +37,8 @@ export function LoginPage() {
     : null
 
   if (auth.isLoading) return <AppLoadingScreen />
-  if (auth.isAuthenticated) return <Navigate to="/dashboard" replace />
+  if (auth.isAuthenticated)
+    return <Navigate to={landingRouteFor(auth.user)} replace />
 
   return (
     <div className="login-shell">

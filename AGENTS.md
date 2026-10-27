@@ -26,6 +26,13 @@
 - Update `docs/implementation-status.md` after a material feature is completed or its verification status changes.
 - Use Indonesian for user-facing project documentation unless a technical standard requires English.
 
+## Commit-message convention
+
+- When asked for a suitable commit comment/message (for example, `Bagaimana commit comment yang cocok?`), return one ready-to-paste Conventional Commit message in a single fenced `text` block.
+- The message must combine the subject and body: a concise lowercase Conventional Commit header, followed by a blank line and imperative bullet points when a body is useful. Do not split it into separate `Head` and `Body` sections.
+- Choose the type by the actual change: `feat` for functionality, `fix` for a reproduced defect, `refactor` for behavior-preserving code changes, `perf` for performance improvements, `style` for formatting only, `docs` for documentation only, `test` for test-only coverage changes, `ci` for continuous-integration changes, `build` for build/dependency changes, `chore` for other non-source/test/docs work, and `revert` for reversals.
+- Tests and documentation that directly support a feature or bug fix belong in the same `feat` or `fix` message.
+
 ## Current architecture decisions
 
 - The web application is split into a Laravel API and a React client.

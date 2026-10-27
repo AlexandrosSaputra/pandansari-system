@@ -29,12 +29,12 @@ Tidak ada klaim UAT dari pemeriksaan otomatis. Firmware/perangkat ESP32, pairing
 
 Database lokal awal belum memadai karena hanya memiliki akun Superadmin dan lokasi Gudang. `DemoDataSeeder` disediakan secara opt-in dan idempoten untuk menambahkan:
 
-- akun Gudang serta Admin yang memiliki assignment Outlet dan Ticketing;
+- akun terpisah untuk Gudang, Loket, Outlet 1, Outlet 2, dan Outlet 3, masing-masing dengan tepat satu assignment sesuai area kerjanya;
 - unit Outlet dan Ticketing dengan kode otomatis berformat dua huruf dan empat angka beserta lokasi inventori;
-- dua produk ber-barcode dan satu layanan ticketing;
+- 29 produk dan satu layanan ticketing;
 - harga per unit serta stok Gudang yang cukup untuk transfer dan checkout.
 
-Kata sandi wajib diberikan lewat `DEMO_USER_PASSWORD`, tidak disimpan di Git, dan seeder tidak dipanggil oleh `DatabaseSeeder`. Menjalankan ulang seeder tidak menggandakan master data dan hanya menaikkan saldo Gudang sampai target demo bila masih kurang.
+Kata sandi akun operasional wajib diberikan lewat `DEMO_USER_PASSWORD`, tidak disimpan di Git, dan seeder tidak dipanggil oleh `DatabaseSeeder`. Menjalankan ulang seeder tidak menggandakan master data dan hanya menaikkan saldo Gudang sampai target demo bila masih kurang. Regression test memverifikasi bahwa keenam akun dapat login langsung ke konteksnya dan akun Outlet 1 ditolak saat mencoba membaca inventori atau memakai assignment milik Outlet 2.
 
 Keputusan bisnis yang tetap terbuka adalah metode pembayaran serta aturan movement `ADJUSTMENT`/`DAMAGED`. Seeder tidak menetapkan keduanya.
 

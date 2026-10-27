@@ -29,7 +29,7 @@ class UserSeeder extends Seeder
 
     /**
      * @param  list<OperationalUnit>  $outlets
-     * @return array{warehouse: User, admin: User}
+     * @return array{warehouse: User, ticketing: User, outlets: list<User>}
      */
     public function seedDemoAccounts(array $outlets, OperationalUnit $ticketing): array
     {
@@ -37,26 +37,31 @@ class UserSeeder extends Seeder
 
         $accounts = $this->accounts();
         $warehouseRole = Role::where('slug', $accounts['warehouse']['role'])->firstOrFail();
-        $adminRole = Role::where('slug', $accounts['admin']['role'])->firstOrFail();
+        $adminRole = Role::where('slug', $accounts['ticketing']['role'])->firstOrFail();
 
         $warehouseUser = $this->upsertUser($accounts['warehouse'], $warehouseRole);
-        $warehouseUser->assignments()->updateOrCreate([
-            'role_id' => $warehouseRole->id,
-            'operational_unit_id' => null,
-        ], ['is_active' => true]);
+        $this->syncSingleAssignment($warehouseUser, $warehouseRole);
 
-        $adminUser = $this->upsertUser($accounts['admin'], $adminRole, $outlets[0]);
+        $ticketingUser = $this->upsertUser($accounts['ticketing'], $adminRole, $ticketing);
+        $this->syncSingleAssignment($ticketingUser, $adminRole, $ticketing);
 
-        foreach ([...$outlets, $ticketing] as $unit) {
-            $adminUser->assignments()->updateOrCreate([
-                'role_id' => $adminRole->id,
-                'operational_unit_id' => $unit->id,
-            ], ['is_active' => true]);
+        $outletUsers = [];
+        foreach ($outlets as $index => $outlet) {
+            $account = $accounts['outlet_'.($index + 1)] ?? null;
+
+            if ($account === null) {
+                throw new LogicException('A demo account must be configured for every demo outlet.');
+            }
+
+            $outletUser = $this->upsertUser($account, $adminRole, $outlet);
+            $this->syncSingleAssignment($outletUser, $adminRole, $outlet);
+            $outletUsers[] = $outletUser;
         }
 
         return [
             'warehouse' => $warehouseUser,
-            'admin' => $adminUser,
+            'ticketing' => $ticketingUser,
+            'outlets' => $outletUsers,
         ];
     }
 
@@ -85,20 +90,51 @@ class UserSeeder extends Seeder
                 'role' => 'superadmin',
             ],
             'warehouse' => [
-                'name' => 'Petugas Gudang Demo',
-                'username' => 'warehouse-demo',
+                'name' => 'Petugas Gudang',
+                'username' => 'gudang',
                 'password' => $demoPassword,
                 'email' => 'warehouse.demo@pandansari.local',
                 'role' => 'warehouse',
             ],
-            'admin' => [
-                'name' => 'Petugas Outlet dan Ticketing Demo',
-                'username' => 'admin-demo',
+            'ticketing' => [
+                'name' => 'Petugas Loket',
+                'username' => 'loket',
+                'password' => $demoPassword,
+                'email' => 'loket.demo@pandansari.local',
+                'role' => 'admin',
+            ],
+            'outlet_1' => [
+                'name' => 'Petugas Outlet 1',
+                'username' => 'outlet-1',
                 'password' => $demoPassword,
                 'email' => 'admin.demo@pandansari.local',
                 'role' => 'admin',
             ],
+            'outlet_2' => [
+                'name' => 'Petugas Outlet 2',
+                'username' => 'outlet-2',
+                'password' => $demoPassword,
+                'email' => 'outlet2.demo@pandansari.local',
+                'role' => 'admin',
+            ],
+            'outlet_3' => [
+                'name' => 'Petugas Outlet 3',
+                'username' => 'outlet-3',
+                'password' => $demoPassword,
+                'email' => 'outlet3.demo@pandansari.local',
+                'role' => 'admin',
+            ],
         ];
+    }
+
+    private function syncSingleAssignment(User $user, Role $role, ?OperationalUnit $unit = null): void
+    {
+        $assignment = $user->assignments()->updateOrCreate([
+            'role_id' => $role->id,
+            'operational_unit_id' => $unit?->id,
+        ], ['is_active' => true]);
+
+        $user->assignments()->where('id', '!=', $assignment->id)->delete();
     }
 
     /**

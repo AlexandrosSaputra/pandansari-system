@@ -26,6 +26,9 @@ try {
   const { PermissionGuard } = await server.ssrLoadModule(
     '/src/features/auth/RouteGuard.tsx',
   )
+  const { landingRouteFor } = await server.ssrLoadModule(
+    '/src/features/auth/landingRoute.ts',
+  )
   const { Sidebar } = await server.ssrLoadModule(
     '/src/components/common/Sidebar.tsx',
   )
@@ -156,6 +159,24 @@ try {
   check('Warehouse cannot enter POS even with a mapped permission', () =>
     assert.match(guard('transaction.create', true), /Akses tidak diizinkan/),
   )
+  check('Each operational account lands in its field workspace', () => {
+    assert.equal(
+      landingRouteFor({ role: { slug: 'admin' }, operational_unit: { type: 'OUTLET' } }),
+      '/pos',
+    )
+    assert.equal(
+      landingRouteFor({ role: { slug: 'admin' }, operational_unit: { type: 'TICKETING' } }),
+      '/ticketing',
+    )
+    assert.equal(
+      landingRouteFor({ role: { slug: 'warehouse' }, operational_unit: null }),
+      '/inventory',
+    )
+    assert.equal(
+      landingRouteFor({ role: { slug: 'superadmin' }, operational_unit: null }),
+      '/dashboard',
+    )
+  })
   const serverError = {
     isAxiosError: true,
     response: {
