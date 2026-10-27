@@ -318,13 +318,28 @@ class AuthApiTest extends TestCase
         ])->assertTooManyRequests();
     }
 
-    public function test_sanctum_csrf_cookie_endpoint_is_available_for_the_spa(): void
+    #[DataProvider('localSpaOrigins')]
+    public function test_sanctum_csrf_cookie_endpoint_is_available_for_the_spa(string $origin): void
     {
-        $this->withHeader('Origin', 'http://localhost:5173')
+        config([
+            'cors.allowed_origins' => ['http://localhost:*', 'http://127.0.0.1:*'],
+            'sanctum.stateful' => ['localhost:*', '127.0.0.1:*'],
+        ]);
+
+        $this->withHeader('Origin', $origin)
             ->get('/sanctum/csrf-cookie')
             ->assertNoContent()
-            ->assertHeader('Access-Control-Allow-Origin', 'http://localhost:5173')
+            ->assertHeader('Access-Control-Allow-Origin', $origin)
             ->assertHeader('Access-Control-Allow-Credentials', 'true');
+    }
+
+    public static function localSpaOrigins(): array
+    {
+        return [
+            'localhost default Vite port' => ['http://localhost:5173'],
+            'localhost alternate Vite port' => ['http://localhost:5174'],
+            'loopback alternate Vite port' => ['http://127.0.0.1:5174'],
+        ];
     }
 
     private function createUnit(string $code): OperationalUnit
