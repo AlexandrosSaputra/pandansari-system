@@ -28,6 +28,10 @@ class TransactionItemResource extends JsonResource
                 'visitor_factor' => $item->visitor_factor,
             ],
             'quantity' => $this->quantity,
+            'maximum_quantity' => $this->when(
+                array_key_exists('maximum_quantity', $this->resource->getAttributes()),
+                fn (): int => (int) $this->maximum_quantity,
+            ),
             'unit_price' => $this->unit_price,
             'subtotal' => $this->subtotal,
             'input_method' => $this->input_method->value,

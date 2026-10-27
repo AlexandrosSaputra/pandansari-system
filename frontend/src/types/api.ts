@@ -1,6 +1,11 @@
 export type Money = string | number
 export type ItemType = 'PRODUCT' | 'SERVICE'
 export type UnitType = 'OUTLET' | 'TICKETING'
+export type StockUrgency =
+  | 'HEALTHY'
+  | 'NEAR_MINIMUM'
+  | 'BELOW_MINIMUM'
+  | 'OUT_OF_STOCK'
 export interface Person {
   id: number
   name: string
@@ -99,6 +104,7 @@ export interface InventoryBalance {
   selling_price?: Money
   minimum_stock?: number
   low_stock?: boolean
+  stock_urgency?: StockUrgency
 }
 export interface StockMovement {
   id: number
@@ -142,6 +148,7 @@ export interface TransactionItem {
   id: number
   item: ItemSummary
   quantity: number
+  maximum_quantity?: number
   unit_price: Money
   subtotal: Money
   input_method: 'MANUAL' | 'SCANNER'
@@ -166,13 +173,13 @@ export interface CatalogItem {
   item: ItemSummary
   selling_price: Money
   minimum_stock: number
-  inventory: Pick<
+  inventory: (Pick<
     InventoryBalance,
     | 'quantity_on_hand'
     | 'quantity_reserved'
     | 'available_quantity'
     | 'low_stock'
-  > | null
+  > & { stock_urgency: StockUrgency }) | null
 }
 export interface ActivityLog {
   id: number

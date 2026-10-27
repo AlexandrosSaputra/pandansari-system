@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import {
-  Badge,
   Button,
   EmptyState,
   ListContent,
   type Column,
 } from '../../components/ui'
 import { FilterBar } from '../../components/ui/Filters'
+import { StockUrgencyIndicator } from '../../components/ui/StockUrgencyIndicator'
 import { useFilters } from '../../hooks/useFilters'
 import { useList } from '../../lib/queries'
 import type { InventoryBalance, OperationalUnit } from '../../types/api'
@@ -81,7 +81,11 @@ export function InventoryPage() {
     columns.push({
       title: 'Status stok',
       render: (row) => (
-        <Badge value={row.low_stock ? 'Stok Rendah' : 'Normal'} />
+        <StockUrgencyIndicator
+          urgency={row.stock_urgency}
+          minimumStock={row.minimum_stock}
+          availableQuantity={row.available_quantity}
+        />
       ),
     })
   columns.push({

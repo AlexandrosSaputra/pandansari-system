@@ -297,7 +297,10 @@ export function UnitDetailPage() {
         ? '0%'
         : `${Math.round((activeItems / totalItems) * 100)}%`
       : '…'
-  const criticalStock = inventory.data?.data.filter((row) => row.low_stock).length
+  const criticalStock = inventory.data?.data.filter(
+    (row) =>
+      row.stock_urgency === 'BELOW_MINIMUM' || row.stock_urgency === 'OUT_OF_STOCK',
+  ).length
   const canReadItems = auth.hasPermission('item.view')
 
   return (

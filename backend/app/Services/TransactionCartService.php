@@ -2,8 +2,12 @@
 
 namespace App\Services;
 
+use App\Enums\InventoryLocationType;
+use App\Enums\ItemType;
 use App\Enums\TransactionInputMethod;
 use App\Enums\TransactionStatus;
+use App\Models\InventoryBalance;
+use App\Models\InventoryLocation;
 use App\Models\Item;
 use App\Models\OperationalUnit;
 use App\Models\Transaction;
@@ -93,10 +97,13 @@ class TransactionCartService
 
             if ($line) {
                 abort_if($line->quantity > self::MAX_QUANTITY - $quantity, 409, 'Transaction item quantity exceeds the supported range.');
-                $line->quantity += $quantity;
+                $nextQuantity = $line->quantity + $quantity;
+                $this->assertAvailableStock($unit, $item, $nextQuantity);
+                $line->quantity = $nextQuantity;
                 $line->subtotal = $this->money->multiply((string) $line->unit_price, $line->quantity);
                 $line->save();
             } else {
+                $this->assertAvailableStock($unit, $item, $quantity);
                 $line = TransactionItem::create([
                     'transaction_id' => $transaction->id,
                     'item_id' => $item->id,
@@ -121,12 +128,14 @@ class TransactionCartService
     ): Transaction {
         return DB::transaction(function () use ($actor, $transaction, $transactionItem, $quantity): Transaction {
             $transaction = $this->lockMutableCart($actor, $transaction);
-            $this->lockActiveUnit($transaction);
+            $unit = $this->lockActiveUnit($transaction);
             $line = TransactionItem::query()
                 ->whereKey($transactionItem->id)
                 ->where('transaction_id', $transaction->id)
                 ->lockForUpdate()
                 ->firstOrFail();
+            $item = Item::query()->whereKey($line->item_id)->lockForUpdate()->firstOrFail();
+            $this->assertAvailableStock($unit, $item, $quantity);
             $line->update([
                 'quantity' => $quantity,
                 'subtotal' => $this->money->multiply((string) $line->unit_price, $quantity),
@@ -218,13 +227,64 @@ class TransactionCartService
         $this->calculator->recalculate($transaction, $lines);
     }
 
+    private function assertAvailableStock(
+        OperationalUnit $unit,
+        Item $item,
+        int $quantity,
+    ): void {
+        if ($item->type !== ItemType::Product) {
+            return;
+        }
+
+        $location = InventoryLocation::query()
+            ->where('operational_unit_id', $unit->id)
+            ->where('type', InventoryLocationType::Unit->value)
+            ->where('is_active', true)
+            ->lockForUpdate()
+            ->first();
+        abort_unless($location, 409, 'The operational unit inventory location is unavailable.');
+
+        $balance = InventoryBalance::query()
+            ->where('inventory_location_id', $location->id)
+            ->where('item_id', $item->id)
+            ->lockForUpdate()
+            ->first();
+        $availableQuantity = $balance?->available_quantity ?? 0;
+
+        abort_if($quantity > $availableQuantity, 409, 'Insufficient available stock.');
+    }
+
     private function loadTransaction(Transaction $transaction): Transaction
     {
-        return $transaction->fresh([
+        $transaction = $transaction->fresh([
             'operationalUnit',
             'creator',
             'payer',
             'transactionItems.item',
         ]);
+
+        $productItemIds = $transaction->transactionItems
+            ->filter(fn (TransactionItem $line): bool => $line->item->type === ItemType::Product)
+            ->pluck('item_id');
+        $locationId = $transaction->operationalUnit
+            ->inventoryLocation()
+            ->where('type', InventoryLocationType::Unit->value)
+            ->value('id');
+        $balances = InventoryBalance::query()
+            ->where('inventory_location_id', $locationId)
+            ->whereIn('item_id', $productItemIds)
+            ->get()
+            ->keyBy('item_id');
+
+        foreach ($transaction->transactionItems as $line) {
+            if ($line->item->type === ItemType::Product) {
+                $line->setAttribute(
+                    'maximum_quantity',
+                    $balances->get($line->item_id)?->available_quantity ?? 0,
+                );
+            }
+        }
+
+        return $transaction;
     }
 }

@@ -13,17 +13,26 @@ import { apiError } from '../../lib/errors'
 import { formatCurrency, formatNumber } from '../../utils/format'
 import type { usePosCart } from './usePosCart'
 import { CartLine } from './CartLine'
+import { PosSectionHeader } from './PosSectionHeader'
 
 export function CartPanel({ pos }: { pos: ReturnType<typeof usePosCart> }) {
   const [confirm, setConfirm] = useState(false)
   const data = pos.cart.data
   const busy = pos.action.isPending || pos.newCart.isPending
+  const itemCount =
+    data?.items?.reduce((total, item) => total + item.quantity, 0) ?? 0
   return (
-    <Card className="p-5">
-      <div className="mb-4 flex justify-between">
-        <h2>Keranjang</h2>
-        {data && <Badge value={data.status} />}
-      </div>
+    <Card className="pos-cart">
+      <PosSectionHeader
+        kind="cart"
+        title="Keranjang"
+        description={data?.transaction_number}
+        badge={data?.status === 'PAID' ? (
+          <Badge value={data.status} />
+        ) : (
+          <span className="pos-cart-count">{formatNumber(itemCount)} item</span>
+        )}
+      />
       {pos.cart.isPending ? (
         <Skeleton rows={4} />
       ) : pos.cart.error ? (
@@ -36,48 +45,52 @@ export function CartPanel({ pos }: { pos: ReturnType<typeof usePosCart> }) {
       ) : (
         data && (
           <>
-            <p className="mb-2 text-xs text-slate-400">
-              {data.transaction_number}
-            </p>
-            <AnimatePresence initial={false}>
-              {data.items?.map((item) => (
-                <CartLine
-                  key={item.id}
-                  attempt={pos.action.submittedAt}
-                  item={item}
-                  disabled={busy || data.status === 'PAID'}
-                  update={(quantity) =>
-                    pos.action.mutate({
-                      type: 'quantity',
-                      id: item.id,
-                      quantity,
-                    })
-                  }
-                  remove={() =>
-                    pos.action.mutate({ type: 'remove', id: item.id })
-                  }
-                />
-              ))}
-            </AnimatePresence>
-            {!data.items?.length && (
-              <EmptyState message="Keranjang masih kosong">
-                <p className="mt-2 text-xs text-slate-400">
-                  Pilih item dari katalog.
-                </p>
-              </EmptyState>
-            )}
-            <div className="mt-5 space-y-3 text-sm">
-              <div className="flex justify-between text-slate-500">
+            <div className="pos-cart-items" role="region" aria-label="Daftar item keranjang" tabIndex={0}>
+              <AnimatePresence initial={false}>
+                {data.items?.map((item, index) => (
+                  <CartLine
+                    key={item.id}
+                    rowNumber={index + 1}
+                    attempt={pos.action.submittedAt}
+                    item={item}
+                    maximumQuantity={item.maximum_quantity}
+                    disabled={busy || data.status === 'PAID'}
+                    update={(quantity) =>
+                      pos.action.mutate({
+                        type: 'quantity',
+                        id: item.id,
+                        quantity,
+                      })
+                    }
+                    remove={() =>
+                      pos.action.mutate({ type: 'remove', id: item.id })
+                    }
+                  />
+                ))}
+              </AnimatePresence>
+              {!data.items?.length && (
+                <EmptyState message="Keranjang masih kosong">
+                  <p className="mt-2 text-xs text-slate-400">
+                    Pilih item dari katalog.
+                  </p>
+                </EmptyState>
+              )}
+            </div>
+            <div className="pos-cart-summary">
+              <div className="pos-summary-row">
                 <span>Subtotal</span>
                 <span>{formatCurrency(data.subtotal)}</span>
               </div>
-              <div className="flex justify-between text-slate-500">
-                <span>Jumlah pengunjung</span>
-                <span>{formatNumber(data.visitor_count)}</span>
-              </div>
-              <div className="flex justify-between border-t border-slate-100 pt-4 text-lg font-semibold">
+              {(data.operational_unit.type === 'TICKETING' ||
+                data.visitor_count > 0) && (
+                <div className="pos-summary-row">
+                  <span>Jumlah pengunjung</span>
+                  <span>{formatNumber(data.visitor_count)}</span>
+                </div>
+              )}
+              <div className="pos-summary-total">
                 <span>Total</span>
-                <span>{formatCurrency(data.total)}</span>
+                <strong>{formatCurrency(data.total)}</strong>
               </div>
             </div>
             {pos.action.error && (
@@ -92,7 +105,7 @@ export function CartPanel({ pos }: { pos: ReturnType<typeof usePosCart> }) {
             )}
             {data.status === 'PAID' ? (
               <Button
-                className="mt-5 w-full"
+                className="pos-checkout"
                 busy={pos.newCart.isPending}
                 onClick={() => pos.newCart.mutate()}
               >
@@ -100,7 +113,7 @@ export function CartPanel({ pos }: { pos: ReturnType<typeof usePosCart> }) {
               </Button>
             ) : (
               <Button
-                className="mt-5 w-full"
+                className="pos-checkout"
                 disabled={!data.items?.length}
                 busy={busy}
                 onClick={() => {

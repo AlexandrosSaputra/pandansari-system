@@ -44,8 +44,10 @@ class DemoDataSeederTest extends TestCase
         $this->assertDatabaseCount('items', 30);
         $this->assertDatabaseCount('unit_items', 30);
         $this->assertDatabaseCount('user_role_assignments', 6);
-        $this->assertDatabaseCount('inventory_balances', 29);
-        $this->assertDatabaseCount('stock_movements', 29);
+        $this->assertDatabaseCount('inventory_balances', 38);
+        $this->assertDatabaseCount('stock_movements', 43);
+        $this->assertDatabaseCount('stock_transfers', 1);
+        $this->assertDatabaseCount('stock_transfer_items', 7);
 
         $warehouseRoleId = Role::where('slug', 'warehouse')->value('id');
         $adminRoleId = Role::where('slug', 'admin')->value('id');
@@ -118,6 +120,7 @@ class DemoDataSeederTest extends TestCase
         $this->assertSame('SERVICE', $ticketingItems->first()->item->type->value);
 
         $warehouseId = InventoryLocation::where('code', 'WH-MAIN')->value('id');
+        $outletOneLocationId = InventoryLocation::where('operational_unit_id', $outletIds[0])->value('id');
         $waterId = Item::where('item_code', 'PROD-AQUA-600ML')->value('id');
         $ticketId = Item::where('item_code', 'SERVICE-TICKET')->value('id');
         $this->assertDatabaseHas('inventory_balances', [
@@ -130,7 +133,7 @@ class DemoDataSeederTest extends TestCase
             'inventory_location_id' => $warehouseId,
             'item_id' => $waterId,
             'movement_type' => 'STOCK_IN',
-            'quantity' => 30,
+            'quantity' => 36,
             'performed_by' => $warehouseUser->id,
             'note' => 'Persediaan awal demo',
         ]);
@@ -149,6 +152,25 @@ class DemoDataSeederTest extends TestCase
             'inventory_location_id' => $warehouseId,
             'item_id' => $ticketId,
         ]);
+
+        foreach ([
+            'PROD-AQUA-15-L' => 30,
+            'PROD-AQUA-600ML' => 6,
+            'PROD-BASO' => 4,
+            'PROD-BENG-BENG' => 0,
+            'PROD-BETTER' => 25,
+            'PROD-CHITATO' => 6,
+            'PROD-FRESH-TEA-300ML' => 3,
+            'PROD-PIATOS' => 0,
+            'PROD-TEH-PUCUK-HARUM' => 20,
+        ] as $itemCode => $quantity) {
+            $this->assertDatabaseHas('inventory_balances', [
+                'inventory_location_id' => $outletOneLocationId,
+                'item_id' => Item::where('item_code', $itemCode)->value('id'),
+                'quantity_on_hand' => $quantity,
+                'quantity_reserved' => 0,
+            ]);
+        }
     }
 
     public function test_each_demo_account_logs_in_directly_to_its_own_workspace(): void

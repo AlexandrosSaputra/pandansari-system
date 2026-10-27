@@ -1,10 +1,9 @@
+import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import {
-  Badge,
   Card,
   EmptyState,
   ErrorState,
-  Pagination,
   Skeleton,
 } from '../../components/ui'
 import { FilterBar } from '../../components/ui/Filters'
@@ -16,15 +15,23 @@ import type {
   UnitSummary,
   UnitType,
 } from '../../types/api'
-import { formatCurrency, formatNumber } from '../../utils/format'
 import { useAuth } from '../auth/useAuth'
 import { useTopbarOverride } from '../../components/common/topbarOverride'
 import { usePosCart } from './usePosCart'
 import { CartPanel } from './CartPanel'
+import { PosCatalogCard } from './PosCatalogCard'
+import { PosSectionHeader } from './PosSectionHeader'
+import { PosPagination } from './PosPagination'
+import { formatNumber } from '../../utils/format'
+import './pos-workspace.css'
+
 function TransactionWorkspace({ unit }: { unit: UnitSummary }) {
   const auth = useAuth()
   const filters = useFilters()
   const pos = usePosCart(unit.id)
+  const [activePanel, setActivePanel] = useState<'catalog' | 'cart'>('catalog')
+  const cartQuantity =
+    pos.cart.data?.items?.reduce((total, item) => total + item.quantity, 0) ?? 0
   const catalog = useList<CatalogItem>('/transaction-catalog', {
     ...(auth.isSuperadmin ? { operational_unit_id: unit.id } : {}),
     search: filters.params.search,
@@ -37,64 +44,81 @@ function TransactionWorkspace({ unit }: { unit: UnitSummary }) {
     pos.action.isPending ||
     pos.newCart.isPending
   return (
-    <div className="pos-grid">
-      <div>
-        <Card className="p-5">
-          <div className="flex items-center justify-between">
-            <h2>
-              {unit.type === 'TICKETING' ? 'Katalog Ticketing' : 'Katalog Item'}
-            </h2>
-            <Badge value={unit.type ?? 'OUTLET'} />
-          </div>
+    <div className="pos-grid pos-workspace" data-active-panel={activePanel}>
+      <div
+        className="pos-panel-switch"
+        role="group"
+        aria-label="Tampilan transaksi"
+      >
+        <button
+          type="button"
+          aria-pressed={activePanel === 'catalog'}
+          onClick={() => setActivePanel('catalog')}
+        >
+          Katalog
+        </button>
+        <button
+          type="button"
+          aria-pressed={activePanel === 'cart'}
+          onClick={() => setActivePanel('cart')}
+        >
+          Keranjang <span>{formatNumber(cartQuantity)}</span>
+        </button>
+      </div>
+      <div className="pos-catalog-column">
+        <Card className="pos-catalog">
+          <PosSectionHeader
+            kind="catalog"
+            title={unit.type === 'TICKETING' ? 'Katalog Ticketing' : 'Katalog Item'}
+            description={catalog.data
+              ? `${formatNumber(catalog.data.meta.total)} item dalam katalog`
+              : 'Pilih item untuk transaksi'}
+            badge={<span className="pos-unit-label">{unit.name}</span>}
+          />
           <FilterBar filters={filters} />
-          {catalog.error && (
-            <ErrorState
-              error={catalog.error}
-              retry={() => {
-                void catalog.refetch()
-              }}
-            />
-          )}
-          {catalog.isPending ? (
-            <Skeleton />
-          ) : catalog.data?.data.length ? (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {catalog.data.data.map((row) => (
-                <button
-                  type="button"
-                  className="flex min-h-36 flex-col rounded-xl border border-slate-200 p-4 text-left transition-colors hover:border-emerald-500 hover:bg-emerald-50/30 disabled:cursor-not-allowed disabled:opacity-50"
-                  key={row.id}
-                  disabled={
-                    disabled ||
-                    catalog.isPlaceholderData ||
-                    (row.inventory !== null &&
-                      row.inventory.available_quantity <= 0)
-                  }
-                  onClick={() =>
-                    pos.action.mutate({ type: 'add', item_id: row.item.id })
-                  }
-                >
-                  <span className="mb-3 text-xs text-slate-400">
-                    {row.item.item_code}
-                  </span>
-                  <span className="mb-2 text-sm font-semibold">
-                    {row.item.name}
-                  </span>
-                  <span className="mt-auto font-semibold text-emerald-800">
-                    {formatCurrency(row.selling_price)}
-                  </span>
-                  {row.inventory && (
-                    <span className="mt-2 text-xs text-slate-500">
-                      Tersedia: {formatNumber(row.inventory.available_quantity)}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          ) : (
-            <EmptyState message="Belum ada item yang dapat ditransaksikan" />
-          )}
-          <Pagination
+          <div
+            className="pos-catalog-items"
+            role="region"
+            aria-label="Daftar katalog"
+            tabIndex={0}
+          >
+            {catalog.error && (
+              <ErrorState
+                error={catalog.error}
+                retry={() => {
+                  void catalog.refetch()
+                }}
+              />
+            )}
+            {catalog.isPending ? (
+              <Skeleton />
+            ) : catalog.data?.data.length ? (
+              <div className="pos-product-grid">
+                {catalog.data.data.map((row) => {
+                  const quantityInCart =
+                    pos.cart.data?.status === 'CART'
+                      ? (pos.cart.data.items?.find(
+                          (line) => line.item.id === row.item.id,
+                        )?.quantity ?? 0)
+                      : 0
+                  return (
+                    <PosCatalogCard
+                      key={row.id}
+                      row={row}
+                      quantityInCart={quantityInCart}
+                      disabled={disabled || catalog.isPlaceholderData}
+                      onAdd={() =>
+                        pos.action.mutate({ type: 'add', item_id: row.item.id })
+                      }
+                    />
+                  )
+                })}
+              </div>
+            ) : (
+              <EmptyState message="Belum ada item yang dapat ditransaksikan" />
+            )}
+          </div>
+          <PosPagination
             meta={catalog.data?.meta}
             onPage={(p) => filters.set('page', String(p))}
             disabled={catalog.isPlaceholderData}

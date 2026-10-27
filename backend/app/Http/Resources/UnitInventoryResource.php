@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\StockUrgency;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -39,6 +40,10 @@ class UnitInventoryResource extends JsonResource
             'quantity_on_hand' => $quantityOnHand,
             'quantity_reserved' => $quantityReserved,
             'available_quantity' => $quantityOnHand - $quantityReserved,
+            'stock_urgency' => StockUrgency::forAvailableQuantity(
+                $quantityOnHand - $quantityReserved,
+                (int) $this->minimum_stock,
+            )->value,
             'low_stock' => $quantityOnHand <= $this->minimum_stock,
             'updated_at' => $this->balance_updated_at
                 ? CarbonImmutable::parse($this->balance_updated_at)->toIso8601String()

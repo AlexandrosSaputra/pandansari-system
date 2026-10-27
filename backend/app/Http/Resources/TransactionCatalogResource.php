@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Enums\ItemType;
+use App\Enums\StockUrgency;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -42,6 +43,10 @@ class TransactionCatalogResource extends JsonResource
                 'quantity_on_hand' => $quantityOnHand,
                 'quantity_reserved' => $quantityReserved,
                 'available_quantity' => $quantityOnHand - $quantityReserved,
+                'stock_urgency' => StockUrgency::forAvailableQuantity(
+                    $quantityOnHand - $quantityReserved,
+                    (int) $this->minimum_stock,
+                )->value,
                 'low_stock' => $quantityOnHand <= $this->minimum_stock,
             ] : null,
         ];

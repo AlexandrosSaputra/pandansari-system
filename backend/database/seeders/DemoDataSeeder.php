@@ -12,6 +12,7 @@ use App\Models\OperationalUnit;
 use App\Models\UnitItem;
 use App\Models\User;
 use App\Models\UserRoleAssignment;
+use App\Services\StockTransferService;
 use App\Services\WarehouseStockService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +23,25 @@ class DemoDataSeeder extends Seeder
     private const int DEFAULT_INITIAL_STOCK = 30;
 
     private const int DEFAULT_MINIMUM_STOCK = 5;
+
+    private const string OUTLET_ONE_NAME = 'Outlet 1';
+
+    /**
+     * Closing stock targets for Outlet 1.
+     *
+     * @var array<string, int>
+     */
+    private const array OUTLET_ONE_STOCK_TARGETS = [
+        'AQUA 1,5 L' => 30,
+        'AQUA 600ML' => 6,
+        'BASO' => 4,
+        'BENG-BENG' => 0,
+        'BETTER' => 25,
+        'CHITATO' => 6,
+        'FRESH TEA 300ML' => 3,
+        'PIATOS' => 0,
+        'TEH PUCUK HARUM' => 20,
+    ];
 
     /** @var array<int, string> */
     private const array OBSOLETE_DEMO_UNIT_CODES = [
@@ -87,8 +107,11 @@ class DemoDataSeeder extends Seeder
     /**
      * Run the database seeds.
      */
-    public function run(WarehouseStockService $warehouseStock, UserSeeder $userSeeder): void
-    {
+    public function run(
+        StockTransferService $stockTransfers,
+        WarehouseStockService $warehouseStock,
+        UserSeeder $userSeeder,
+    ): void {
         $userSeeder->validateDemoAccountConfiguration();
 
         $this->call(DatabaseSeeder::class);
@@ -96,6 +119,7 @@ class DemoDataSeeder extends Seeder
         $superadmin = User::where('email', config('auth.initial_superadmin_email'))->firstOrFail();
         $outlets = [];
         $products = [];
+        $outletOneStockTargets = [];
 
         foreach (self::OUTLET_CATALOG as $outletData) {
             $outlet = $this->upsertUnit(
@@ -118,6 +142,10 @@ class DemoDataSeeder extends Seeder
                 );
                 $products[$item->id] = $item;
                 $outletItemIds[] = $item->id;
+
+                if ($outlet->name === self::OUTLET_ONE_NAME) {
+                    $outletOneStockTargets[$item->id] = self::OUTLET_ONE_STOCK_TARGETS[$item->name];
+                }
 
                 $this->upsertUnitItem(
                     $outlet,
@@ -153,14 +181,24 @@ class DemoDataSeeder extends Seeder
 
         $this->removeObsoleteDemoUnits();
 
+        $outletOneStockShortfalls = $this->outletStockShortfalls($outlets[0], $outletOneStockTargets);
+
         foreach ($products as $product) {
             $this->topUpWarehouse(
                 $warehouseStock,
                 $warehouseUser,
                 $product,
-                self::DEFAULT_INITIAL_STOCK,
+                self::DEFAULT_INITIAL_STOCK + ($outletOneStockShortfalls[$product->id] ?? 0),
             );
         }
+
+        $this->seedOutletInventory(
+            $stockTransfers,
+            $warehouseUser,
+            $demoAccounts['outlets'][0],
+            $outlets[0],
+            $outletOneStockTargets,
+        );
     }
 
     private function productCode(string $name): string
@@ -334,5 +372,78 @@ class DemoDataSeeder extends Seeder
                 'Persediaan awal demo',
             );
         }
+    }
+
+    /**
+     * @param  array<int, int>  $stockTargets
+     * @return array<int, int>
+     */
+    private function outletStockShortfalls(OperationalUnit $outlet, array $stockTargets): array
+    {
+        $location = $outlet->inventoryLocation()->firstOrFail();
+        $currentQuantities = InventoryBalance::query()
+            ->where('inventory_location_id', $location->id)
+            ->whereIn('item_id', array_keys($stockTargets))
+            ->pluck('quantity_on_hand', 'item_id');
+        $shortfalls = [];
+
+        foreach ($stockTargets as $itemId => $targetQuantity) {
+            $currentQuantity = (int) ($currentQuantities->get($itemId) ?? 0);
+
+            if ($targetQuantity > $currentQuantity) {
+                $shortfalls[$itemId] = $targetQuantity - $currentQuantity;
+            }
+        }
+
+        return $shortfalls;
+    }
+
+    /**
+     * @param  array<int, int>  $stockTargets
+     */
+    private function seedOutletInventory(
+        StockTransferService $stockTransfers,
+        User $warehouseUser,
+        User $outletUser,
+        OperationalUnit $outlet,
+        array $stockTargets,
+    ): void {
+        $location = $outlet->inventoryLocation()->firstOrFail();
+        $itemIds = array_keys($stockTargets);
+        $currentQuantities = InventoryBalance::query()
+            ->where('inventory_location_id', $location->id)
+            ->whereIn('item_id', $itemIds)
+            ->pluck('quantity_on_hand', 'item_id');
+
+        foreach ($stockTargets as $itemId => $targetQuantity) {
+            if ($targetQuantity === 0) {
+                InventoryBalance::firstOrCreate([
+                    'inventory_location_id' => $location->id,
+                    'item_id' => $itemId,
+                ], [
+                    'quantity_on_hand' => 0,
+                    'quantity_reserved' => 0,
+                ]);
+            }
+        }
+
+        $items = [];
+        foreach ($stockTargets as $itemId => $targetQuantity) {
+            $currentQuantity = (int) ($currentQuantities->get($itemId) ?? 0);
+
+            if ($targetQuantity > $currentQuantity) {
+                $items[] = [
+                    'item_id' => $itemId,
+                    'quantity' => $targetQuantity - $currentQuantity,
+                ];
+            }
+        }
+
+        if ($items === []) {
+            return;
+        }
+
+        $transfer = $stockTransfers->create($warehouseUser, $outlet->id, $items);
+        $stockTransfers->accept($outletUser, $transfer);
     }
 }
