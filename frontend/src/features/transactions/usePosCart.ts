@@ -7,7 +7,6 @@ import type { Resource, Transaction } from '../../types/api'
 import { getSessionRevision, useAuth } from '../auth/useAuth'
 type CartAction =
   | { type: 'add'; item_id: number }
-  | { type: 'scan'; barcode: string }
   | { type: 'quantity'; id: number; quantity: number }
   | { type: 'remove'; id: number }
   | { type: 'checkout' }
@@ -44,14 +43,6 @@ export function usePosCart(unitId: number) {
             await api.post<Resource<Transaction>>(`${path}/items`, {
               input_method: 'MANUAL',
               item_id: operation.item_id,
-              quantity: 1,
-            })
-          ).data.data
-        case 'scan':
-          return (
-            await api.post<Resource<Transaction>>(`${path}/items`, {
-              input_method: 'SCANNER',
-              barcode: operation.barcode,
               quantity: 1,
             })
           ).data.data

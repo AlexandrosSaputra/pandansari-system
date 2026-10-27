@@ -93,11 +93,11 @@ Daftar, filter status/tujuan/pembuat/tanggal/nomor, pagination, detail, prefetch
 
 ## 16. POS dan Ticketing
 
-POS dan Ticketing memiliki menu, route, judul halaman, serta pilihan unit terpisah, tetapi tetap memakai satu engine transaksi. Admin memakai unit sendiri tanpa mengirim `operational_unit_id` yang dilarang backend dan hanya melihat ruang transaksi sesuai tipe unitnya. Superadmin melihat kedua menu; pemilih pada setiap halaman hanya memuat unit dengan tipe yang sesuai. Ticketing memakai judul katalog layanan; katalog tetap mengikuti hasil backend. Input Barcode hanya tampil jika scanner diaktifkan dan unit bukan Ticketing. Produk dengan available nol tidak dapat ditambahkan dari katalog.
+POS dan Ticketing memiliki menu, route, judul halaman, serta pilihan unit terpisah, tetapi tetap memakai satu engine transaksi. Admin memakai unit sendiri tanpa mengirim `operational_unit_id` yang dilarang backend dan hanya melihat ruang transaksi sesuai tipe unitnya. Superadmin melihat kedua menu; pemilih pada setiap halaman hanya memuat unit dengan tipe yang sesuai. Ticketing memakai judul katalog layanan; katalog tetap mengikuti hasil backend. Halaman POS tidak menyediakan input barcode manual; scan barcode dikirim oleh perangkat ESP32 atau klien API seperti Postman melalui endpoint scan backend. Produk dengan available nol tidak dapat ditambahkan dari katalog.
 
 ## 17. Keranjang
 
-Resolve/resume melalui `POST /transactions/cart`, dideduplikasi oleh query per user/unit; tidak dibuat setiap render. Baris manual/barcode, quantity minus/input/plus, PATCH, DELETE. Total, subtotal, visitor_count, dan harga memakai respons server. Mutasi diserialkan per keranjang; tidak ada optimistic update. Transaksi PAID tidak dapat diubah.
+Resolve/resume melalui `POST /transactions/cart`, dideduplikasi oleh query per user/unit; tidak dibuat setiap render. Baris katalog manual, quantity minus/input/plus, PATCH, DELETE. Total, subtotal, visitor_count, dan harga memakai respons server. Mutasi diserialkan per keranjang; tidak ada optimistic update. Transaksi PAID tidak dapat diubah.
 
 ## 18. Checkout
 

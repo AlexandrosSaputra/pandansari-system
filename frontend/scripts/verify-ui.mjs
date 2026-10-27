@@ -174,6 +174,19 @@ try {
     assert.match(html, /href="\/pos"[^>]*>.*POS/)
     assert.doesNotMatch(html, /href="\/ticketing"/)
   })
+  const { PosPage } = await server.ssrLoadModule(
+    '/src/features/transactions/PosPage.tsx',
+  )
+  session('admin', ['transaction.create'], {
+    ...unit,
+    type: 'OUTLET',
+    scanner_enabled: true,
+  })
+  check('POS does not expose manual barcode input', () => {
+    const html = render(h(PosPage))
+    assert.match(html, /Katalog Item/)
+    assert.doesNotMatch(html, /Input Barcode|Masukkan barcode/)
+  })
   session('superadmin', ['transaction.create'])
   check('Superadmin can open both transaction workspaces', () => {
     const html = render(h(Sidebar))
@@ -639,14 +652,6 @@ try {
       assert.deepEqual(requests.at(-1).data, {
         input_method: 'MANUAL',
         item_id: 2,
-        quantity: 1,
-      }),
-    )
-    await pos.action.mutateAsync({ type: 'scan', barcode: 'TEST-BARCODE' })
-    check('Scanner input sends barcode without item_id', () =>
-      assert.deepEqual(requests.at(-1).data, {
-        input_method: 'SCANNER',
-        barcode: 'TEST-BARCODE',
         quantity: 1,
       }),
     )

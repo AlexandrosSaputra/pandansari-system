@@ -1,15 +1,9 @@
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { z } from 'zod'
-import { zodResolver } from '@hookform/resolvers/zod'
 import {
   Badge,
-  Button,
   Card,
   EmptyState,
   ErrorState,
-  FormField,
-  Input,
   Pagination,
   Skeleton,
 } from '../../components/ui'
@@ -28,17 +22,10 @@ import { UnitSelector } from '../inventory/UnitSelector'
 import { useTopbarOverride } from '../../components/common/topbarOverride'
 import { usePosCart } from './usePosCart'
 import { CartPanel } from './CartPanel'
-const barcodeSchema = z.object({
-  barcode: z.string().trim().min(1, 'Masukkan barcode.').max(255),
-})
 function TransactionWorkspace({ unit }: { unit: UnitSummary }) {
   const auth = useAuth()
   const filters = useFilters()
   const pos = usePosCart(unit.id)
-  const barcode = useForm<z.infer<typeof barcodeSchema>>({
-    resolver: zodResolver(barcodeSchema),
-    defaultValues: { barcode: '' },
-  })
   const catalog = useList<CatalogItem>('/transaction-catalog', {
     ...(auth.isSuperadmin ? { operational_unit_id: unit.id } : {}),
     search: filters.params.search,
@@ -53,41 +40,6 @@ function TransactionWorkspace({ unit }: { unit: UnitSummary }) {
   return (
     <div className="pos-grid">
       <div>
-        {unit.scanner_enabled && unit.type !== 'TICKETING' && (
-          <Card className="mb-4 p-4">
-            <form
-              className="flex items-end gap-3"
-              onSubmit={barcode.handleSubmit(async (values) => {
-                try {
-                  await pos.action.mutateAsync({
-                    type: 'scan',
-                    barcode: values.barcode,
-                  })
-                  barcode.reset()
-                } catch {
-                  /* The shared notification center displays the backend error. */
-                }
-              })}
-            >
-              <div className="flex-1">
-                <FormField
-                  label="Input Barcode"
-                  hint="Masukkan barcode produk untuk menambahkan ke keranjang."
-                  error={barcode.formState.errors.barcode?.message}
-                >
-                  <Input
-                    disabled={disabled}
-                    autoComplete="off"
-                    {...barcode.register('barcode')}
-                  />
-                </FormField>
-              </div>
-              <Button type="submit" disabled={disabled}>
-                Tambah
-              </Button>
-            </form>
-          </Card>
-        )}
         <Card className="p-5">
           <div className="flex items-center justify-between">
             <h2>
