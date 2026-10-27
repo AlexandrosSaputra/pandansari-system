@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import logoKebun from '../../assets/logo-kebun.png'
 import { useAuth } from '../../features/auth/useAuth'
@@ -136,21 +136,13 @@ export function Sidebar({
     )
   }, [query, visibleItems])
   const groups = [...new Set(items.map((item) => item.group))]
-  const routeWorkspace =
-    visibleItems.find(
-      (item) =>
-        item.workspaceType &&
-        (location.pathname === item.to ||
-          location.pathname.startsWith(`${item.to}/`)),
-    )?.to ?? null
-  const [workspaceMenu, setWorkspaceMenu] = useState<{
-    pathname: string
-    expanded: string | null
-  }>({ pathname: location.pathname, expanded: routeWorkspace })
-  const expandedWorkspace =
-    workspaceMenu.pathname === location.pathname
-      ? workspaceMenu.expanded
-      : routeWorkspace
+  const [expandedWorkspaces, setExpandedWorkspaces] = useState<
+    Record<string, boolean>
+  >({})
+
+  useEffect(() => {
+    if (!auth.user) setExpandedWorkspaces({})
+  }, [auth.user])
 
   const brand = (
     <>
@@ -243,15 +235,14 @@ export function Sidebar({
                       item={item}
                       collapsed={collapsed}
                       chooseUnit={chooseUnit}
-                      expanded={chooseUnit && expandedWorkspace === item.to}
+                      expanded={chooseUnit && !!expandedWorkspaces[item.to]}
                       selectedUnitId={Number(unitPath) || undefined}
                       onToggleUnits={() => {
                         if (collapsed) onToggleCollapse?.()
-                        setWorkspaceMenu({
-                          pathname: location.pathname,
-                          expanded:
-                            expandedWorkspace === item.to ? null : item.to,
-                        })
+                        setExpandedWorkspaces((workspaces) => ({
+                          ...workspaces,
+                          [item.to]: !workspaces[item.to],
+                        }))
                       }}
                       onNavigate={onNavigate}
                     />
