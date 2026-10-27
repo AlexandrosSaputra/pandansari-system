@@ -2,10 +2,10 @@
 
 ## Bukti verifikasi saat ini
 
-Pada pemeriksaan otomatis 23 Oktober 2026:
+Pada pemeriksaan otomatis 27 Oktober 2026:
 
 - Frontend lulus `npm run lint`.
-- Frontend lulus `npm test` dengan 34 pemeriksaan SSR, termasuk regresi instruksi pemulihan akun terkunci, halaman pemulihan kata sandi, dan pergantian assignment aktif.
+- Frontend lulus `npm test` dengan 53 pemeriksaan SSR, termasuk submenu unit transaksi Superadmin dan pemulihan konteksnya dari route, regresi instruksi pemulihan akun terkunci, halaman pemulihan kata sandi, dan pergantian assignment aktif.
 - Frontend lulus `npm run build`.
 - Build frontend menampilkan peringatan ukuran chunk pada bundle utama/login; ini bukan kegagalan build, tetapi perlu diperhatikan sebelum deployment produksi.
 - Koneksi MySQL pengembangan berhasil dan seluruh 20 migrasi berstatus `Ran`.

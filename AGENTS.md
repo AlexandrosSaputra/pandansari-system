@@ -29,7 +29,8 @@
 ## Commit-message convention
 
 - When asked for a suitable commit comment/message (for example, `Bagaimana commit comment yang cocok?`), return one ready-to-paste Conventional Commit message in a single fenced `text` block.
-- The message must combine the subject and body: a concise lowercase Conventional Commit header, followed by a blank line and imperative bullet points when a body is useful. Do not split it into separate `Head` and `Body` sections.
+- The message must use a single fenced `text` block with one concise Conventional Commit header followed directly by imperative bullet points. Do not add `Head:` or `Body:` labels or separate sections.
+- Commit comments must be written entirely in English, including the head, body, scope, and bullet points.
 - Choose the type by the actual change: `feat` for functionality, `fix` for a reproduced defect, `refactor` for behavior-preserving code changes, `perf` for performance improvements, `style` for formatting only, `docs` for documentation only, `test` for test-only coverage changes, `ci` for continuous-integration changes, `build` for build/dependency changes, `chore` for other non-source/test/docs work, and `revert` for reversals.
 - Tests and documentation that directly support a feature or bug fix belong in the same `feat` or `fix` message.
 

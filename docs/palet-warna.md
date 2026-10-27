@@ -14,9 +14,9 @@ Kelima warna referensi tidak dipakai dengan porsi sama. Kartu, tabel, modal, sid
 | --- | --- | --- |
 | Area kerja | `--color-surface` / `#FFFFFF` | Kartu, form, modal, tabel, navigasi. |
 | Canvas | `--color-canvas` / `#F6F7F1` | Latar aplikasi dan halaman detail outlet. |
-| Aksi utama | `--color-primary` / `#03695E` | Tombol utama, tautan, fokus keyboard, checkbox. |
+| Aksi utama | `--color-primary` / `#03695E` | Tombol utama, parent menu transaksi aktif, tautan, fokus keyboard, checkbox. |
 | Hover utama | `--color-primary-hover` / `#02564D` | Tombol yang sedang ditunjuk. |
-| Pilihan aktif | `--color-primary-soft` / `#E5F2EF` | Navigasi terpilih dan pilihan item, dengan teks jade. |
+| Pilihan aktif | `--color-primary-soft` / `#E5F2EF` | Navigasi umum, child unit aktif, dan pilihan item, dengan teks jade. |
 | Herb | `#6DAA5F`, Mantis `#5DBB63`, tinta `#365E2E`, latar `#EFF5EB` | Ringkasan item aktif/teralokasi dan dekorasi login. |
 | Aqua | `#239DCA`, tinta `#126482`, latar `#E8F4F9` | Ringkasan informasi, badge layanan, dan notifikasi informasi. |
 | Mist | `#A5C6DB` | Border informasi dan aksen ilustrasi. |

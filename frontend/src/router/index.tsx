@@ -176,14 +176,14 @@ export const router = createBrowserRouter([
             ),
             children: [
               {
-                path: 'pos',
+                path: 'pos/:unitId?',
                 lazy: async () => ({
                   Component: (await import('../features/transactions/PosPage'))
                     .PosPage,
                 }),
               },
               {
-                path: 'ticketing',
+                path: 'ticketing/:unitId?',
                 lazy: async () => ({
                   Component: (await import('../features/transactions/PosPage'))
                     .TicketingPage,

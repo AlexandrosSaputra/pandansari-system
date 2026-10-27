@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useParams } from 'react-router-dom'
 import {
   Badge,
   Card,
@@ -9,7 +9,7 @@ import {
 } from '../../components/ui'
 import { FilterBar } from '../../components/ui/Filters'
 import { useFilters } from '../../hooks/useFilters'
-import { useList } from '../../lib/queries'
+import { useDetail, useList } from '../../lib/queries'
 import type {
   CatalogItem,
   OperationalUnit,
@@ -18,7 +18,6 @@ import type {
 } from '../../types/api'
 import { formatCurrency, formatNumber } from '../../utils/format'
 import { useAuth } from '../auth/useAuth'
-import { UnitSelector } from '../inventory/UnitSelector'
 import { useTopbarOverride } from '../../components/common/topbarOverride'
 import { usePosCart } from './usePosCart'
 import { CartPanel } from './CartPanel'
@@ -124,41 +123,51 @@ const workspaceCopy: Record<
 
 function TransactionPage({ type }: { type: UnitType }) {
   const auth = useAuth()
-  const [selected, setSelected] = useState<OperationalUnit>()
-  const unit = auth.isSuperadmin ? selected : auth.user?.operational_unit
+  const { unitId } = useParams()
+  const requestedUnitId = Number(unitId)
+  const hasRequestedUnit =
+    Number.isInteger(requestedUnitId) && requestedUnitId > 0
+  const selected = useDetail<OperationalUnit>(
+    `/operational-units/${hasRequestedUnit ? requestedUnitId : 0}`,
+    auth.isSuperadmin && hasRequestedUnit,
+  )
+  const unit = auth.isSuperadmin ? selected.data : auth.user?.operational_unit
   const copy = workspaceCopy[type]
   const matchesWorkspace = unit?.type === type
   useTopbarOverride({
     label: copy.title,
     description: unit ? `${unit.name} · ${unit.code}` : copy.description,
   })
+
+  if (auth.isSuperadmin && hasRequestedUnit && selected.isPending) {
+    return <Skeleton />
+  }
+
+  if (auth.isSuperadmin && selected.error) {
+    return (
+      <ErrorState
+        error={selected.error}
+        retry={() => {
+          void selected.refetch()
+        }}
+      />
+    )
+  }
+
   return (
-    <>
-      {auth.isSuperadmin && (
-        <div className="mb-5 max-w-md">
-          <UnitSelector
-            value={selected?.id}
-            name={selected?.name}
-            type={type}
-            showCode={type !== 'OUTLET'}
-            onChange={setSelected}
-          />
-        </div>
-      )}
-      {unit && matchesWorkspace ? (
-        <TransactionWorkspace key={unit.id} unit={unit} />
-      ) : (
-        <Card>
-          <EmptyState
-            message={
-              unit
-                ? `${copy.title} tidak tersedia untuk unit ${unit.name}`
-                : copy.empty
-            }
-          />
-        </Card>
-      )}
-    </>
+    unit && matchesWorkspace ? (
+      <TransactionWorkspace key={unit.id} unit={unit} />
+    ) : (
+      <Card>
+        <EmptyState
+          message={
+            unit
+              ? `${copy.title} tidak tersedia untuk unit ${unit.name}`
+              : `${copy.empty} melalui menu ${copy.title}`
+          }
+        />
+      </Card>
+    )
   )
 }
 

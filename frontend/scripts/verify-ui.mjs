@@ -193,6 +193,67 @@ try {
     assert.match(html, /href="\/pos"/)
     assert.match(html, /href="\/ticketing"/)
   })
+  check('Superadmin chooses transaction units from inline sidebar menus', () => {
+    const html = render(h(Sidebar))
+    assert.match(html, /POS, tampilkan pilihan unit/)
+    assert.match(html, /Ticketing, tampilkan pilihan unit/)
+    assert.doesNotMatch(html, /aria-haspopup="dialog"/)
+
+    queryClient.setQueryData(
+      keys.list('/operational-units', {
+        is_active: 1,
+        type: 'OUTLET',
+        page: 1,
+        per_page: 100,
+      }),
+      {
+        data: [{ ...unit, name: 'Outlet Fixture', type: 'OUTLET' }],
+        meta: {
+          current_page: 1,
+          last_page: 1,
+          per_page: 100,
+          total: 1,
+          from: 1,
+          to: 1,
+        },
+        links: { first: '', last: '', prev: null, next: null },
+      },
+    )
+
+    const selectedHtml = render(h(Sidebar), ['/pos/7'])
+    assert.match(selectedHtml, /POS, sembunyikan pilihan unit/)
+    assert.match(selectedHtml, /class="nav-item has-unit-menu active"/)
+    assert.match(selectedHtml, /aria-label="Unit POS"/)
+    assert.match(selectedHtml, /href="\/pos\/7"/)
+    assert.match(selectedHtml, /class="sidebar-unit-option active"/)
+    assert.match(selectedHtml, /Outlet Fixture/)
+    assert.match(selectedHtml, /Kasir Aktif/)
+  })
+  check('Superadmin POS no longer renders an operational unit picker', () => {
+    const html = render(h(PosPage), ['/pos'])
+    assert.match(html, /Pilih unit outlet melalui menu POS/)
+    assert.doesNotMatch(html, /Unit operasional/)
+  })
+  check('Superadmin POS restores its selected unit from the route', () => {
+    queryClient.setQueryData(keys.detail('/operational-units/7'), {
+      ...unit,
+      type: 'OUTLET',
+      is_active: true,
+    })
+    const html = render(
+      h(
+        Routes,
+        null,
+        h(Route, {
+          path: '/pos/:unitId',
+          element: h(PosPage),
+        }),
+      ),
+      ['/pos/7'],
+    )
+    assert.match(html, /Katalog Item/)
+    assert.doesNotMatch(html, /Unit operasional/)
+  })
   session('warehouse', ['transaction.create'])
   check('Warehouse cannot enter POS even with a mapped permission', () =>
     assert.match(guard('transaction.create', true), /Akses tidak diizinkan/),

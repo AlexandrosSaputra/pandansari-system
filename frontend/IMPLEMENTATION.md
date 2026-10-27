@@ -17,8 +17,8 @@ Tanggal: 8 Oktober 2026. Implementasi menggunakan backend yang tersedia, tanpa p
 | `/inventory` | `inventory.view` | Saldo gudang/unit |
 | `/inventory/movements` | `inventory.view` | Pergerakan stok |
 | `/stock-transfers` | `transfer.view` | Daftar, buat, detail, respons transfer |
-| `/pos` | `transaction.create` | POS untuk unit outlet; role Admin/Superadmin |
-| `/ticketing` | `transaction.create` | Transaksi untuk unit ticketing; role Admin/Superadmin |
+| `/pos/:unitId?` | `transaction.create` | POS untuk unit outlet; role Admin/Superadmin |
+| `/ticketing/:unitId?` | `transaction.create` | Transaksi untuk unit ticketing; role Admin/Superadmin |
 | `/transactions` | `transaction.view` | Riwayat dan detail; role Admin/Superadmin |
 
 `/` mengarah ke dashboard. Route aplikasi yang tidak dikenal menampilkan 404. Seluruh route aplikasi berada di dalam guard autentikasi.
@@ -93,7 +93,7 @@ Daftar, filter status/tujuan/pembuat/tanggal/nomor, pagination, detail, prefetch
 
 ## 16. POS dan Ticketing
 
-POS dan Ticketing memiliki menu, route, judul halaman, serta pilihan unit terpisah, tetapi tetap memakai satu engine transaksi. Admin memakai unit sendiri tanpa mengirim `operational_unit_id` yang dilarang backend dan hanya melihat ruang transaksi sesuai tipe unitnya. Superadmin melihat kedua menu; pemilih pada setiap halaman hanya memuat unit dengan tipe yang sesuai. Ticketing memakai judul katalog layanan; katalog tetap mengikuti hasil backend. Halaman POS tidak menyediakan input barcode manual; scan barcode dikirim oleh perangkat ESP32 atau klien API seperti Postman melalui endpoint scan backend. Produk dengan available nol tidak dapat ditambahkan dari katalog.
+POS dan Ticketing memiliki menu, route, judul halaman, serta konteks unit terpisah, tetapi tetap memakai satu engine transaksi. Admin memakai unit sendiri tanpa mengirim `operational_unit_id` yang dilarang backend dan hanya melihat ruang transaksi sesuai tipe unitnya. Superadmin melihat kedua menu; klik pada menu POS atau Ticketing membuka submenu unit langsung di dalam sidebar. Parent transaksi aktif memakai latar jade solid dengan teks putih agar berbeda dari child unit aktif yang memakai highlight mint, titik hijau, dan label `Kasir Aktif` atau `Loket Aktif`; unit lain menjadi tautan langsung. ID unit disimpan sebagai segmen route agar konteks bertahan saat refresh atau tautan dibuka langsung. Halaman transaksi tidak lagi menampilkan pemilih unit. Ticketing memakai judul katalog layanan; katalog tetap mengikuti hasil backend. Halaman POS tidak menyediakan input barcode manual; scan barcode dikirim oleh perangkat ESP32 atau klien API seperti Postman melalui endpoint scan backend. Produk dengan available nol tidak dapat ditambahkan dari katalog.
 
 ## 17. Keranjang
 
@@ -135,6 +135,7 @@ Path relatif terhadap root project:
 frontend/IMPLEMENTATION.md
 frontend/scripts/verify-ui.mjs
 frontend/src/components/common/navigation.ts
+frontend/src/components/common/TransactionUnitMenu.tsx
 frontend/src/components/ui/DataTable.tsx
 frontend/src/components/ui/Dialog.tsx
 frontend/src/components/ui/EntityFilter.tsx
@@ -206,7 +207,7 @@ Selain file tracked, `frontend/.env` lokal diperbaiki dari akhiran `/apie` menja
 ## 27. Lint dan test
 
 - `npm run lint`: lulus, tanpa error/peringatan.
-- `npm test`: 31 pemeriksaan lulus menggunakan Node assert, Vite SSR, dan dependency yang sudah tersedia.
+- `npm test`: 53 pemeriksaan lulus menggunakan Node assert, Vite SSR, dan dependency yang sudah tersedia.
 - Cakupan: guard/sidebar, batasan role Gudang, error sensitif, form, dashboard, harga historis, payload keranjang, konflik checkout, larangan mutasi PAID, urutan login, observer auth pada login/logout/401, pembersihan cache privat.
 - Fixture dan adapter API hanya ada dalam test; test tidak mengakses/mengubah data backend.
 - `git diff --check`: lulus; Git hanya memberi informasi konversi line ending Windows.
