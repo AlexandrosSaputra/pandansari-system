@@ -10,13 +10,36 @@ from typing import Any, Iterable
 
 import numpy as np
 from sklearn.compose import ColumnTransformer
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import ExtraTreesRegressor, GradientBoostingRegressor, RandomForestRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 
 HOLDOUT_WEEKS = 52
 MINIMUM_HISTORY_WEEKS = 156
 BASELINE_MODELS = ("lag_1", "moving_average_4", "seasonal_52")
+TREE_CANDIDATES = ("random_forest", "extra_trees", "gradient_boosting")
+TREE_PARAMETERS: dict[str, dict[str, Any]] = {
+    "random_forest": {
+        "n_estimators": 300,
+        "min_samples_leaf": 3,
+        "max_features": 0.8,
+        "random_state": 42,
+    },
+    "extra_trees": {
+        "n_estimators": 300,
+        "min_samples_leaf": 3,
+        "max_features": 0.8,
+        "random_state": 42,
+    },
+    "gradient_boosting": {
+        "n_estimators": 200,
+        "learning_rate": 0.03,
+        "max_depth": 3,
+        "min_samples_leaf": 3,
+        "loss": "huber",
+        "random_state": 42,
+    },
+}
 FEATURE_NAMES = (
     "outlet",
     "sku",
@@ -129,18 +152,20 @@ def build_rows(
     return features, targets, identities
 
 
-def tree_pipeline() -> Pipeline:
+def tree_pipeline(candidate: str) -> Pipeline:
     preprocessing = ColumnTransformer(
-        [("categorical", OneHotEncoder(handle_unknown="ignore"), [0, 1])],
+        [("categorical", OneHotEncoder(handle_unknown="ignore", sparse_output=False), [0, 1])],
         remainder="passthrough",
     )
-    model = RandomForestRegressor(
-        n_estimators=300,
-        min_samples_leaf=3,
-        max_features=0.8,
-        random_state=42,
-        n_jobs=1,
-    )
+    parameters = TREE_PARAMETERS.get(candidate)
+    if parameters is None:
+        raise ValueError(f"Unsupported tree candidate: {candidate}")
+    if candidate == "random_forest":
+        model = RandomForestRegressor(**parameters, n_jobs=1)
+    elif candidate == "extra_trees":
+        model = ExtraTreesRegressor(**parameters, n_jobs=1)
+    else:
+        model = GradientBoostingRegressor(**parameters)
     return Pipeline([("features", preprocessing), ("model", model)])
 
 
@@ -202,18 +227,19 @@ def promotion_decision(
     baseline: ModelMetrics,
     tree: ModelMetrics,
     minimum_relative_wape_improvement: float,
+    candidate: str = "random_forest",
 ) -> dict[str, Any]:
     relative_improvement = 100 * (baseline.wape - tree.wape) / max(baseline.wape, 1e-9)
     passed = relative_improvement >= minimum_relative_wape_improvement and tree.mae <= baseline.mae
     return {
         "passed": passed,
-        "candidate": "random_forest",
+        "candidate": candidate,
         "relative_wape_improvement_percent": round(relative_improvement, 4),
         "minimum_required_improvement_percent": minimum_relative_wape_improvement,
         "reason": (
-            "Random Forest passed the WAPE improvement gate without worsening MAE."
+            f"{candidate} passed the WAPE improvement gate without worsening MAE."
             if passed
-            else "Random Forest did not pass both the WAPE improvement and MAE gates."
+            else f"{candidate} did not pass both the WAPE improvement and MAE gates."
         ),
     }
 
@@ -258,9 +284,24 @@ def evaluate_dataset(path: Path, minimum_relative_wape_improvement: float = 2.0)
         validation_start,
         test_start,
     )
-    candidate_model = tree_pipeline()
-    candidate_model.fit(candidate_training_features, candidate_training_targets)
-    tree_validation = metrics(validation_targets, candidate_model.predict(validation_features))
+    candidate_validation: dict[str, ModelMetrics] = {}
+    for candidate in TREE_CANDIDATES:
+        candidate_model = tree_pipeline(candidate)
+        candidate_model.fit(candidate_training_features, candidate_training_targets)
+        candidate_validation[candidate] = metrics(
+            validation_targets,
+            candidate_model.predict(validation_features),
+        )
+    selected_candidate = min(
+        TREE_CANDIDATES,
+        key=lambda name: (
+            candidate_validation[name].mae,
+            candidate_validation[name].rmse,
+            candidate_validation[name].wape,
+            name,
+        ),
+    )
+    tree_validation = candidate_validation[selected_candidate]
     baseline_validation_actual, baseline_validation_predictions = selected_baseline_predictions(
         series_by_key,
         selected_baselines,
@@ -272,30 +313,11 @@ def evaluate_dataset(path: Path, minimum_relative_wape_improvement: float = 2.0)
         baseline_validation,
         tree_validation,
         minimum_relative_wape_improvement,
+        selected_candidate,
     )
-
-    training_features, training_targets, _ = build_rows(series_by_key, 52, test_start)
-    test_features, test_targets, _ = build_rows(series_by_key, test_start, weeks)
-    model = tree_pipeline()
-    model.fit(training_features, training_targets)
-    tree_predictions = model.predict(test_features)
-
-    baseline_test_actual, baseline_predictions = selected_baseline_predictions(
-        series_by_key,
-        selected_baselines,
-        test_start,
-        weeks,
-    )
-
-    if baseline_test_actual != test_targets:
-        raise ValueError("Tree and baseline test observations are not aligned.")
-    baseline_test = metrics(baseline_test_actual, baseline_predictions)
-    tree_test = metrics(test_targets, tree_predictions)
-    test_relative_improvement = 100 * (baseline_test.wape - tree_test.wape) / max(baseline_test.wape, 1e-9)
     first_series = next(iter(series_by_key.values()))
-
-    return {
-        "experiment": "random_forest_vs_time_series_baseline_v1",
+    report: dict[str, Any] = {
+        "experiment": "tree_candidates_vs_time_series_baseline_v2",
         "source_file": path.name,
         "dataset": {
             "rows": sum(len(series) for series in series_by_key.values()),
@@ -312,15 +334,14 @@ def evaluate_dataset(path: Path, minimum_relative_wape_improvement: float = 2.0)
             "test_used_for_selection": False,
         },
         "features": list(FEATURE_NAMES),
-        "random_forest": {
-            "parameters": {
-                "n_estimators": 300,
-                "min_samples_leaf": 3,
-                "max_features": 0.8,
-                "random_state": 42,
+        "tree_candidates": {
+            "selection_metric": "lowest validation MAE, then RMSE, then WAPE",
+            "parameters": TREE_PARAMETERS,
+            "validation_metrics": {
+                candidate: candidate_validation[candidate].as_dict()
+                for candidate in TREE_CANDIDATES
             },
-            "validation_metrics": tree_validation.as_dict(),
-            "test_metrics": tree_test.as_dict(),
+            "selected": selected_candidate,
         },
         "baseline": {
             "validation_candidate_metrics": validation_metrics,
@@ -331,13 +352,41 @@ def evaluate_dataset(path: Path, minimum_relative_wape_improvement: float = 2.0)
                     for model_name in BASELINE_MODELS
                 )
             ),
-            "test_metrics": baseline_test.as_dict(),
         },
         "promotion_gate": {**promotion_gate, "evaluation_split": "validation"},
         "test_confirmation": {
-            "tree_wape_better": tree_test.wape < baseline_test.wape,
-            "tree_mae_not_worse": tree_test.mae <= baseline_test.mae,
-            "relative_wape_improvement_percent": round(test_relative_improvement, 4),
+            "evaluated": False,
+            "reason": "Test set is withheld because the selected candidate did not pass validation gate.",
             "used_for_model_or_hyperparameter_selection": False,
         },
     }
+
+    if not promotion_gate["passed"]:
+        return report
+
+    training_features, training_targets, _ = build_rows(series_by_key, 52, test_start)
+    test_features, test_targets, _ = build_rows(series_by_key, test_start, weeks)
+    model = tree_pipeline(selected_candidate)
+    model.fit(training_features, training_targets)
+    tree_predictions = model.predict(test_features)
+    baseline_test_actual, baseline_predictions = selected_baseline_predictions(
+        series_by_key,
+        selected_baselines,
+        test_start,
+        weeks,
+    )
+    if baseline_test_actual != test_targets:
+        raise ValueError("Tree and baseline test observations are not aligned.")
+    baseline_test = metrics(baseline_test_actual, baseline_predictions)
+    tree_test = metrics(test_targets, tree_predictions)
+    test_relative_improvement = 100 * (baseline_test.wape - tree_test.wape) / max(baseline_test.wape, 1e-9)
+    report["tree_candidates"]["test_metrics"] = tree_test.as_dict()
+    report["baseline"]["test_metrics"] = baseline_test.as_dict()
+    report["test_confirmation"] = {
+        "evaluated": True,
+        "tree_wape_better": tree_test.wape < baseline_test.wape,
+        "tree_mae_not_worse": tree_test.mae <= baseline_test.mae,
+        "relative_wape_improvement_percent": round(test_relative_improvement, 4),
+        "used_for_model_or_hyperparameter_selection": False,
+    }
+    return report

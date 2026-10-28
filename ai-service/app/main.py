@@ -19,8 +19,13 @@ def health() -> dict[str, str]:
     return {"status": "ok", "service": "pandansari-ai"}
 
 
-@app.post("/experiments/random-forest/evaluate")
-def evaluate_random_forest() -> dict[str, Any]:
+@app.post("/experiments/tree-candidates/evaluate")
+def evaluate_tree_candidates() -> dict[str, Any]:
     dataset = Path(os.getenv("HISTORICAL_SALES_PATH", DEFAULT_DATASET)).resolve()
     threshold = float(os.getenv("MINIMUM_WAPE_IMPROVEMENT", "2.0"))
     return evaluate_dataset(dataset, threshold)
+
+
+@app.post("/experiments/random-forest/evaluate", deprecated=True)
+def evaluate_random_forest() -> dict[str, Any]:
+    return evaluate_tree_candidates()

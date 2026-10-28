@@ -25,7 +25,7 @@ def write_dataset(path: Path) -> None:
                 )
 
 
-def test_evaluation_preserves_the_final_test_set_for_reporting_only(tmp_path: Path) -> None:
+def test_evaluation_selects_candidates_on_validation_and_withholds_failed_test(tmp_path: Path) -> None:
     dataset = tmp_path / "sales.csv"
     write_dataset(dataset)
 
@@ -35,9 +35,17 @@ def test_evaluation_preserves_the_final_test_set_for_reporting_only(tmp_path: Pa
     assert report["split"]["validation"] == {"start_index": 104, "end_index": 155}
     assert report["split"]["test"] == {"start_index": 156, "end_index": 207}
     assert report["split"]["test_used_for_selection"] is False
-    assert report["random_forest"]["parameters"]["random_state"] == 42
-    assert report["baseline"]["test_metrics"]["observations"] == 104
+    assert set(report["tree_candidates"]["validation_metrics"]) == {
+        "random_forest",
+        "extra_trees",
+        "gradient_boosting",
+    }
+    assert report["tree_candidates"]["selected"] in report["tree_candidates"]["validation_metrics"]
+    assert report["promotion_gate"]["passed"] is False
     assert report["promotion_gate"]["evaluation_split"] == "validation"
+    assert report["test_confirmation"]["evaluated"] is False
+    assert "test_metrics" not in report["tree_candidates"]
+    assert "test_metrics" not in report["baseline"]
     assert report["test_confirmation"]["used_for_model_or_hyperparameter_selection"] is False
 
 
@@ -46,8 +54,8 @@ def test_promotion_gate_requires_both_wape_improvement_and_non_worse_mae() -> No
     passing_tree = ModelMetrics(mae=9, rmse=11, wape=18, observations=52)
     worse_mae_tree = ModelMetrics(mae=11, rmse=11, wape=18, observations=52)
 
-    assert promotion_decision(baseline, passing_tree, 2)["passed"] is True
-    assert promotion_decision(baseline, worse_mae_tree, 2)["passed"] is False
+    assert promotion_decision(baseline, passing_tree, 2, "extra_trees")["passed"] is True
+    assert promotion_decision(baseline, worse_mae_tree, 2, "extra_trees")["passed"] is False
 
 
 def test_health_response_identifies_the_service() -> None:

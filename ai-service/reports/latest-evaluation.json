@@ -1,5 +1,5 @@
 {
-  "experiment": "random_forest_vs_time_series_baseline_v1",
+  "experiment": "tree_candidates_vs_time_series_baseline_v2",
   "source_file": "historical-sales.csv",
   "dataset": {
     "rows": 6032,
@@ -38,23 +38,55 @@
     "week_cos",
     "trend_index"
   ],
-  "random_forest": {
+  "tree_candidates": {
+    "selection_metric": "lowest validation MAE, then RMSE, then WAPE",
     "parameters": {
-      "n_estimators": 300,
-      "min_samples_leaf": 3,
-      "max_features": 0.8,
-      "random_state": 42
+      "random_forest": {
+        "n_estimators": 300,
+        "min_samples_leaf": 3,
+        "max_features": 0.8,
+        "random_state": 42
+      },
+      "extra_trees": {
+        "n_estimators": 300,
+        "min_samples_leaf": 3,
+        "max_features": 0.8,
+        "random_state": 42
+      },
+      "gradient_boosting": {
+        "n_estimators": 200,
+        "learning_rate": 0.03,
+        "max_depth": 3,
+        "min_samples_leaf": 3,
+        "loss": "huber",
+        "random_state": 42
+      }
     },
     "validation_metrics": {
-      "mae": 4.8905,
-      "rmse": 8.7548,
-      "wape": 23.4853,
-      "observations": 1508
+      "random_forest": {
+        "mae": 4.8905,
+        "rmse": 8.7548,
+        "wape": 23.4853,
+        "observations": 1508
+      },
+      "extra_trees": {
+        "mae": 4.3733,
+        "rmse": 8.0166,
+        "wape": 21.0014,
+        "observations": 1508
+      },
+      "gradient_boosting": {
+        "mae": 4.9853,
+        "rmse": 9.0758,
+        "wape": 23.9406,
+        "observations": 1508
+      }
     },
+    "selected": "extra_trees",
     "test_metrics": {
-      "mae": 4.8787,
-      "rmse": 8.8004,
-      "wape": 21.0213,
+      "mae": 4.1207,
+      "rmse": 8.3719,
+      "wape": 17.7555,
       "observations": 1508
     }
   },
@@ -98,17 +130,18 @@
     }
   },
   "promotion_gate": {
-    "passed": false,
-    "candidate": "random_forest",
-    "relative_wape_improvement_percent": -2.3431,
+    "passed": true,
+    "candidate": "extra_trees",
+    "relative_wape_improvement_percent": 8.4809,
     "minimum_required_improvement_percent": 2.0,
-    "reason": "Random Forest did not pass both the WAPE improvement and MAE gates.",
+    "reason": "extra_trees passed the WAPE improvement gate without worsening MAE.",
     "evaluation_split": "validation"
   },
   "test_confirmation": {
+    "evaluated": true,
     "tree_wape_better": true,
     "tree_mae_not_worse": true,
-    "relative_wape_improvement_percent": 11.6695,
+    "relative_wape_improvement_percent": 25.3922,
     "used_for_model_or_hyperparameter_selection": false
   }
 }

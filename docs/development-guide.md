@@ -72,7 +72,7 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m app.cli --dataset ..\backend\database\data\historical-sales.csv --output reports\latest-evaluation.json
 ```
 
-API eksperimen dapat dijalankan dengan `.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload`. Endpoint `POST /experiments/random-forest/evaluate` memakai dataset canonical dan mengembalikan metrik serta keputusan promotion gate. Layanan ini belum dipanggil oleh Laravel untuk prediksi produksi.
+API eksperimen dapat dijalankan dengan `.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload`. Endpoint `POST /experiments/tree-candidates/evaluate` memakai dataset canonical, membandingkan tiga kandidat pada validation set, dan mengembalikan metrik serta keputusan promotion gate. Endpoint lama `POST /experiments/random-forest/evaluate` tetap tersedia sebagai alias deprecated. Test set hanya dihitung bila kandidat terpilih lulus gate; layanan ini belum dipanggil oleh Laravel untuk prediksi produksi.
 
 Untuk fitur lupa password, isi alamat penerima OTP khusus di `backend/.env` dan konfigurasi SMTP sesuai penyedia email yang digunakan:
 
