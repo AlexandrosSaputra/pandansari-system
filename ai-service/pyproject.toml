@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pandansari-ai-service"
+version = "0.1.0"
+description = "Time-ordered forecasting experiments for Pandansari"
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "fastapi==0.162.0",
+    "numpy==2.2.6",
+    "scikit-learn==1.7.2",
+    "uvicorn==0.54.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest==9.1.1"]
+
+[project.scripts]
+pandansari-evaluate = "app.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

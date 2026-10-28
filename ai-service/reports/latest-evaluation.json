@@ -1,0 +1,114 @@
+{
+  "experiment": "random_forest_vs_time_series_baseline_v1",
+  "source_file": "historical-sales.csv",
+  "dataset": {
+    "rows": 6032,
+    "series": 29,
+    "weeks_per_series": 208,
+    "history_start": "2022-09-05",
+    "history_through": "2026-08-30"
+  },
+  "split": {
+    "train": {
+      "start_index": 0,
+      "end_index": 103
+    },
+    "validation": {
+      "start_index": 104,
+      "end_index": 155
+    },
+    "test": {
+      "start_index": 156,
+      "end_index": 207
+    },
+    "holdout_weeks": 52,
+    "test_used_for_selection": false
+  },
+  "features": [
+    "outlet",
+    "sku",
+    "lag_1",
+    "lag_2",
+    "lag_4",
+    "rolling_4",
+    "rolling_13",
+    "rolling_52",
+    "lag_52",
+    "week_sin",
+    "week_cos",
+    "trend_index"
+  ],
+  "random_forest": {
+    "parameters": {
+      "n_estimators": 300,
+      "min_samples_leaf": 3,
+      "max_features": 0.8,
+      "random_state": 42
+    },
+    "validation_metrics": {
+      "mae": 4.8905,
+      "rmse": 8.7548,
+      "wape": 23.4853,
+      "observations": 1508
+    },
+    "test_metrics": {
+      "mae": 4.8787,
+      "rmse": 8.8004,
+      "wape": 21.0213,
+      "observations": 1508
+    }
+  },
+  "baseline": {
+    "validation_candidate_metrics": {
+      "lag_1": {
+        "mae": 5.2056,
+        "rmse": 10.8925,
+        "wape": 24.9984,
+        "observations": 1508
+      },
+      "moving_average_4": {
+        "mae": 7.2344,
+        "rmse": 11.9789,
+        "wape": 34.7414,
+        "observations": 1508
+      },
+      "seasonal_52": {
+        "mae": 4.7924,
+        "rmse": 10.8371,
+        "wape": 23.0145,
+        "observations": 1508
+      }
+    },
+    "validation_selected_metrics": {
+      "mae": 4.7785,
+      "rmse": 10.7789,
+      "wape": 22.9476,
+      "observations": 1508
+    },
+    "selected_model_counts": {
+      "lag_1": 3,
+      "moving_average_4": 0,
+      "seasonal_52": 26
+    },
+    "test_metrics": {
+      "mae": 5.5232,
+      "rmse": 12.4404,
+      "wape": 23.7985,
+      "observations": 1508
+    }
+  },
+  "promotion_gate": {
+    "passed": false,
+    "candidate": "random_forest",
+    "relative_wape_improvement_percent": -2.3431,
+    "minimum_required_improvement_percent": 2.0,
+    "reason": "Random Forest did not pass both the WAPE improvement and MAE gates.",
+    "evaluation_split": "validation"
+  },
+  "test_confirmation": {
+    "tree_wape_better": true,
+    "tree_mae_not_worse": true,
+    "relative_wape_improvement_percent": 11.6695,
+    "used_for_model_or_hyperparameter_selection": false
+  }
+}

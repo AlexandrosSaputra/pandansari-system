@@ -62,6 +62,18 @@ Atur `Safety stock`, `Lead time pemasok`, dan `Ukuran kemasan pemesanan` pada fo
 
 Metode safety stock default adalah `MANUAL`, sehingga data lama tetap memakai stok minimum. Mode `CALCULATED` menghitung cadangan dengan `z-score × RMSE × √periode perlindungan`, memakai target service level 90%, 95%, 97,5%, atau 99%. Periode perlindungan mengikuti lead time dalam minggu dan tidak pernah kurang dari satu minggu. Nilai stok minimum tetap dipakai sebagai ambang indikator stok meskipun mode forecast terhitung aktif.
 
+Eksperimen model pohon berada di `ai-service/` dan membutuhkan Python 3.10. Siapkan environment lalu jalankan test dan evaluasi:
+
+```powershell
+cd ai-service
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
+.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe -m app.cli --dataset ..\backend\database\data\historical-sales.csv --output reports\latest-evaluation.json
+```
+
+API eksperimen dapat dijalankan dengan `.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload`. Endpoint `POST /experiments/random-forest/evaluate` memakai dataset canonical dan mengembalikan metrik serta keputusan promotion gate. Layanan ini belum dipanggil oleh Laravel untuk prediksi produksi.
+
 Untuk fitur lupa password, isi alamat penerima OTP khusus di `backend/.env` dan konfigurasi SMTP sesuai penyedia email yang digunakan:
 
 ```dotenv

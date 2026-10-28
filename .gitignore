@@ -13,6 +13,10 @@
 /backend/storage/logs/*.log
 
 # Local tooling
+/ai-service/.venv/
+/ai-service/.pytest_cache/
+/ai-service/**/__pycache__/
+/ai-service/*.egg-info/
 .DS_Store
 Thumbs.db
 /.idea/

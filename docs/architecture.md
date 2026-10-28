@@ -71,7 +71,7 @@ Laravel scan API ---- event real-time ---- POS aktif
                                   Dashboard Super Admin
 ```
 
-Komponen ESP32 penuh dan layanan forecasting Python belum tersedia. MVP forecasting saat ini berjalan di Laravel dengan tabel `historical_sales`, `forecast_runs`, dan `forecast_results`. Baseline dipilih per SKU melalui backtest berurutan waktu; hasil hanya menjadi rekomendasi dan tidak memindahkan aturan harga, stok, atau transaksi dari Laravel. OpenAI atau Ollama hanya menghasilkan penjelasan terstruktur atas angka yang sudah dihitung sistem.
+Komponen ESP32 penuh belum tersedia. Forecasting operasional saat ini tetap berjalan di Laravel dengan tabel `historical_sales`, `forecast_runs`, dan `forecast_results`; kandidat deret waktu dipilih per SKU melalui backtest berurutan waktu. `ai-service/` kini menyediakan eksperimen FastAPI/scikit-learn terpisah untuk membandingkan Random Forest terhadap baseline menggunakan split train–validation–test dan promotion gate. Hasil eksperimen belum menjadi sumber angka produksi, sehingga aturan harga, stok, transaksi, dan rekomendasi aktif tetap berada di Laravel. OpenAI atau Ollama hanya menghasilkan penjelasan terstruktur atas angka yang sudah dihitung sistem.
 
 ## Keputusan desain yang masih diperlukan
 
