@@ -15,6 +15,8 @@ use Illuminate\Validation\ValidationException;
 
 class ForecastService
 {
+    public function __construct(private WeeklyForecastModelSelector $modelSelector) {}
+
     /**
      * @param  array{operational_unit_id: int, horizon: string, target_date?: string|null}  $attributes
      */
@@ -72,7 +74,13 @@ class ForecastService
             'squared_error' => 0.0,
             'actual' => 0.0,
             'observations' => 0,
-            'model_counts' => ['lag_1' => 0, 'seasonal_52' => 0],
+            'model_counts' => array_fill_keys(WeeklyForecastModelSelector::MODELS, 0),
+            'candidate_metrics' => array_fill_keys(WeeklyForecastModelSelector::MODELS, [
+                'absolute_error' => 0.0,
+                'squared_error' => 0.0,
+                'actual' => 0.0,
+                'observations' => 0,
+            ]),
         ];
 
         foreach ($salesByItem as $itemId => $sales) {
@@ -82,7 +90,17 @@ class ForecastService
                 continue;
             }
 
-            $evaluation = $this->evaluateModels($sales);
+            if ($sales->count() < 8) {
+                throw ValidationException::withMessages([
+                    'operational_unit_id' => 'Setiap produk membutuhkan sedikitnya delapan minggu data historis.',
+                ]);
+            }
+
+            $values = $sales->pluck('units_sold')
+                ->map(fn (mixed $value): float => (float) $value)
+                ->values()
+                ->all();
+            $evaluation = $this->modelSelector->evaluate($values);
             $predictedUnits = $this->forecastDemand(
                 $sales,
                 $evaluation['model'],
@@ -122,6 +140,13 @@ class ForecastService
             $aggregate['actual'] += $evaluation['actual'];
             $aggregate['observations'] += $evaluation['observations'];
             $aggregate['model_counts'][$evaluation['model']]++;
+
+            foreach ($evaluation['candidates'] as $model => $candidate) {
+                $aggregate['candidate_metrics'][$model]['absolute_error'] += $candidate['absolute_error'];
+                $aggregate['candidate_metrics'][$model]['squared_error'] += $candidate['squared_error'];
+                $aggregate['candidate_metrics'][$model]['actual'] += $candidate['actual'];
+                $aggregate['candidate_metrics'][$model]['observations'] += $candidate['observations'];
+            }
         }
 
         if ($resultRows === []) {
@@ -130,12 +155,21 @@ class ForecastService
             ]);
         }
 
+        $candidateMetrics = collect($aggregate['candidate_metrics'])
+            ->filter(fn (array $candidate): bool => $candidate['observations'] > 0)
+            ->map(fn (array $candidate): array => [
+                'mae' => round($candidate['absolute_error'] / $candidate['observations'], 4),
+                'rmse' => round(sqrt($candidate['squared_error'] / $candidate['observations']), 4),
+                'wape' => round(100 * $candidate['absolute_error'] / max(1, $candidate['actual']), 4),
+                'observations' => $candidate['observations'],
+            ])->all();
         $metrics = [
             'mae' => round($aggregate['absolute_error'] / max(1, $aggregate['observations']), 4),
             'rmse' => round(sqrt($aggregate['squared_error'] / max(1, $aggregate['observations'])), 4),
             'wape' => round(100 * $aggregate['absolute_error'] / max(1, $aggregate['actual']), 4),
             'evaluation_weeks' => 52,
             'model_counts' => $aggregate['model_counts'],
+            'candidate_metrics' => $candidateMetrics,
         ];
         $forecastWeeks = (int) $forecastStart->startOfWeek(CarbonImmutable::MONDAY)
             ->diffInWeeks($forecastEnd->startOfWeek(CarbonImmutable::MONDAY)) + 1;
@@ -160,7 +194,7 @@ class ForecastService
                 'forecast_end' => $forecastEnd,
                 'history_through' => $historyThrough,
                 'forecast_weeks' => $forecastWeeks,
-                'method' => 'per_sku_baseline_selection',
+                'method' => 'per_sku_time_series_selection_v2',
                 'metrics' => $metrics,
                 'explanation_provider' => config('forecast.explanation.provider', 'none'),
                 'explanation_status' => 'pending',
@@ -196,63 +230,6 @@ class ForecastService
         };
     }
 
-    /**
-     * @param  Collection<int, HistoricalSale>  $sales
-     * @return array{model: string, mae: float, rmse: float, wape: float, absolute_error: float, squared_error: float, actual: float, observations: int}
-     */
-    private function evaluateModels(Collection $sales): array
-    {
-        $values = $sales->pluck('units_sold')->map(fn (mixed $value): float => (float) $value)->values()->all();
-        $count = count($values);
-
-        if ($count < 8) {
-            throw ValidationException::withMessages([
-                'operational_unit_id' => 'Setiap produk membutuhkan sedikitnya delapan minggu data historis.',
-            ]);
-        }
-
-        $start = max(1, $count - 52);
-        $models = ['lag_1'];
-
-        if ($count >= 104) {
-            $models[] = 'seasonal_52';
-            $start = max(52, $count - 52);
-        }
-
-        $evaluations = [];
-
-        foreach ($models as $model) {
-            $absoluteError = 0.0;
-            $squaredError = 0.0;
-            $actualTotal = 0.0;
-            $observations = 0;
-
-            for ($index = $start; $index < $count; $index++) {
-                $prediction = $model === 'seasonal_52'
-                    ? $values[$index - 52]
-                    : $values[$index - 1];
-                $error = $values[$index] - $prediction;
-                $absoluteError += abs($error);
-                $squaredError += $error ** 2;
-                $actualTotal += $values[$index];
-                $observations++;
-            }
-
-            $evaluations[$model] = [
-                'model' => $model,
-                'mae' => round($absoluteError / max(1, $observations), 4),
-                'rmse' => round(sqrt($squaredError / max(1, $observations)), 4),
-                'wape' => round(100 * $absoluteError / max(1, $actualTotal), 4),
-                'absolute_error' => $absoluteError,
-                'squared_error' => $squaredError,
-                'actual' => $actualTotal,
-                'observations' => $observations,
-            ];
-        }
-
-        return collect($evaluations)->sortBy(['mae', 'rmse'])->first();
-    }
-
     /** @param Collection<int, HistoricalSale> $sales */
     private function forecastDemand(
         Collection $sales,
@@ -260,29 +237,22 @@ class ForecastService
         CarbonImmutable $forecastStart,
         CarbonImmutable $forecastEnd,
     ): int {
-        $actual = $sales->mapWithKeys(fn (HistoricalSale $sale): array => [
-            $sale->week_start->toDateString() => (float) $sale->units_sold,
-        ])->all();
+        $history = $sales->pluck('units_sold')
+            ->map(fn (mixed $value): float => (float) $value)
+            ->values()
+            ->all();
         $lastSale = $sales->last();
         $lastHistoricalWeek = $lastSale->week_start->toImmutable();
         $firstForecastWeek = $forecastStart->startOfWeek(CarbonImmutable::MONDAY);
         $lastForecastWeek = $forecastEnd->startOfWeek(CarbonImmutable::MONDAY);
+        $steps = (int) $lastHistoricalWeek->diffInWeeks($lastForecastWeek);
+        $projected = $this->modelSelector->project($history, $steps, $model);
         $predictions = [];
+        $offset = 0;
 
         for ($week = $lastHistoricalWeek->addWeek(); $week->lessThanOrEqualTo($lastForecastWeek); $week = $week->addWeek()) {
-            $key = $week->toDateString();
-
-            if ($model === 'seasonal_52') {
-                $seasonalKey = $week->subWeeks(52)->toDateString();
-                $predictions[$key] = $actual[$seasonalKey]
-                    ?? $predictions[$seasonalKey]
-                    ?? (float) $lastSale->units_sold;
-            } else {
-                $previousKey = $week->subWeek()->toDateString();
-                $predictions[$key] = $actual[$previousKey]
-                    ?? $predictions[$previousKey]
-                    ?? (float) $lastSale->units_sold;
-            }
+            $predictions[$week->toDateString()] = $projected[$offset];
+            $offset++;
         }
 
         $total = 0.0;

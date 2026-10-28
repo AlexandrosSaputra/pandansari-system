@@ -17,9 +17,9 @@ Pada pemeriksaan otomatis 27 Oktober 2026:
 - Endpoint scan eksternal memiliki pemeriksaan feature untuk Bearer token ber-ability `transaction:scan`, pencocokan barcode pada katalog unit, kepemilikan keranjang, status scanner unit, validasi input, dan jaminan bahwa scan belum membuat mutasi stok.
 - UAT browser resmi belum dicatat pada dokumen ini dan akan dilakukan langsung oleh pengguna.
 
-Tidak ada klaim UAT dari pemeriksaan otomatis. Firmware/perangkat ESP32, pairing perangkat, idempotensi retry, WebSocket, stock opname, dan model forecasting lanjutan tetap berada di luar milestone ini. MVP baseline forecasting sudah tersedia.
+Tidak ada klaim UAT dari pemeriksaan otomatis. Firmware/perangkat ESP32, pairing perangkat, idempotensi retry, WebSocket, stock opname, dan model pohon forecasting tetap berada di luar milestone ini. Seleksi kandidat deret waktu deterministik sudah tersedia.
 
-Verifikasi terfokus forecasting dan kebijakan restock pada MySQL testing lulus 22 test dengan 476 assertion. Cakupannya meliputi importer dataset 6.032 baris yang idempoten, skema dan foreign key baru, konfigurasi safety stock/lead time/ukuran kemasan per produk–outlet, pembulatan rekomendasi, tenggat pemesanan, akses khusus Superadmin, validasi tanggal target, pemilihan baseline per SKU, klasifikasi kesegaran data dan jeda observasi, adapter structured output OpenAI/Ollama, pencatatan audit, serta bukti bahwa pembuatan forecast tidak mengubah saldo atau mutasi stok. Build dan lint frontend berhasil.
+Verifikasi terfokus forecasting dan kebijakan restock pada MySQL testing lulus 25 test dengan 484 assertion. Cakupannya meliputi importer dataset 6.032 baris yang idempoten, skema dan foreign key baru, konfigurasi safety stock/lead time/ukuran kemasan per produk–outlet, pembulatan rekomendasi, tenggat pemesanan, akses khusus Superadmin, validasi tanggal target, evaluasi empat kandidat deret waktu per SKU pada holdout yang sama, proyeksi rekursif, klasifikasi kesegaran data dan jeda observasi, adapter structured output OpenAI/Ollama, pencatatan audit, serta bukti bahwa pembuatan forecast tidak mengubah saldo atau mutasi stok. Build dan lint frontend berhasil.
 
 Suite backend penuh terbaru menjalankan 153 test: 144 lulus dan 9 gagal. Kegagalan berada pada test lama di luar modul forecasting: satu assertion mengasumsikan nomor auto-increment item tertentu, sedangkan test keranjang/checkout/scan menambahkan produk tanpa saldo yang cukup lalu mengharapkan HTTP 200 walaupun aturan backend saat ini menolak stok tidak cukup dengan HTTP 409. Aturan stok tidak dilonggarkan untuk membuat test tersebut lulus; fixture dan assertion test lama perlu diselaraskan secara terpisah.
 
@@ -70,4 +70,4 @@ Keputusan bisnis yang tetap terbuka adalah metode pembayaran serta aturan moveme
 - Model baseline dan kandidat dievaluasi pada horizon yang sama.
 - WAPE, MAE, dan RMSE dihitung dengan definisi yang konsisten serta level agregasi yang jelas.
 - Data yang digunakan merupakan histori penjualan riil yang sudah dirapikan untuk capstone; keterbatasan agregasi mingguan, harga konstan, dan tidak adanya observasi penjualan nol tetap harus dijelaskan.
-- Pengujian berikutnya membandingkan baseline terpilih dengan model pohon pada validation/test set yang sama dan menambahkan lead time serta service level ke rekomendasi.
+- Pengujian berikutnya membandingkan kandidat deret waktu terpilih dengan model pohon pada validation/test set yang sama dan menambahkan service level terkalibrasi ke rekomendasi.

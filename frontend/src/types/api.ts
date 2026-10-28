@@ -218,7 +218,11 @@ export interface ForecastExplanation {
 export interface ForecastResult {
   id: number
   item: Pick<ItemSummary, 'id' | 'item_code' | 'name' | 'uom'>
-  model: 'lag_1' | 'seasonal_52'
+  model:
+    | 'lag_1'
+    | 'moving_average_4'
+    | 'seasonal_52'
+    | 'seasonal_average_3'
   history_weeks: number
   predicted_units: number
   available_quantity: number
@@ -252,6 +256,10 @@ export interface ForecastRun {
     wape: number
     evaluation_weeks: number
     model_counts: Record<string, number>
+    candidate_metrics?: Record<
+      string,
+      { mae: number; rmse: number; wape: number; observations: number }
+    >
   }
   explanation_provider: 'none' | 'openai' | 'ollama'
   explanation_status: 'disabled' | 'pending' | 'generated' | 'fallback'

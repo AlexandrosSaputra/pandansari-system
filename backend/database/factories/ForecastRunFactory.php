@@ -30,7 +30,7 @@ class ForecastRunFactory extends Factory
             'forecast_end' => $start->copy()->endOfWeek(),
             'history_through' => now()->subWeek()->endOfWeek(),
             'forecast_weeks' => 1,
-            'method' => 'per_sku_baseline_selection',
+            'method' => 'per_sku_time_series_selection_v2',
             'metrics' => ['mae' => 1, 'rmse' => 1, 'wape' => 5, 'evaluation_weeks' => 52],
             'explanation_provider' => 'none',
             'explanation_status' => 'disabled',

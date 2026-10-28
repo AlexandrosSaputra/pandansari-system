@@ -74,6 +74,7 @@ class ForecastApiTest extends TestCase
             ->assertJsonPath('data.data_freshness.age_days', 58)
             ->assertJsonPath('data.data_freshness.gap_weeks', 9)
             ->assertJsonPath('data.data_freshness.requires_warning', true)
+            ->assertJsonPath('data.method', 'per_sku_time_series_selection_v2')
             ->assertJsonPath('data.explanation_status', 'disabled')
             ->assertJsonCount(9, 'data.results');
 
@@ -96,8 +97,17 @@ class ForecastApiTest extends TestCase
                 && $result['recommended_restock'] === $rounded;
         }));
         $this->assertTrue($results->every(
-            fn (array $result): bool => in_array($result['model'], ['lag_1', 'seasonal_52'], true),
+            fn (array $result): bool => in_array($result['model'], [
+                'lag_1',
+                'moving_average_4',
+                'seasonal_52',
+                'seasonal_average_3',
+            ], true),
         ));
+        $this->assertEqualsCanonicalizing(
+            ['lag_1', 'moving_average_4', 'seasonal_52', 'seasonal_average_3'],
+            array_keys($response->json('data.metrics.candidate_metrics')),
+        );
         $packagedResult = $results->firstWhere('item.name', 'BENG-BENG');
         $this->assertSame(6, $packagedResult['order_pack_size']);
         $this->assertSame(7, $packagedResult['supplier_lead_time_days']);

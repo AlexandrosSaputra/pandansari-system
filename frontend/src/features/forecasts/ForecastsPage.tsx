@@ -32,7 +32,9 @@ const horizonLabels: Record<ForecastHorizon, string> = {
 
 const modelLabels: Record<string, string> = {
   lag_1: 'Minggu terakhir',
+  moving_average_4: 'Rata-rata 4 minggu',
   seasonal_52: 'Musiman 52 minggu',
+  seasonal_average_3: 'Rata-rata musiman 3 tahun',
 }
 
 export function ForecastsPage() {
@@ -323,6 +325,24 @@ export function ForecastsPage() {
                   : activeRun.explanation_provider}
               </span>
             </div>
+            {Object.keys(activeRun.metrics.candidate_metrics ?? {}).length >
+              0 && (
+              <div className="mb-5 flex flex-wrap gap-2">
+                {Object.keys(modelLabels).map((model) => {
+                  const metrics = activeRun.metrics.candidate_metrics?.[model]
+
+                  return metrics ? (
+                    <span
+                      className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600"
+                      key={model}
+                    >
+                      {modelLabels[model] ?? model}: WAPE{' '}
+                      {metrics.wape.toFixed(1)}%
+                    </span>
+                  ) : null
+                })}
+              </div>
+            )}
             {activeRun.explanation && (
               <div className="grid gap-5 lg:grid-cols-3">
                 <div>
