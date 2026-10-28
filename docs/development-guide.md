@@ -70,9 +70,21 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -e ".[dev]"
 .\.venv\Scripts\python.exe -m pytest -q
 .\.venv\Scripts\python.exe -m app.cli --dataset ..\backend\database\data\historical-sales.csv --output reports\latest-evaluation.json
+.\.venv\Scripts\python.exe -m app.train --dataset ..\backend\database\data\historical-sales.csv --report reports\latest-evaluation.json --output artifacts\extra_trees_v1.pkl.gz
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8001
 ```
 
-API eksperimen dapat dijalankan dengan `.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload`. Endpoint `POST /experiments/tree-candidates/evaluate` memakai dataset canonical, membandingkan tiga kandidat pada validation set, dan mengembalikan metrik serta keputusan promotion gate. Endpoint lama `POST /experiments/random-forest/evaluate` tetap tersedia sebagai alias deprecated. Test set hanya dihitung bila kandidat terpilih lulus gate; layanan ini belum dipanggil oleh Laravel untuk prediksi produksi.
+Endpoint `POST /experiments/tree-candidates/evaluate` memakai dataset canonical, membandingkan tiga kandidat pada validation set, dan mengembalikan keputusan promotion gate. Endpoint lama `POST /experiments/random-forest/evaluate` tetap tersedia sebagai alias deprecated. Perintah training menolak laporan yang gate-nya gagal dan menghasilkan artefak Extra Trees terkompresi. `GET /v1/models/current` menampilkan metadata model aktif, sedangkan `POST /v1/forecasts/weekly` menghasilkan prediksi mingguan.
+
+Laravel tetap memakai model deret waktu lokal secara default. Untuk mengaktifkan adapter AI service setelah proses Python berjalan, atur konfigurasi berikut pada `backend/.env`:
+
+```dotenv
+FORECAST_PREDICTION_PROVIDER=ai_service
+FORECAST_AI_SERVICE_URL=http://127.0.0.1:8001
+FORECAST_AI_SERVICE_TIMEOUT=10
+```
+
+Gunakan `FORECAST_PREDICTION_PROVIDER=local` untuk menonaktifkan pemanggilan eksternal. Kegagalan koneksi, status HTTP gagal, jumlah prediksi yang tidak sesuai, atau payload yang tidak valid memicu fallback lokal. Setelah kegagalan pertama, produk berikutnya pada forecast run yang sama langsung memakai fallback agar timeout tidak berulang.
 
 Untuk fitur lupa password, isi alamat penerima OTP khusus di `backend/.env` dan konfigurasi SMTP sesuai penyedia email yang digunakan:
 

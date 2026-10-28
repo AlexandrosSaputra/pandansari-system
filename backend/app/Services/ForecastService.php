@@ -12,13 +12,18 @@ use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class ForecastService
 {
+    private bool $aiServiceUnavailable = false;
+
     public function __construct(
         private WeeklyForecastModelSelector $modelSelector,
         private SafetyStockCalculator $safetyStockCalculator,
+        private AiForecastClient $aiForecastClient,
     ) {}
 
     /**
@@ -85,6 +90,12 @@ class ForecastService
                 'actual' => 0.0,
                 'observations' => 0,
             ]),
+            'prediction_provider_counts' => [
+                'local' => 0,
+                'ai_service' => 0,
+                'local_fallback' => 0,
+            ],
+            'active_model_metrics' => null,
         ];
 
         foreach ($salesByItem as $itemId => $sales) {
@@ -105,12 +116,18 @@ class ForecastService
                 ->values()
                 ->all();
             $evaluation = $this->modelSelector->evaluate($values);
-            $predictedUnits = $this->forecastDemand(
+            $projection = $this->forecastDemand(
                 $sales,
                 $evaluation['model'],
                 $forecastStart,
                 $forecastEnd,
             );
+            $predictedUnits = $projection['units'];
+            $projectionMetrics = $projection['metrics'] ?? [
+                'mae' => $evaluation['mae'],
+                'rmse' => $evaluation['rmse'],
+                'wape' => $evaluation['wape'],
+            ];
             $balance = $balances->get($itemId);
             $available = $balance ? max(0, (int) $balance->quantity_on_hand - (int) $balance->quantity_reserved) : 0;
             $minimumStock = (int) $unitItem->minimum_stock;
@@ -119,7 +136,7 @@ class ForecastService
             $safetyStockMode = $unitItem->safety_stock_mode;
             $targetServiceLevel = (float) $unitItem->target_service_level;
             $calculatedSafetyStock = $this->safetyStockCalculator->calculate(
-                $evaluation['rmse'],
+                $projectionMetrics['rmse'],
                 $leadTimeDays,
                 $targetServiceLevel,
             );
@@ -134,7 +151,7 @@ class ForecastService
             $resultRows[] = [
                 'operational_unit_id' => $unit->id,
                 'item_id' => (int) $itemId,
-                'model' => $evaluation['model'],
+                'model' => $projection['model'],
                 'history_weeks' => $sales->count(),
                 'predicted_units' => $predictedUnits,
                 'available_quantity' => $available,
@@ -149,15 +166,19 @@ class ForecastService
                 'unrounded_restock' => $unroundedRestock,
                 'recommended_restock' => $recommended,
                 'order_by_date' => $forecastStart->subDays($leadTimeDays)->toDateString(),
-                'mae' => $evaluation['mae'],
-                'rmse' => $evaluation['rmse'],
-                'wape' => $evaluation['wape'],
+                'mae' => $projectionMetrics['mae'],
+                'rmse' => $projectionMetrics['rmse'],
+                'wape' => $projectionMetrics['wape'],
             ];
             $aggregate['absolute_error'] += $evaluation['absolute_error'];
             $aggregate['squared_error'] += $evaluation['squared_error'];
             $aggregate['actual'] += $evaluation['actual'];
             $aggregate['observations'] += $evaluation['observations'];
-            $aggregate['model_counts'][$evaluation['model']]++;
+            $aggregate['model_counts'][$projection['model']] = ($aggregate['model_counts'][$projection['model']] ?? 0) + 1;
+            $aggregate['prediction_provider_counts'][$projection['provider']]++;
+            if ($projection['provider'] === 'ai_service') {
+                $aggregate['active_model_metrics'] = $projectionMetrics;
+            }
 
             foreach ($evaluation['candidates'] as $model => $candidate) {
                 $aggregate['candidate_metrics'][$model]['absolute_error'] += $candidate['absolute_error'];
@@ -181,16 +202,33 @@ class ForecastService
                 'wape' => round(100 * $candidate['absolute_error'] / max(1, $candidate['actual']), 4),
                 'observations' => $candidate['observations'],
             ])->all();
-        $metrics = [
+        $reportedMetrics = [
             'mae' => round($aggregate['absolute_error'] / max(1, $aggregate['observations']), 4),
             'rmse' => round(sqrt($aggregate['squared_error'] / max(1, $aggregate['observations'])), 4),
             'wape' => round(100 * $aggregate['absolute_error'] / max(1, $aggregate['actual']), 4),
+        ];
+        $metricSource = 'local_holdout';
+
+        if ($aggregate['prediction_provider_counts']['ai_service'] === count($resultRows)
+            && is_array($aggregate['active_model_metrics'])) {
+            $reportedMetrics = $aggregate['active_model_metrics'];
+            $metricSource = 'extra_trees_test_set';
+        }
+
+        $metrics = [
+            'mae' => round($reportedMetrics['mae'], 4),
+            'rmse' => round($reportedMetrics['rmse'], 4),
+            'wape' => round($reportedMetrics['wape'], 4),
             'evaluation_weeks' => 52,
+            'metric_source' => $metricSource,
             'model_counts' => $aggregate['model_counts'],
             'candidate_metrics' => $candidateMetrics,
+            'prediction_provider_requested' => config('forecast.prediction.provider', 'local'),
+            'prediction_provider_counts' => $aggregate['prediction_provider_counts'],
         ];
         $forecastWeeks = (int) $forecastStart->startOfWeek(CarbonImmutable::MONDAY)
             ->diffInWeeks($forecastEnd->startOfWeek(CarbonImmutable::MONDAY)) + 1;
+        $method = $this->forecastMethod($aggregate['prediction_provider_counts'], count($resultRows));
 
         return DB::transaction(function () use (
             $actor,
@@ -202,6 +240,7 @@ class ForecastService
             $forecastWeeks,
             $metrics,
             $resultRows,
+            $method,
         ): ForecastRun {
             $run = ForecastRun::create([
                 'requested_by' => $actor->id,
@@ -212,7 +251,7 @@ class ForecastService
                 'forecast_end' => $forecastEnd,
                 'history_through' => $historyThrough,
                 'forecast_weeks' => $forecastWeeks,
-                'method' => 'per_sku_time_series_selection_v2',
+                'method' => $method,
                 'metrics' => $metrics,
                 'explanation_provider' => config('forecast.explanation.provider', 'none'),
                 'explanation_status' => 'pending',
@@ -248,23 +287,57 @@ class ForecastService
         };
     }
 
-    /** @param Collection<int, HistoricalSale> $sales */
+    /**
+     * @param  Collection<int, HistoricalSale>  $sales
+     * @return array{units: int, model: string, provider: string, metrics: array{mae: float, rmse: float, wape: float}|null}
+     */
     private function forecastDemand(
         Collection $sales,
         string $model,
         CarbonImmutable $forecastStart,
         CarbonImmutable $forecastEnd,
-    ): int {
+    ): array {
         $history = $sales->pluck('units_sold')
             ->map(fn (mixed $value): float => (float) $value)
             ->values()
             ->all();
         $lastSale = $sales->last();
-        $lastHistoricalWeek = $lastSale->week_start->toImmutable();
-        $firstForecastWeek = $forecastStart->startOfWeek(CarbonImmutable::MONDAY);
-        $lastForecastWeek = $forecastEnd->startOfWeek(CarbonImmutable::MONDAY);
+        $lastHistoricalWeek = CarbonImmutable::parse(
+            $lastSale->week_start->toDateString(),
+            config('forecast.timezone'),
+        );
+        $periodStart = CarbonImmutable::parse($forecastStart->toDateString(), config('forecast.timezone'));
+        $periodEnd = CarbonImmutable::parse($forecastEnd->toDateString(), config('forecast.timezone'));
+        $firstForecastWeek = $periodStart->startOfWeek(CarbonImmutable::MONDAY);
+        $lastForecastWeek = $periodEnd->startOfWeek(CarbonImmutable::MONDAY);
         $steps = (int) $lastHistoricalWeek->diffInWeeks($lastForecastWeek);
-        $projected = $this->modelSelector->project($history, $steps, $model);
+        $provider = 'local';
+        $projectionModel = $model;
+        $projectionMetrics = null;
+
+        if (config('forecast.prediction.provider', 'local') === 'ai_service' && ! $this->aiServiceUnavailable) {
+            try {
+                $aiProjection = $this->aiForecastClient->project($sales, $steps);
+                $projected = $aiProjection['predictions'];
+                $projectionModel = $aiProjection['model_version'];
+                $projectionMetrics = $aiProjection['metrics'];
+                $provider = 'ai_service';
+            } catch (Throwable $error) {
+                $this->aiServiceUnavailable = true;
+                Log::warning('AI forecast service failed; using local time-series fallback.', [
+                    'operational_unit_id' => $sales->first()->operational_unit_id,
+                    'item_id' => $sales->first()->item_id,
+                    'error' => $error->getMessage(),
+                ]);
+                $projected = $this->modelSelector->project($history, $steps, $model);
+                $provider = 'local_fallback';
+            }
+        } elseif (config('forecast.prediction.provider', 'local') === 'ai_service') {
+            $projected = $this->modelSelector->project($history, $steps, $model);
+            $provider = 'local_fallback';
+        } else {
+            $projected = $this->modelSelector->project($history, $steps, $model);
+        }
         $predictions = [];
         $offset = 0;
 
@@ -277,13 +350,34 @@ class ForecastService
 
         for ($week = $firstForecastWeek; $week->lessThanOrEqualTo($lastForecastWeek); $week = $week->addWeek()) {
             $weekEnd = $week->endOfWeek(CarbonImmutable::SUNDAY);
-            $overlapStart = $week->greaterThan($forecastStart) ? $week : $forecastStart;
-            $overlapEnd = $weekEnd->lessThan($forecastEnd) ? $weekEnd : $forecastEnd;
+            $overlapStart = $week->greaterThan($periodStart) ? $week : $periodStart;
+            $overlapEnd = $weekEnd->lessThan($periodEnd) ? $weekEnd : $periodEnd;
             $overlapDays = $overlapStart->diffInDays($overlapEnd) + 1;
             $weeklyPrediction = $predictions[$week->toDateString()] ?? (float) $lastSale->units_sold;
             $total += $weeklyPrediction * ($overlapDays / 7);
         }
 
-        return max(0, (int) ceil($total));
+        return [
+            'units' => max(0, (int) ceil($total)),
+            'model' => $projectionModel,
+            'provider' => $provider,
+            'metrics' => $projectionMetrics,
+        ];
+    }
+
+    /** @param array{local: int, ai_service: int, local_fallback: int} $providerCounts */
+    private function forecastMethod(array $providerCounts, int $results): string
+    {
+        if ($providerCounts['ai_service'] === $results) {
+            return 'extra_trees_ai_service_v1';
+        }
+        if ($providerCounts['ai_service'] > 0 && $providerCounts['local_fallback'] > 0) {
+            return 'hybrid_ai_service_fallback_v1';
+        }
+        if ($providerCounts['local_fallback'] > 0) {
+            return 'local_time_series_ai_fallback_v1';
+        }
+
+        return 'per_sku_time_series_selection_v2';
     }
 }

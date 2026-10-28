@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import csv
+import json
 from datetime import date, timedelta
 from pathlib import Path
 
+from app.artifact import load_artifact, train_promoted_artifact
 from app.evaluation import ModelMetrics, evaluate_dataset, promotion_decision
+from app.inference import forecast_weekly
 from app.main import health
 
 
@@ -60,3 +63,50 @@ def test_promotion_gate_requires_both_wape_improvement_and_non_worse_mae() -> No
 
 def test_health_response_identifies_the_service() -> None:
     assert health() == {"status": "ok", "service": "pandansari-ai"}
+
+
+def test_promoted_artifact_supports_recursive_weekly_inference(tmp_path: Path) -> None:
+    dataset = tmp_path / "sales.csv"
+    report = tmp_path / "report.json"
+    artifact_path = tmp_path / "extra_trees_v1.pkl.gz"
+    write_dataset(dataset)
+    report.write_text(json.dumps({
+        "promotion_gate": {"passed": True, "candidate": "extra_trees"},
+        "tree_candidates": {
+            "selected": "extra_trees",
+            "validation_metrics": {
+                "extra_trees": {"mae": 2.0, "rmse": 3.0, "wape": 10.0, "observations": 104},
+            },
+            "test_metrics": {"mae": 1.5, "rmse": 2.5, "wape": 8.0, "observations": 104},
+        },
+    }), encoding="utf-8")
+
+    metadata = train_promoted_artifact(dataset, report, artifact_path)
+    artifact = load_artifact(artifact_path)
+    weeks = [date(2022, 1, 3) + timedelta(weeks=week) for week in range(208)]
+    values = [21 + (week % 13) for week in range(208)]
+    predictions = forecast_weekly(artifact, "Outlet 1", "A", weeks, values, 2)
+
+    assert metadata["model_version"] == "extra_trees_v1"
+    assert metadata["training_rows"] == 312
+    assert metadata["evaluation"]["test"]["rmse"] == 2.5
+    assert predictions[0]["week_start"] == "2025-12-29"
+    assert predictions[1]["week_start"] == "2026-01-05"
+    assert all(prediction["units"] >= 0 for prediction in predictions)
+
+
+def test_artifact_training_rejects_a_candidate_that_did_not_pass_gate(tmp_path: Path) -> None:
+    dataset = tmp_path / "sales.csv"
+    report = tmp_path / "report.json"
+    write_dataset(dataset)
+    report.write_text(json.dumps({
+        "promotion_gate": {"passed": False, "candidate": "extra_trees"},
+        "tree_candidates": {"selected": "extra_trees"},
+    }), encoding="utf-8")
+
+    try:
+        train_promoted_artifact(dataset, report, tmp_path / "model.pkl")
+    except ValueError as error:
+        assert "promoted tree candidate" in str(error)
+    else:
+        raise AssertionError("Training should reject an unpromoted candidate.")

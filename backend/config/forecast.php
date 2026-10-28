@@ -9,6 +9,14 @@ return [
         'Pop Mie' => 'Outlet 3',
     ],
 
+    'prediction' => [
+        'provider' => env('FORECAST_PREDICTION_PROVIDER', 'local'),
+        'ai_service' => [
+            'base_url' => env('FORECAST_AI_SERVICE_URL', 'http://127.0.0.1:8001'),
+            'timeout' => (int) env('FORECAST_AI_SERVICE_TIMEOUT', 10),
+        ],
+    ],
+
     'explanation' => [
         'provider' => env('FORECAST_EXPLANATION_PROVIDER', 'none'),
         'timeout' => (int) env('FORECAST_EXPLANATION_TIMEOUT', 30),

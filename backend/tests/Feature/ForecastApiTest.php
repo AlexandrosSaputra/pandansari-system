@@ -8,6 +8,7 @@ use App\Models\User;
 use Carbon\CarbonImmutable;
 use Database\Seeders\DemoDataSeeder;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -23,6 +24,7 @@ class ForecastApiTest extends TestCase
         CarbonImmutable::setTestNow('2026-10-27 10:00:00');
         config([
             'demo.user_password' => 'DemoPassword123!',
+            'forecast.prediction.provider' => 'local',
             'forecast.explanation.provider' => 'none',
         ]);
         $this->seed(DemoDataSeeder::class);
@@ -145,6 +147,103 @@ class ForecastApiTest extends TestCase
             'operational_unit_id' => OperationalUnit::query()->where('name', 'Outlet 1')->value('id'),
             'horizon' => 'next_week',
         ])->assertForbidden();
+    }
+
+    public function test_ai_service_predictions_are_used_after_explicit_activation(): void
+    {
+        $superadmin = User::query()->where('username', 'admin')->firstOrFail();
+        $unit = OperationalUnit::query()->where('name', 'Outlet 1')->firstOrFail();
+        config([
+            'forecast.prediction.provider' => 'ai_service',
+            'forecast.prediction.ai_service.base_url' => 'http://ai-service.test',
+            'forecast.prediction.ai_service.timeout' => 2,
+        ]);
+        Http::fake([
+            'http://ai-service.test/v1/forecasts/weekly' => function (Request $request) {
+                $lastWeek = CarbonImmutable::parse(collect($request['week_starts'])->last());
+                $predictions = collect(range(1, $request['steps']))
+                    ->map(fn (int $step): array => [
+                        'week_start' => $lastWeek->addWeeks($step)->toDateString(),
+                        'units' => 12.0,
+                    ])->all();
+
+                return Http::response([
+                    'model_version' => 'extra_trees_v1',
+                    'trained_through' => '2026-08-24',
+                    'evaluation_metrics' => [
+                        'mae' => 4.1207,
+                        'rmse' => 8.3719,
+                        'wape' => 17.7555,
+                        'observations' => 1508,
+                    ],
+                    'predictions' => $predictions,
+                ]);
+            },
+        ]);
+        $this->actingAs($superadmin, 'web');
+
+        $response = $this->postJson('/api/forecasts', [
+            'operational_unit_id' => $unit->id,
+            'horizon' => 'next_week',
+        ])->assertCreated()
+            ->assertJsonPath('data.method', 'extra_trees_ai_service_v1')
+            ->assertJsonPath('data.metrics.prediction_provider_requested', 'ai_service')
+            ->assertJsonPath('data.metrics.prediction_provider_counts.ai_service', 9)
+            ->assertJsonPath('data.metrics.prediction_provider_counts.local_fallback', 0)
+            ->assertJsonPath('data.metrics.metric_source', 'extra_trees_test_set')
+            ->assertJsonPath('data.metrics.wape', 17.7555);
+
+        $this->assertEqualsCanonicalizing(
+            array_fill(0, 9, 'extra_trees_v1'),
+            collect($response->json('data.results'))->pluck('model')->all(),
+        );
+        $this->assertEqualsCanonicalizing(
+            array_fill(0, 9, 12),
+            collect($response->json('data.results'))->pluck('predicted_units')->all(),
+        );
+        $this->assertEqualsCanonicalizing(
+            array_fill(0, 9, 8.3719),
+            collect($response->json('data.results'))->pluck('rmse')->all(),
+        );
+        Http::assertSentCount(9);
+        Http::assertSent(fn (Request $request): bool => $request->url() === 'http://ai-service.test/v1/forecasts/weekly'
+            && $request['outlet'] === 'Baso'
+            && count($request['week_starts']) === 208
+            && count($request['units_sold']) === 208
+            && $request['steps'] === 10);
+    }
+
+    public function test_ai_service_failure_falls_back_without_failing_the_forecast(): void
+    {
+        $superadmin = User::query()->where('username', 'admin')->firstOrFail();
+        $unit = OperationalUnit::query()->where('name', 'Outlet 1')->firstOrFail();
+        config([
+            'forecast.prediction.provider' => 'ai_service',
+            'forecast.prediction.ai_service.base_url' => 'http://ai-service.test',
+        ]);
+        Http::fake([
+            'http://ai-service.test/*' => Http::response(['detail' => 'unavailable'], 503),
+        ]);
+        $this->actingAs($superadmin, 'web');
+
+        $response = $this->postJson('/api/forecasts', [
+            'operational_unit_id' => $unit->id,
+            'horizon' => 'next_week',
+        ])->assertCreated()
+            ->assertJsonPath('data.method', 'local_time_series_ai_fallback_v1')
+            ->assertJsonPath('data.metrics.prediction_provider_requested', 'ai_service')
+            ->assertJsonPath('data.metrics.prediction_provider_counts.ai_service', 0)
+            ->assertJsonPath('data.metrics.prediction_provider_counts.local_fallback', 9);
+
+        $this->assertTrue(collect($response->json('data.results'))->every(
+            fn (array $result): bool => in_array($result['model'], [
+                'lag_1',
+                'moving_average_4',
+                'seasonal_52',
+                'seasonal_average_3',
+            ], true),
+        ));
+        Http::assertSentCount(1);
     }
 
     public function test_custom_forecast_requires_a_future_target_date(): void

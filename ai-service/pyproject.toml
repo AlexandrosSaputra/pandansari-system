@@ -19,6 +19,7 @@ dev = ["pytest==9.1.1"]
 
 [project.scripts]
 pandansari-evaluate = "app.cli:main"
+pandansari-train = "app.train:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
