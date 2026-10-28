@@ -90,6 +90,8 @@ export interface UnitItem {
   item: ItemSummary
   selling_price: Money
   minimum_stock: number
+  safety_stock_mode: 'MANUAL' | 'CALCULATED'
+  target_service_level: number
   supplier_lead_time_days: number
   order_pack_size: number
   is_active: boolean
@@ -227,6 +229,10 @@ export interface ForecastResult {
   predicted_units: number
   available_quantity: number
   minimum_stock: number
+  safety_stock_mode: 'MANUAL' | 'CALCULATED'
+  target_service_level: number
+  calculated_safety_stock: number
+  safety_stock: number
   supplier_lead_time_days: number
   order_pack_size: number
   incoming_quantity: number

@@ -60,6 +60,8 @@ AI Insight menandai histori berumur paling lama 7 hari sebagai `fresh`, 8–28 h
 
 Atur `Safety stock`, `Lead time pemasok`, dan `Ukuran kemasan pemesanan` pada form item setiap outlet. Jumlah restock mentah memakai `prediksi + safety stock - stok tersedia`, kemudian dibulatkan ke atas sesuai ukuran kemasan. Tanggal pemesanan paling lambat adalah awal periode forecast dikurangi lead time; tanggal yang sudah terlewati ditandai sebagai terlambat. Default data lama adalah lead time 0 hari dan ukuran kemasan 1 unit.
 
+Metode safety stock default adalah `MANUAL`, sehingga data lama tetap memakai stok minimum. Mode `CALCULATED` menghitung cadangan dengan `z-score × RMSE × √periode perlindungan`, memakai target service level 90%, 95%, 97,5%, atau 99%. Periode perlindungan mengikuti lead time dalam minggu dan tidak pernah kurang dari satu minggu. Nilai stok minimum tetap dipakai sebagai ambang indikator stok meskipun mode forecast terhitung aktif.
+
 Untuk fitur lupa password, isi alamat penerima OTP khusus di `backend/.env` dan konfigurasi SMTP sesuai penyedia email yang digunakan:
 
 ```dotenv

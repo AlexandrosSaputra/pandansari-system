@@ -118,7 +118,16 @@ export function ForecastsPage() {
     },
     {
       title: 'Safety stock',
-      render: (row) => formatNumber(row.minimum_stock),
+      render: (row) => (
+        <div>
+          <span>{formatNumber(row.safety_stock)}</span>
+          <small className="block text-slate-500">
+            {row.safety_stock_mode === 'CALCULATED'
+              ? `Terhitung · target ${row.target_service_level}%`
+              : 'Manual'}
+          </small>
+        </div>
+      ),
     },
     {
       title: 'Kebijakan pesan',

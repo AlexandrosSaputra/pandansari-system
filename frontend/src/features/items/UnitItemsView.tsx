@@ -512,6 +512,16 @@ function UnitItemPanel({
               </dd>
             </div>
             <div>
+              <dt>Metode safety stock</dt>
+              <dd>
+                {detail.item.type === 'SERVICE'
+                  ? '—'
+                  : detail.safety_stock_mode === 'CALCULATED'
+                    ? `Terhitung (${detail.target_service_level}%)`
+                    : 'Manual'}
+              </dd>
+            </div>
+            <div>
               <dt>Lead time pemasok</dt>
               <dd>
                 {detail.item.type === 'SERVICE'
