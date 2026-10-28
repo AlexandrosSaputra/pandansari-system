@@ -6,7 +6,15 @@ from datetime import date, timedelta
 from pathlib import Path
 
 from app.artifact import load_artifact, train_promoted_artifact
-from app.evaluation import ModelMetrics, evaluate_dataset, promotion_decision
+from app.evaluation import (
+    BASELINE_MODELS,
+    ModelMetrics,
+    baseline_candidate_metrics,
+    baseline_prediction,
+    evaluate_dataset,
+    load_sales,
+    promotion_decision,
+)
 from app.inference import forecast_weekly
 from app.main import health
 
@@ -50,6 +58,15 @@ def test_evaluation_selects_candidates_on_validation_and_withholds_failed_test(t
     assert "test_metrics" not in report["tree_candidates"]
     assert "test_metrics" not in report["baseline"]
     assert report["test_confirmation"]["used_for_model_or_hyperparameter_selection"] is False
+    assert report["baseline"]["models"] == [
+        "lag_1",
+        "moving_average_4",
+        "seasonal_52",
+        "seasonal_average_3",
+    ]
+    assert report["baseline"]["validation_ineligible_models"] == {
+        "seasonal_average_3": "requires 156 prior weeks",
+    }
 
 
 def test_promotion_gate_requires_both_wape_improvement_and_non_worse_mae() -> None:
@@ -65,6 +82,27 @@ def test_health_response_identifies_the_service() -> None:
     assert health() == {"status": "ok", "service": "pandansari-ai"}
 
 
+def test_three_year_seasonal_average_uses_all_available_years() -> None:
+    values = [float(index) for index in range(208)]
+
+    assert baseline_prediction(values, 156, "seasonal_average_3") == (104 + 52 + 0) / 3
+
+
+def test_all_four_baselines_use_the_same_locked_test_period(tmp_path: Path) -> None:
+    dataset = tmp_path / "sales.csv"
+    write_dataset(dataset)
+
+    candidate_metrics = baseline_candidate_metrics(
+        load_sales(dataset),
+        156,
+        208,
+        BASELINE_MODELS,
+    )
+
+    assert set(candidate_metrics) == set(BASELINE_MODELS)
+    assert all(score.observations == 104 for score in candidate_metrics.values())
+
+
 def test_promoted_artifact_supports_recursive_weekly_inference(tmp_path: Path) -> None:
     dataset = tmp_path / "sales.csv"
     report = tmp_path / "report.json"
@@ -72,6 +110,8 @@ def test_promoted_artifact_supports_recursive_weekly_inference(tmp_path: Path) -
     write_dataset(dataset)
     report.write_text(json.dumps({
         "promotion_gate": {"passed": True, "candidate": "extra_trees"},
+        "test_confirmation": {"passed": True, "candidate": "extra_trees"},
+        "deployment_decision": {"passed": True},
         "tree_candidates": {
             "selected": "extra_trees",
             "validation_metrics": {
@@ -110,3 +150,22 @@ def test_artifact_training_rejects_a_candidate_that_did_not_pass_gate(tmp_path: 
         assert "promoted tree candidate" in str(error)
     else:
         raise AssertionError("Training should reject an unpromoted candidate.")
+
+
+def test_artifact_training_rejects_a_failed_test_confirmation(tmp_path: Path) -> None:
+    dataset = tmp_path / "sales.csv"
+    report = tmp_path / "report.json"
+    write_dataset(dataset)
+    report.write_text(json.dumps({
+        "promotion_gate": {"passed": True, "candidate": "extra_trees"},
+        "test_confirmation": {"passed": False, "candidate": "extra_trees"},
+        "deployment_decision": {"passed": False},
+        "tree_candidates": {"selected": "extra_trees"},
+    }), encoding="utf-8")
+
+    try:
+        train_promoted_artifact(dataset, report, tmp_path / "model.pkl")
+    except ValueError as error:
+        assert "promoted tree candidate" in str(error)
+    else:
+        raise AssertionError("Training should reject a failed test confirmation.")

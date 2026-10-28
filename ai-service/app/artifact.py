@@ -9,7 +9,7 @@ from typing import Any
 
 from app.evaluation import FEATURE_NAMES, build_rows, load_sales, tree_pipeline
 
-ARTIFACT_SCHEMA_VERSION = 2
+ARTIFACT_SCHEMA_VERSION = 3
 
 
 def train_promoted_artifact(
@@ -19,10 +19,16 @@ def train_promoted_artifact(
 ) -> dict[str, Any]:
     report = json.loads(report_path.read_text(encoding="utf-8"))
     promotion_gate = report.get("promotion_gate", {})
+    test_confirmation = report.get("test_confirmation", {})
+    deployment_decision = report.get("deployment_decision", {})
     tree_candidates = report.get("tree_candidates", {})
     candidate = tree_candidates.get("selected")
 
-    if promotion_gate.get("passed") is not True or promotion_gate.get("candidate") != candidate:
+    if (promotion_gate.get("passed") is not True
+        or test_confirmation.get("passed") is not True
+        or deployment_decision.get("passed") is not True
+        or promotion_gate.get("candidate") != candidate
+        or test_confirmation.get("candidate") != candidate):
         raise ValueError("Evaluation report does not contain a promoted tree candidate.")
     if not isinstance(candidate, str):
         raise ValueError("Evaluation report does not identify the selected tree candidate.")
@@ -53,6 +59,10 @@ def train_promoted_artifact(
         "evaluation": {
             "validation": validation_metrics,
             "test": test_metrics,
+        },
+        "promotion": {
+            "validation_gate": promotion_gate,
+            "test_confirmation": test_confirmation,
         },
     }
     payload = {"metadata": metadata, "model": model}

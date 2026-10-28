@@ -15,8 +15,14 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 
 HOLDOUT_WEEKS = 52
-MINIMUM_HISTORY_WEEKS = 156
-BASELINE_MODELS = ("lag_1", "moving_average_4", "seasonal_52")
+MINIMUM_HISTORY_WEEKS = 208
+BASELINE_MODELS = ("lag_1", "moving_average_4", "seasonal_52", "seasonal_average_3")
+BASELINE_MINIMUM_HISTORY = {
+    "lag_1": 1,
+    "moving_average_4": 4,
+    "seasonal_52": 52,
+    "seasonal_average_3": 156,
+}
 TREE_CANDIDATES = ("random_forest", "extra_trees", "gradient_boosting")
 TREE_PARAMETERS: dict[str, dict[str, Any]] = {
     "random_forest": {
@@ -176,6 +182,8 @@ def baseline_prediction(values: list[float], index: int, model: str) -> float:
         return sum(values[index - 4 : index]) / 4
     if model == "seasonal_52":
         return values[index - 52]
+    if model == "seasonal_average_3":
+        return (values[index - 52] + values[index - 104] + values[index - 156]) / 3
     raise ValueError(f"Unsupported baseline model: {model}")
 
 
@@ -199,16 +207,20 @@ def select_baselines(
     series_by_key: dict[tuple[str, str], list[WeeklySale]],
     validation_start: int,
     test_start: int,
-) -> tuple[dict[tuple[str, str], str], dict[str, dict[str, float | int]]]:
+) -> tuple[dict[tuple[str, str], str], dict[str, dict[str, float | int]], tuple[str, ...]]:
     selected: dict[tuple[str, str], str] = {}
     aggregate_actual: dict[str, list[float]] = defaultdict(list)
     aggregate_predictions: dict[str, list[float]] = defaultdict(list)
+    eligible_models = tuple(
+        model for model in BASELINE_MODELS
+        if validation_start >= BASELINE_MINIMUM_HISTORY[model]
+    )
 
     for key, series in series_by_key.items():
         values = [sale.units_sold for sale in series]
         scored: list[tuple[float, float, str]] = []
         actual = values[validation_start:test_start]
-        for model in BASELINE_MODELS:
+        for model in eligible_models:
             predictions = [baseline_prediction(values, index, model) for index in range(validation_start, test_start)]
             score = metrics(actual, predictions)
             scored.append((score.mae, score.rmse, model))
@@ -218,9 +230,34 @@ def select_baselines(
 
     validation_metrics = {
         model: metrics(aggregate_actual[model], aggregate_predictions[model]).as_dict()
-        for model in BASELINE_MODELS
+        for model in eligible_models
     }
-    return selected, validation_metrics
+    return selected, validation_metrics, eligible_models
+
+
+def baseline_candidate_metrics(
+    series_by_key: dict[tuple[str, str], list[WeeklySale]],
+    start: int,
+    end: int,
+    models: Iterable[str],
+) -> dict[str, ModelMetrics]:
+    candidate_metrics: dict[str, ModelMetrics] = {}
+
+    for model in models:
+        minimum_history = BASELINE_MINIMUM_HISTORY.get(model)
+        if minimum_history is None:
+            raise ValueError(f"Unsupported baseline model: {model}")
+        if start < minimum_history:
+            raise ValueError(f"Baseline model {model} requires {minimum_history} prior weeks.")
+        actual: list[float] = []
+        predicted: list[float] = []
+        for series in series_by_key.values():
+            values = [sale.units_sold for sale in series]
+            actual.extend(values[start:end])
+            predicted.extend(baseline_prediction(values, index, model) for index in range(start, end))
+        candidate_metrics[model] = metrics(actual, predicted)
+
+    return candidate_metrics
 
 
 def promotion_decision(
@@ -272,7 +309,11 @@ def evaluate_dataset(path: Path, minimum_relative_wape_improvement: float = 2.0)
     if validation_start < 52:
         raise ValueError("Dataset does not contain enough history for train, validation, and test splits.")
 
-    selected_baselines, validation_metrics = select_baselines(series_by_key, validation_start, test_start)
+    selected_baselines, validation_metrics, validation_baseline_models = select_baselines(
+        series_by_key,
+        validation_start,
+        test_start,
+    )
 
     candidate_training_features, candidate_training_targets, _ = build_rows(
         series_by_key,
@@ -317,7 +358,7 @@ def evaluate_dataset(path: Path, minimum_relative_wape_improvement: float = 2.0)
     )
     first_series = next(iter(series_by_key.values()))
     report: dict[str, Any] = {
-        "experiment": "tree_candidates_vs_time_series_baseline_v2",
+        "experiment": "tree_candidates_vs_four_time_series_baselines_v3",
         "source_file": path.name,
         "dataset": {
             "rows": sum(len(series) for series in series_by_key.values()),
@@ -344,6 +385,13 @@ def evaluate_dataset(path: Path, minimum_relative_wape_improvement: float = 2.0)
             "selected": selected_candidate,
         },
         "baseline": {
+            "models": list(BASELINE_MODELS),
+            "validation_eligible_models": list(validation_baseline_models),
+            "validation_ineligible_models": {
+                model: f"requires {BASELINE_MINIMUM_HISTORY[model]} prior weeks"
+                for model in BASELINE_MODELS
+                if model not in validation_baseline_models
+            },
             "validation_candidate_metrics": validation_metrics,
             "validation_selected_metrics": baseline_validation.as_dict(),
             "selected_model_counts": dict(
@@ -358,6 +406,10 @@ def evaluate_dataset(path: Path, minimum_relative_wape_improvement: float = 2.0)
             "evaluated": False,
             "reason": "Test set is withheld because the selected candidate did not pass validation gate.",
             "used_for_model_or_hyperparameter_selection": False,
+        },
+        "deployment_decision": {
+            "passed": False,
+            "reason": "Validation gate did not pass; test confirmation was not evaluated.",
         },
     }
 
@@ -379,14 +431,52 @@ def evaluate_dataset(path: Path, minimum_relative_wape_improvement: float = 2.0)
         raise ValueError("Tree and baseline test observations are not aligned.")
     baseline_test = metrics(baseline_test_actual, baseline_predictions)
     tree_test = metrics(test_targets, tree_predictions)
-    test_relative_improvement = 100 * (baseline_test.wape - tree_test.wape) / max(baseline_test.wape, 1e-9)
+    test_baseline_candidates = baseline_candidate_metrics(
+        series_by_key,
+        test_start,
+        weeks,
+        BASELINE_MODELS,
+    )
+    test_reference_model = min(
+        BASELINE_MODELS,
+        key=lambda name: (
+            test_baseline_candidates[name].wape,
+            test_baseline_candidates[name].mae,
+            test_baseline_candidates[name].rmse,
+            name,
+        ),
+    )
+    test_reference = test_baseline_candidates[test_reference_model]
+    test_decision = promotion_decision(
+        test_reference,
+        tree_test,
+        minimum_relative_wape_improvement,
+        selected_candidate,
+    )
     report["tree_candidates"]["test_metrics"] = tree_test.as_dict()
     report["baseline"]["test_metrics"] = baseline_test.as_dict()
+    report["baseline"]["test_candidate_metrics"] = {
+        model_name: test_baseline_candidates[model_name].as_dict()
+        for model_name in BASELINE_MODELS
+    }
     report["test_confirmation"] = {
+        **test_decision,
         "evaluated": True,
-        "tree_wape_better": tree_test.wape < baseline_test.wape,
-        "tree_mae_not_worse": tree_test.mae <= baseline_test.mae,
-        "relative_wape_improvement_percent": round(test_relative_improvement, 4),
+        "baseline_reference_model": test_reference_model,
+        "baseline_reference_metrics": test_reference.as_dict(),
+        "tree_wape_better": tree_test.wape < test_reference.wape,
+        "tree_mae_not_worse": tree_test.mae <= test_reference.mae,
+        "evaluation_split": "test",
         "used_for_model_or_hyperparameter_selection": False,
+    }
+    report["deployment_decision"] = {
+        "passed": test_decision["passed"],
+        "validation_gate_passed": True,
+        "test_confirmation_passed": test_decision["passed"],
+        "reason": (
+            "Selected tree candidate passed validation gate and locked test confirmation."
+            if test_decision["passed"]
+            else "Selected tree candidate passed validation but failed locked test confirmation."
+        ),
     }
     return report

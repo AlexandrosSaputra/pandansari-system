@@ -1,5 +1,5 @@
 {
-  "experiment": "tree_candidates_vs_time_series_baseline_v2",
+  "experiment": "tree_candidates_vs_four_time_series_baselines_v3",
   "source_file": "historical-sales.csv",
   "dataset": {
     "rows": 6032,
@@ -91,6 +91,20 @@
     }
   },
   "baseline": {
+    "models": [
+      "lag_1",
+      "moving_average_4",
+      "seasonal_52",
+      "seasonal_average_3"
+    ],
+    "validation_eligible_models": [
+      "lag_1",
+      "moving_average_4",
+      "seasonal_52"
+    ],
+    "validation_ineligible_models": {
+      "seasonal_average_3": "requires 156 prior weeks"
+    },
     "validation_candidate_metrics": {
       "lag_1": {
         "mae": 5.2056,
@@ -120,13 +134,40 @@
     "selected_model_counts": {
       "lag_1": 3,
       "moving_average_4": 0,
-      "seasonal_52": 26
+      "seasonal_52": 26,
+      "seasonal_average_3": 0
     },
     "test_metrics": {
       "mae": 5.5232,
       "rmse": 12.4404,
       "wape": 23.7985,
       "observations": 1508
+    },
+    "test_candidate_metrics": {
+      "lag_1": {
+        "mae": 5.5637,
+        "rmse": 11.1988,
+        "wape": 23.9728,
+        "observations": 1508
+      },
+      "moving_average_4": {
+        "mae": 8.7042,
+        "rmse": 13.6677,
+        "wape": 37.505,
+        "observations": 1508
+      },
+      "seasonal_52": {
+        "mae": 5.5066,
+        "rmse": 12.5362,
+        "wape": 23.7271,
+        "observations": 1508
+      },
+      "seasonal_average_3": {
+        "mae": 6.1642,
+        "rmse": 12.2966,
+        "wape": 26.5606,
+        "observations": 1508
+      }
     }
   },
   "promotion_gate": {
@@ -138,10 +179,28 @@
     "evaluation_split": "validation"
   },
   "test_confirmation": {
+    "passed": true,
+    "candidate": "extra_trees",
+    "relative_wape_improvement_percent": 25.1676,
+    "minimum_required_improvement_percent": 2.0,
+    "reason": "extra_trees passed the WAPE improvement gate without worsening MAE.",
     "evaluated": true,
+    "baseline_reference_model": "seasonal_52",
+    "baseline_reference_metrics": {
+      "mae": 5.5066,
+      "rmse": 12.5362,
+      "wape": 23.7271,
+      "observations": 1508
+    },
     "tree_wape_better": true,
     "tree_mae_not_worse": true,
-    "relative_wape_improvement_percent": 25.3922,
+    "evaluation_split": "test",
     "used_for_model_or_hyperparameter_selection": false
+  },
+  "deployment_decision": {
+    "passed": true,
+    "validation_gate_passed": true,
+    "test_confirmation_passed": true,
+    "reason": "Selected tree candidate passed validation gate and locked test confirmation."
   }
 }

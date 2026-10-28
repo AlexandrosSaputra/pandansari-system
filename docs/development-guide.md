@@ -74,7 +74,7 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8001
 ```
 
-Endpoint `POST /experiments/tree-candidates/evaluate` memakai dataset canonical, membandingkan tiga kandidat pada validation set, dan mengembalikan keputusan promotion gate. Endpoint lama `POST /experiments/random-forest/evaluate` tetap tersedia sebagai alias deprecated. Perintah training menolak laporan yang gate-nya gagal dan menghasilkan artefak Extra Trees terkompresi. `GET /v1/models/current` menampilkan metadata model aktif, sedangkan `POST /v1/forecasts/weekly` menghasilkan prediksi mingguan.
+Endpoint `POST /experiments/tree-candidates/evaluate` memakai dataset canonical dan membandingkan tiga kandidat pohon pada validation set. Jika validation gate lulus, test set dibuka satu kali untuk membandingkan kandidat terpilih terhadap keempat baseline Laravel pada periode yang sama. `seasonal_average_3` membutuhkan 156 minggu sebelumnya, sehingga baru eligible pada test minggu ke-157–208; model ini tidak dipaksakan ke validation yang historinya belum cukup. Endpoint lama `POST /experiments/random-forest/evaluate` tetap tersedia sebagai alias deprecated. Perintah training menolak laporan bila validation gate atau test confirmation gagal dan menghasilkan artefak Extra Trees terkompresi. `GET /v1/models/current` menampilkan metadata model aktif, sedangkan `POST /v1/forecasts/weekly` menghasilkan prediksi mingguan.
 
 Laravel tetap memakai model deret waktu lokal secara default. Untuk mengaktifkan adapter AI service setelah proses Python berjalan, atur konfigurasi berikut pada `backend/.env`:
 
