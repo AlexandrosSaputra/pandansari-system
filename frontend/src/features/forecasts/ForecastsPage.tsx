@@ -115,8 +115,19 @@ export function ForecastsPage() {
       render: (row) => formatNumber(row.available_quantity),
     },
     {
-      title: 'Stok minimum',
+      title: 'Safety stock',
       render: (row) => formatNumber(row.minimum_stock),
+    },
+    {
+      title: 'Kebijakan pesan',
+      render: (row) => (
+        <div>
+          <span>{formatNumber(row.order_pack_size)} unit/kemasan</span>
+          <small className="block text-slate-500">
+            Lead time {formatNumber(row.supplier_lead_time_days)} hari
+          </small>
+        </div>
+      ),
     },
     {
       title: 'Rekomendasi restock',
@@ -129,8 +140,34 @@ export function ForecastsPage() {
           }
         >
           {formatNumber(row.recommended_restock)}
+          {row.recommended_restock !== row.unrounded_restock && (
+            <small className="block font-normal text-slate-500">
+              dari {formatNumber(row.unrounded_restock)} unit
+            </small>
+          )}
         </strong>
       ),
+    },
+    {
+      title: 'Pesan paling lambat',
+      render: (row) =>
+        row.recommended_restock === 0 || !row.order_by_date ? (
+          '—'
+        ) : (
+          <div>
+            <span>{formatDate(row.order_by_date)}</span>
+            {row.order_status === 'overdue' && (
+              <small className="block font-medium text-red-700">
+                Terlambat
+              </small>
+            )}
+            {row.order_status === 'due_today' && (
+              <small className="block font-medium text-amber-700">
+                Pesan hari ini
+              </small>
+            )}
+          </div>
+        ),
     },
     { title: 'WAPE', render: (row) => `${row.wape.toFixed(1)}%` },
   ]

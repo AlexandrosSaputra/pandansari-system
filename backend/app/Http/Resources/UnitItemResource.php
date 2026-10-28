@@ -33,6 +33,8 @@ class UnitItemResource extends JsonResource
             ],
             'selling_price' => $this->selling_price,
             'minimum_stock' => $this->minimum_stock,
+            'supplier_lead_time_days' => $this->supplier_lead_time_days,
+            'order_pack_size' => $this->order_pack_size,
             'is_active' => $this->is_active,
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),

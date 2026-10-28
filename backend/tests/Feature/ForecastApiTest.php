@@ -41,6 +41,13 @@ class ForecastApiTest extends TestCase
         $superadmin = User::query()->where('username', 'admin')->firstOrFail();
         $unit = OperationalUnit::query()->where('name', 'Outlet 1')->firstOrFail();
         $location = $unit->inventoryLocation()->firstOrFail();
+        $packagedItem = $unit->unitItems()
+            ->whereHas('item', fn ($query) => $query->where('name', 'BENG-BENG'))
+            ->firstOrFail();
+        $packagedItem->update([
+            'supplier_lead_time_days' => 7,
+            'order_pack_size' => 6,
+        ]);
         $balancesBefore = InventoryBalance::query()
             ->where('inventory_location_id', $location->id)
             ->pluck('quantity_on_hand', 'item_id')
@@ -76,15 +83,27 @@ class ForecastApiTest extends TestCase
         );
 
         $results = collect($response->json('data.results'));
-        $this->assertTrue($results->every(
-            fn (array $result): bool => $result['recommended_restock'] === max(
+        $this->assertTrue($results->every(function (array $result): bool {
+            $unrounded = max(
                 0,
                 $result['predicted_units'] + $result['minimum_stock'] - $result['available_quantity'],
-            ),
-        ));
+            );
+            $rounded = $unrounded === 0
+                ? 0
+                : (int) (ceil($unrounded / $result['order_pack_size']) * $result['order_pack_size']);
+
+            return $result['unrounded_restock'] === $unrounded
+                && $result['recommended_restock'] === $rounded;
+        }));
         $this->assertTrue($results->every(
             fn (array $result): bool => in_array($result['model'], ['lag_1', 'seasonal_52'], true),
         ));
+        $packagedResult = $results->firstWhere('item.name', 'BENG-BENG');
+        $this->assertSame(6, $packagedResult['order_pack_size']);
+        $this->assertSame(7, $packagedResult['supplier_lead_time_days']);
+        $this->assertSame('2026-10-26', $packagedResult['order_by_date']);
+        $this->assertSame('overdue', $packagedResult['order_status']);
+        $this->assertSame(0, $packagedResult['recommended_restock'] % 6);
         $this->assertDatabaseCount('forecast_runs', 1);
         $this->assertDatabaseCount('forecast_results', 9);
         $this->assertDatabaseHas('activity_logs', [

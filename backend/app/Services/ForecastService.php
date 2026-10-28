@@ -92,7 +92,12 @@ class ForecastService
             $balance = $balances->get($itemId);
             $available = $balance ? max(0, (int) $balance->quantity_on_hand - (int) $balance->quantity_reserved) : 0;
             $minimumStock = (int) $unitItem->minimum_stock;
-            $recommended = max(0, $predictedUnits + $minimumStock - $available);
+            $leadTimeDays = (int) $unitItem->supplier_lead_time_days;
+            $orderPackSize = max(1, (int) $unitItem->order_pack_size);
+            $unroundedRestock = max(0, $predictedUnits + $minimumStock - $available);
+            $recommended = $unroundedRestock === 0
+                ? 0
+                : (int) (ceil($unroundedRestock / $orderPackSize) * $orderPackSize);
 
             $resultRows[] = [
                 'operational_unit_id' => $unit->id,
@@ -102,8 +107,12 @@ class ForecastService
                 'predicted_units' => $predictedUnits,
                 'available_quantity' => $available,
                 'minimum_stock' => $minimumStock,
+                'supplier_lead_time_days' => $leadTimeDays,
+                'order_pack_size' => $orderPackSize,
                 'incoming_quantity' => 0,
+                'unrounded_restock' => $unroundedRestock,
                 'recommended_restock' => $recommended,
+                'order_by_date' => $forecastStart->subDays($leadTimeDays)->toDateString(),
                 'mae' => $evaluation['mae'],
                 'rmse' => $evaluation['rmse'],
                 'wape' => $evaluation['wape'],

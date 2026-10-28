@@ -20,6 +20,8 @@ const schema = z.object({
       'Harga terlalu besar.',
     ),
   minimum_stock: z.number().int().min(0).max(4294967295),
+  supplier_lead_time_days: z.number().int().min(0).max(365),
+  order_pack_size: z.number().int().min(1).max(4294967295),
   is_active: z.boolean(),
 })
 type Values = z.infer<typeof schema>
@@ -45,6 +47,8 @@ export function UnitItemForm({
       item_id: item?.item.id ?? 0,
       selling_price: String(item?.selling_price ?? '0'),
       minimum_stock: item?.minimum_stock ?? 0,
+      supplier_lead_time_days: item?.supplier_lead_time_days ?? 0,
+      order_pack_size: item?.order_pack_size ?? 1,
       is_active: item?.is_active ?? true,
     },
   })
@@ -60,6 +64,10 @@ export function UnitItemForm({
       const body: Partial<Values> = {
         ...values,
         minimum_stock: selected?.type === 'SERVICE' ? 0 : values.minimum_stock,
+        supplier_lead_time_days:
+          selected?.type === 'SERVICE' ? 0 : values.supplier_lead_time_days,
+        order_pack_size:
+          selected?.type === 'SERVICE' ? 1 : values.order_pack_size,
       }
       if (item) delete body.item_id
       return save.mutateAsync(body)
@@ -101,7 +109,11 @@ export function UnitItemForm({
               onChange={(row) => {
                 setSelected(row)
                 form.setValue('item_id', row.id, { shouldValidate: true })
-                if (row.type === 'SERVICE') form.setValue('minimum_stock', 0)
+                if (row.type === 'SERVICE') {
+                  form.setValue('minimum_stock', 0)
+                  form.setValue('supplier_lead_time_days', 0)
+                  form.setValue('order_pack_size', 1)
+                }
               }}
             />
           )}
@@ -113,7 +125,7 @@ export function UnitItemForm({
           <Input inputMode="decimal" {...form.register('selling_price')} />
         </FormField>
         <FormField
-          label="Stok minimum"
+          label="Safety stock (stok minimum)"
           error={form.formState.errors.minimum_stock?.message}
         >
           <Input
@@ -121,6 +133,32 @@ export function UnitItemForm({
             min={0}
             disabled={selected?.type === 'SERVICE'}
             {...form.register('minimum_stock', { valueAsNumber: true })}
+          />
+        </FormField>
+        <FormField
+          label="Lead time pemasok (hari)"
+          error={form.formState.errors.supplier_lead_time_days?.message}
+        >
+          <Input
+            type="number"
+            min={0}
+            max={365}
+            disabled={selected?.type === 'SERVICE'}
+            {...form.register('supplier_lead_time_days', {
+              valueAsNumber: true,
+            })}
+          />
+        </FormField>
+        <FormField
+          label="Ukuran kemasan pemesanan"
+          hint="Rekomendasi dibulatkan ke kelipatan jumlah ini."
+          error={form.formState.errors.order_pack_size?.message}
+        >
+          <Input
+            type="number"
+            min={1}
+            disabled={selected?.type === 'SERVICE'}
+            {...form.register('order_pack_size', { valueAsNumber: true })}
           />
         </FormField>
         <label className="check-field">

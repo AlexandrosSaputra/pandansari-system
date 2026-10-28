@@ -58,6 +58,8 @@ Perintah tersebut idempoten dan memvalidasi pemetaan outlet/SKU, kelengkapan min
 
 AI Insight menandai histori berumur paling lama 7 hari sebagai `fresh`, 8–28 hari sebagai `aging`, dan lebih dari 28 hari sebagai `stale`. Status `aging` dan `stale` memunculkan peringatan review manusia; prediksi tetap dapat dibuat agar tidak menghambat analisis, tetapi data penjualan sebaiknya diimpor ulang sebelum rekomendasi restock disetujui.
 
+Atur `Safety stock`, `Lead time pemasok`, dan `Ukuran kemasan pemesanan` pada form item setiap outlet. Jumlah restock mentah memakai `prediksi + safety stock - stok tersedia`, kemudian dibulatkan ke atas sesuai ukuran kemasan. Tanggal pemesanan paling lambat adalah awal periode forecast dikurangi lead time; tanggal yang sudah terlewati ditandai sebagai terlambat. Default data lama adalah lead time 0 hari dan ukuran kemasan 1 unit.
+
 Untuk fitur lupa password, isi alamat penerima OTP khusus di `backend/.env` dan konfigurasi SMTP sesuai penyedia email yang digunakan:
 
 ```dotenv

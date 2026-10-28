@@ -22,8 +22,15 @@ class UnitItemApiTest extends TestCase
         $water = $this->item('WATER', ItemType::Product);
 
         $a = $this->postJson('/api/operational-units/'.$unitA->id.'/items', [
-            'item_id' => $water->id, 'selling_price' => '5000.00', 'minimum_stock' => 10,
-        ])->assertCreated()->assertJsonPath('data.selling_price', '5000.00');
+            'item_id' => $water->id,
+            'selling_price' => '5000.00',
+            'minimum_stock' => 10,
+            'supplier_lead_time_days' => 7,
+            'order_pack_size' => 12,
+        ])->assertCreated()
+            ->assertJsonPath('data.selling_price', '5000.00')
+            ->assertJsonPath('data.supplier_lead_time_days', 7)
+            ->assertJsonPath('data.order_pack_size', 12);
         $b = $this->postJson('/api/operational-units/'.$unitB->id.'/items', [
             'item_id' => $water->id, 'selling_price' => '6000.00', 'minimum_stock' => 20,
         ])->assertCreated()->assertJsonPath('data.selling_price', '6000.00');
@@ -48,7 +55,19 @@ class UnitItemApiTest extends TestCase
             ->assertUnprocessable()->assertJsonValidationErrors('minimum_stock');
 
         $id = $this->postJson($url, ['item_id' => $service->id, 'selling_price' => '25000.00'])
-            ->assertCreated()->assertJsonPath('data.minimum_stock', 0)->json('data.id');
+            ->assertCreated()
+            ->assertJsonPath('data.minimum_stock', 0)
+            ->assertJsonPath('data.supplier_lead_time_days', 0)
+            ->assertJsonPath('data.order_pack_size', 1)
+            ->json('data.id');
+
+        $this->postJson($url, [
+            'item_id' => $other->id,
+            'selling_price' => '5000.00',
+            'supplier_lead_time_days' => 2,
+            'order_pack_size' => 6,
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors(['supplier_lead_time_days', 'order_pack_size']);
 
         $this->postJson($url, ['item_id' => $service->id, 'selling_price' => '30000.00'])
             ->assertUnprocessable()->assertJsonValidationErrors('item_id');

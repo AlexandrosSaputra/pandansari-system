@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\ForecastResult;
 use App\Support\ForecastDataFreshness;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -60,12 +61,37 @@ class ForecastRunResource extends JsonResource
                     'predicted_units' => $result->predicted_units,
                     'available_quantity' => $result->available_quantity,
                     'minimum_stock' => $result->minimum_stock,
+                    'supplier_lead_time_days' => $result->supplier_lead_time_days,
+                    'order_pack_size' => $result->order_pack_size,
                     'incoming_quantity' => $result->incoming_quantity,
+                    'unrounded_restock' => $result->unrounded_restock ?? $result->recommended_restock,
                     'recommended_restock' => $result->recommended_restock,
+                    'order_by_date' => $result->order_by_date?->toDateString(),
+                    'order_status' => $this->orderStatus($result),
                     'mae' => (float) $result->mae,
                     'rmse' => (float) $result->rmse,
                     'wape' => (float) $result->wape,
                 ])->all()),
         ];
+    }
+
+    private function orderStatus(ForecastResult $result): string
+    {
+        if ($result->recommended_restock === 0) {
+            return 'not_required';
+        }
+
+        if ($result->order_by_date === null || $this->created_at === null) {
+            return 'unknown';
+        }
+
+        $orderBy = $result->order_by_date->startOfDay();
+        $createdAt = $this->created_at->startOfDay();
+
+        if ($orderBy->lessThan($createdAt)) {
+            return 'overdue';
+        }
+
+        return $orderBy->equalTo($createdAt) ? 'due_today' : 'planned';
     }
 }

@@ -14,6 +14,8 @@ class UnitItem extends Model
         'item_id',
         'selling_price',
         'minimum_stock',
+        'supplier_lead_time_days',
+        'order_pack_size',
         'is_active',
         'created_by',
     ];
@@ -44,6 +46,8 @@ class UnitItem extends Model
         return [
             'selling_price' => 'decimal:2',
             'minimum_stock' => 'integer',
+            'supplier_lead_time_days' => 'integer',
+            'order_pack_size' => 'integer',
             'is_active' => 'boolean',
         ];
     }

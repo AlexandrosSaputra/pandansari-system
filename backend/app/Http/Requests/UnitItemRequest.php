@@ -33,6 +33,8 @@ class UnitItemRequest extends FormRequest
                 : ['prohibited'],
             'selling_price' => [$creating ? 'required' : 'sometimes', 'numeric', 'decimal:0,2', 'min:0', 'max:9999999999999.99'],
             'minimum_stock' => ['sometimes', 'integer', 'min:0', 'max:4294967295'],
+            'supplier_lead_time_days' => ['sometimes', 'integer', 'min:0', 'max:365'],
+            'order_pack_size' => ['sometimes', 'integer', 'min:1', 'max:4294967295'],
             'is_active' => ['sometimes', 'boolean'],
         ];
     }
@@ -43,9 +45,19 @@ class UnitItemRequest extends FormRequest
             $unitItem = $this->route('unitItem');
             $item = $unitItem instanceof UnitItem ? $unitItem->item : Item::find($this->input('item_id'));
             $minimumStock = $this->input('minimum_stock', $unitItem instanceof UnitItem ? $unitItem->minimum_stock : 0);
+            $leadTimeDays = $this->input('supplier_lead_time_days', $unitItem instanceof UnitItem ? $unitItem->supplier_lead_time_days : 0);
+            $orderPackSize = $this->input('order_pack_size', $unitItem instanceof UnitItem ? $unitItem->order_pack_size : 1);
 
             if ($item?->type === ItemType::Service && is_numeric($minimumStock) && (int) $minimumStock !== 0) {
                 $validator->errors()->add('minimum_stock', 'Services must have a minimum stock of zero.');
+            }
+
+            if ($item?->type === ItemType::Service && is_numeric($leadTimeDays) && (int) $leadTimeDays !== 0) {
+                $validator->errors()->add('supplier_lead_time_days', 'Services must have a supplier lead time of zero.');
+            }
+
+            if ($item?->type === ItemType::Service && is_numeric($orderPackSize) && (int) $orderPackSize !== 1) {
+                $validator->errors()->add('order_pack_size', 'Services must have an order pack size of one.');
             }
         });
     }

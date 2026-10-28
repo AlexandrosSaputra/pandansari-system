@@ -23,7 +23,7 @@ class DatabaseFoundationTest extends TestCase
             'operational_units' => ['type', 'scanner_enabled', 'created_by'],
             'users' => ['role_id', 'operational_unit_id', 'is_active'],
             'items' => ['item_code', 'barcode', 'type', 'visitor_factor'],
-            'unit_items' => ['operational_unit_id', 'item_id', 'selling_price', 'minimum_stock'],
+            'unit_items' => ['operational_unit_id', 'item_id', 'selling_price', 'minimum_stock', 'supplier_lead_time_days', 'order_pack_size'],
             'inventory_locations' => ['type', 'operational_unit_id'],
             'inventory_balances' => ['quantity_on_hand', 'quantity_reserved'],
             'stock_movements' => ['direction', 'movement_type', 'quantity', 'reference_type', 'reference_id', 'performed_by', 'created_at'],
@@ -34,7 +34,7 @@ class DatabaseFoundationTest extends TestCase
             'activity_logs' => ['actor_id', 'action', 'subject_type', 'subject_id', 'metadata', 'created_at'],
             'historical_sales' => ['operational_unit_id', 'item_id', 'week_start', 'units_sold', 'source_file'],
             'forecast_runs' => ['requested_by', 'operational_unit_id', 'horizon', 'forecast_start', 'forecast_end', 'metrics', 'explanation'],
-            'forecast_results' => ['forecast_run_id', 'item_id', 'predicted_units', 'available_quantity', 'recommended_restock', 'wape'],
+            'forecast_results' => ['forecast_run_id', 'item_id', 'predicted_units', 'available_quantity', 'supplier_lead_time_days', 'order_pack_size', 'unrounded_restock', 'recommended_restock', 'order_by_date', 'wape'],
         ];
 
         foreach ($tables as $table => $columns) {

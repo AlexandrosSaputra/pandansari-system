@@ -54,6 +54,8 @@ class UnitItemController extends Controller
                 ...$attributes,
                 'operational_unit_id' => $operationalUnit->id,
                 'minimum_stock' => $attributes['minimum_stock'] ?? 0,
+                'supplier_lead_time_days' => $attributes['supplier_lead_time_days'] ?? 0,
+                'order_pack_size' => $attributes['order_pack_size'] ?? 1,
                 'is_active' => $attributes['is_active'] ?? true,
                 'created_by' => $request->user()->id,
             ]);

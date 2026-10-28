@@ -90,6 +90,8 @@ export interface UnitItem {
   item: ItemSummary
   selling_price: Money
   minimum_stock: number
+  supplier_lead_time_days: number
+  order_pack_size: number
   is_active: boolean
   created_at: string | null
   updated_at: string | null
@@ -221,8 +223,13 @@ export interface ForecastResult {
   predicted_units: number
   available_quantity: number
   minimum_stock: number
+  supplier_lead_time_days: number
+  order_pack_size: number
   incoming_quantity: number
+  unrounded_restock: number
   recommended_restock: number
+  order_by_date: string | null
+  order_status: 'not_required' | 'overdue' | 'due_today' | 'planned' | 'unknown'
   mae: number
   rmse: number
   wape: number

@@ -18,7 +18,7 @@ import type {
   Page,
   UnitItem,
 } from '../../types/api'
-import { formatCurrency } from '../../utils/format'
+import { formatCurrency, formatNumber } from '../../utils/format'
 import { UnitItemForm } from '../operational-units/UnitItemForm'
 
 function SvgIcon({
@@ -509,6 +509,22 @@ function UnitItemPanel({
               <dt>Stok minimum</dt>
               <dd>
                 {detail.item.type === 'SERVICE' ? '—' : detail.minimum_stock}
+              </dd>
+            </div>
+            <div>
+              <dt>Lead time pemasok</dt>
+              <dd>
+                {detail.item.type === 'SERVICE'
+                  ? 'â€”'
+                  : `${formatNumber(detail.supplier_lead_time_days)} hari`}
+              </dd>
+            </div>
+            <div>
+              <dt>Ukuran kemasan</dt>
+              <dd>
+                {detail.item.type === 'SERVICE'
+                  ? 'â€”'
+                  : `${formatNumber(detail.order_pack_size)} unit`}
               </dd>
             </div>
             <div>

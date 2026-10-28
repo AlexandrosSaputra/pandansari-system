@@ -165,7 +165,11 @@ class ForecastExplanationService
                     'predicted_units' => $result->predicted_units,
                     'available_quantity' => $result->available_quantity,
                     'minimum_stock' => $result->minimum_stock,
+                    'supplier_lead_time_days' => $result->supplier_lead_time_days,
+                    'order_pack_size' => $result->order_pack_size,
+                    'unrounded_restock' => $result->unrounded_restock,
                     'recommended_restock' => $result->recommended_restock,
+                    'order_by_date' => $result->order_by_date?->toDateString(),
                     'model' => $result->model,
                     'wape' => (float) $result->wape,
                 ])->values()->all(),
@@ -193,6 +197,7 @@ class ForecastExplanationService
         $run->loadMissing(['operationalUnit', 'results.item']);
         $restockItems = $run->results->where('recommended_restock', '>', 0);
         $highest = $restockItems->sortByDesc('recommended_restock')->first();
+        $earliestOrder = $restockItems->whereNotNull('order_by_date')->sortBy('order_by_date')->first();
         $freshness = $this->freshness->forRun($run);
         $risks = [
             sprintf('WAPE agregat backtest adalah %.2f%%; rekomendasi tetap perlu ditinjau sebelum pengadaan.', (float) ($run->metrics['wape'] ?? 0)),
@@ -216,6 +221,15 @@ class ForecastExplanationService
                 'Prioritaskan review %s dengan rekomendasi restock %d unit.',
                 $highest->item->name,
                 $highest->recommended_restock,
+            );
+        }
+
+        if ($earliestOrder) {
+            $actions[] = sprintf(
+                'Pesan %s paling lambat %s dalam kelipatan %d unit per kemasan.',
+                $earliestOrder->item->name,
+                $earliestOrder->order_by_date->translatedFormat('d F Y'),
+                $earliestOrder->order_pack_size,
             );
         }
 
