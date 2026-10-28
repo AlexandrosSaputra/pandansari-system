@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\SafetyStockMode;
 use Database\Factories\ForecastResultFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -21,6 +22,10 @@ class ForecastResult extends Model
         'predicted_units',
         'available_quantity',
         'minimum_stock',
+        'safety_stock_mode',
+        'target_service_level',
+        'calculated_safety_stock',
+        'safety_stock',
         'supplier_lead_time_days',
         'order_pack_size',
         'incoming_quantity',
@@ -54,6 +59,10 @@ class ForecastResult extends Model
             'predicted_units' => 'integer',
             'available_quantity' => 'integer',
             'minimum_stock' => 'integer',
+            'safety_stock_mode' => SafetyStockMode::class,
+            'target_service_level' => 'decimal:2',
+            'calculated_safety_stock' => 'integer',
+            'safety_stock' => 'integer',
             'supplier_lead_time_days' => 'integer',
             'order_pack_size' => 'integer',
             'incoming_quantity' => 'integer',

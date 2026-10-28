@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\SafetyStockMode;
 use App\Models\ForecastResult;
 use App\Models\ForecastRun;
 use App\Models\Item;
@@ -28,10 +29,14 @@ class ForecastResultFactory extends Factory
             'predicted_units' => 20,
             'available_quantity' => 10,
             'minimum_stock' => 5,
+            'safety_stock_mode' => SafetyStockMode::Calculated,
+            'target_service_level' => 95,
+            'calculated_safety_stock' => 7,
+            'safety_stock' => 7,
             'supplier_lead_time_days' => 7,
             'order_pack_size' => 6,
             'incoming_quantity' => 0,
-            'unrounded_restock' => 15,
+            'unrounded_restock' => 17,
             'recommended_restock' => 18,
             'order_by_date' => now()->addWeek()->toDateString(),
             'mae' => 3,

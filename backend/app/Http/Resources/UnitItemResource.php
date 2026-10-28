@@ -33,6 +33,8 @@ class UnitItemResource extends JsonResource
             ],
             'selling_price' => $this->selling_price,
             'minimum_stock' => $this->minimum_stock,
+            'safety_stock_mode' => $this->safety_stock_mode->value,
+            'target_service_level' => (float) $this->target_service_level,
             'supplier_lead_time_days' => $this->supplier_lead_time_days,
             'order_pack_size' => $this->order_pack_size,
             'is_active' => $this->is_active,

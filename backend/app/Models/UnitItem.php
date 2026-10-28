@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\SafetyStockMode;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -14,6 +15,8 @@ class UnitItem extends Model
         'item_id',
         'selling_price',
         'minimum_stock',
+        'safety_stock_mode',
+        'target_service_level',
         'supplier_lead_time_days',
         'order_pack_size',
         'is_active',
@@ -46,6 +49,8 @@ class UnitItem extends Model
         return [
             'selling_price' => 'decimal:2',
             'minimum_stock' => 'integer',
+            'safety_stock_mode' => SafetyStockMode::class,
+            'target_service_level' => 'decimal:2',
             'supplier_lead_time_days' => 'integer',
             'order_pack_size' => 'integer',
             'is_active' => 'boolean',

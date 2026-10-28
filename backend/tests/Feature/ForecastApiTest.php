@@ -45,6 +45,8 @@ class ForecastApiTest extends TestCase
             ->whereHas('item', fn ($query) => $query->where('name', 'BENG-BENG'))
             ->firstOrFail();
         $packagedItem->update([
+            'safety_stock_mode' => 'CALCULATED',
+            'target_service_level' => 95,
             'supplier_lead_time_days' => 7,
             'order_pack_size' => 6,
         ]);
@@ -87,7 +89,7 @@ class ForecastApiTest extends TestCase
         $this->assertTrue($results->every(function (array $result): bool {
             $unrounded = max(
                 0,
-                $result['predicted_units'] + $result['minimum_stock'] - $result['available_quantity'],
+                $result['predicted_units'] + $result['safety_stock'] - $result['available_quantity'],
             );
             $rounded = $unrounded === 0
                 ? 0
@@ -110,6 +112,9 @@ class ForecastApiTest extends TestCase
         );
         $packagedResult = $results->firstWhere('item.name', 'BENG-BENG');
         $this->assertSame(6, $packagedResult['order_pack_size']);
+        $this->assertSame('CALCULATED', $packagedResult['safety_stock_mode']);
+        $this->assertSame(95, $packagedResult['target_service_level']);
+        $this->assertSame($packagedResult['calculated_safety_stock'], $packagedResult['safety_stock']);
         $this->assertSame(7, $packagedResult['supplier_lead_time_days']);
         $this->assertSame('2026-10-26', $packagedResult['order_by_date']);
         $this->assertSame('overdue', $packagedResult['order_status']);

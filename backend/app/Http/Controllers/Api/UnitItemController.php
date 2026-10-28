@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Enums\ItemType;
+use App\Enums\SafetyStockMode;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UnitItemRequest;
 use App\Http\Resources\UnitItemResource;
@@ -54,6 +55,8 @@ class UnitItemController extends Controller
                 ...$attributes,
                 'operational_unit_id' => $operationalUnit->id,
                 'minimum_stock' => $attributes['minimum_stock'] ?? 0,
+                'safety_stock_mode' => $attributes['safety_stock_mode'] ?? SafetyStockMode::Manual->value,
+                'target_service_level' => $attributes['target_service_level'] ?? 95,
                 'supplier_lead_time_days' => $attributes['supplier_lead_time_days'] ?? 0,
                 'order_pack_size' => $attributes['order_pack_size'] ?? 1,
                 'is_active' => $attributes['is_active'] ?? true,

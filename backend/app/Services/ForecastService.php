@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\SafetyStockMode;
 use App\Models\ForecastRun;
 use App\Models\HistoricalSale;
 use App\Models\InventoryBalance;
@@ -15,7 +16,10 @@ use Illuminate\Validation\ValidationException;
 
 class ForecastService
 {
-    public function __construct(private WeeklyForecastModelSelector $modelSelector) {}
+    public function __construct(
+        private WeeklyForecastModelSelector $modelSelector,
+        private SafetyStockCalculator $safetyStockCalculator,
+    ) {}
 
     /**
      * @param  array{operational_unit_id: int, horizon: string, target_date?: string|null}  $attributes
@@ -112,7 +116,17 @@ class ForecastService
             $minimumStock = (int) $unitItem->minimum_stock;
             $leadTimeDays = (int) $unitItem->supplier_lead_time_days;
             $orderPackSize = max(1, (int) $unitItem->order_pack_size);
-            $unroundedRestock = max(0, $predictedUnits + $minimumStock - $available);
+            $safetyStockMode = $unitItem->safety_stock_mode;
+            $targetServiceLevel = (float) $unitItem->target_service_level;
+            $calculatedSafetyStock = $this->safetyStockCalculator->calculate(
+                $evaluation['rmse'],
+                $leadTimeDays,
+                $targetServiceLevel,
+            );
+            $safetyStock = $safetyStockMode === SafetyStockMode::Calculated
+                ? $calculatedSafetyStock
+                : $minimumStock;
+            $unroundedRestock = max(0, $predictedUnits + $safetyStock - $available);
             $recommended = $unroundedRestock === 0
                 ? 0
                 : (int) (ceil($unroundedRestock / $orderPackSize) * $orderPackSize);
@@ -125,6 +139,10 @@ class ForecastService
                 'predicted_units' => $predictedUnits,
                 'available_quantity' => $available,
                 'minimum_stock' => $minimumStock,
+                'safety_stock_mode' => $safetyStockMode,
+                'target_service_level' => $targetServiceLevel,
+                'calculated_safety_stock' => $calculatedSafetyStock,
+                'safety_stock' => $safetyStock,
                 'supplier_lead_time_days' => $leadTimeDays,
                 'order_pack_size' => $orderPackSize,
                 'incoming_quantity' => 0,
