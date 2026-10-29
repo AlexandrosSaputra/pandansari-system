@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  Badge,
   Button,
   Card,
   EmptyState,
@@ -23,6 +24,7 @@ import type {
   Resource,
 } from '../../types/api'
 import { formatDate, formatDateTime, formatNumber } from '../../utils/format'
+import { ForecastDecisionModal } from './ForecastDecisionModal'
 
 const horizonLabels: Record<ForecastHorizon, string> = {
   next_week: 'Minggu depan',
@@ -42,6 +44,9 @@ export function ForecastsPage() {
   const [unitId, setUnitId] = useState('')
   const [horizon, setHorizon] = useState<ForecastHorizon>('next_week')
   const [targetDate, setTargetDate] = useState('')
+  const [decisionRun, setDecisionRun] = useState<ForecastRun | null>(null)
+  const [selectedResult, setSelectedResult] =
+    useState<ForecastResult | null>(null)
   const options = useQuery({
     queryKey: keys.detail('/forecasts/options'),
     queryFn: ({ signal }) =>
@@ -63,6 +68,7 @@ export function ForecastsPage() {
       return response.data.data
     },
     onSuccess: async () => {
+      setDecisionRun(null)
       await queryClient.invalidateQueries({ queryKey: ['/forecasts'] })
     },
   })
@@ -77,7 +83,7 @@ export function ForecastsPage() {
   const selectedUnit = options.data?.units.find(
     (unit) => unit.id === Number(effectiveUnitId),
   )
-  const activeRun = generate.data ?? history.data?.data[0]
+  const activeRun = decisionRun ?? generate.data ?? history.data?.data[0]
   const totals = useMemo(
     () => ({
       predicted:
@@ -179,6 +185,26 @@ export function ForecastsPage() {
             )}
           </div>
         ),
+    },
+    {
+      title: 'Keputusan owner',
+      render: (row) => (
+        <div className="flex min-w-28 flex-col items-start gap-2">
+          <Badge value={row.decision_status} />
+          {row.decision_status === 'APPROVED' && (
+            <small className="text-slate-600">
+              Final {formatNumber(row.final_restock_quantity)} unit
+            </small>
+          )}
+          <Button
+            variant="secondary"
+            className="px-2.5 py-1.5 text-xs"
+            onClick={() => setSelectedResult(row)}
+          >
+            {row.decision_status === 'PENDING' ? 'Putuskan' : 'Tinjau'}
+          </Button>
+        </div>
+      ),
     },
     { title: 'WAPE', render: (row) => `${row.wape.toFixed(1)}%` },
   ]
@@ -387,6 +413,17 @@ export function ForecastsPage() {
             Pilih unit dan horizon, lalu buat prediksi pertama.
           </p>
         </EmptyState>
+      )}
+      {selectedResult && (
+        <ForecastDecisionModal
+          result={selectedResult}
+          onClose={() => setSelectedResult(null)}
+          onSaved={(run) => {
+            setDecisionRun(run)
+            setSelectedResult(null)
+            void queryClient.invalidateQueries({ queryKey: ['/forecasts'] })
+          }}
+        />
       )}
     </div>
   )

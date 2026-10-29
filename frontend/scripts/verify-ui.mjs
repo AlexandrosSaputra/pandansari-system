@@ -193,6 +193,60 @@ try {
     assert.match(html, /href="\/pos"/)
     assert.match(html, /href="\/ticketing"/)
   })
+  const { ForecastDecisionModal } = await server.ssrLoadModule(
+    '/src/features/forecasts/ForecastDecisionModal.tsx',
+  )
+  check('Forecast decision modal exposes correction and audit history', () => {
+    const html = render(
+      h(ForecastDecisionModal, {
+        result: {
+          id: 91,
+          item: { id: 2, item_code: 'SKU-2', name: 'Produk Fixture', uom: 'pcs' },
+          model: 'seasonal_52',
+          history_weeks: 156,
+          predicted_units: 12,
+          available_quantity: 4,
+          minimum_stock: 5,
+          safety_stock_mode: 'CALCULATED',
+          target_service_level: 95,
+          calculated_safety_stock: 3,
+          safety_stock: 3,
+          supplier_lead_time_days: 7,
+          order_pack_size: 6,
+          incoming_quantity: 0,
+          unrounded_restock: 11,
+          recommended_restock: 12,
+          decision_status: 'APPROVED',
+          final_restock_quantity: 6,
+          decision_reason: 'Kapasitas rak terbatas.',
+          decided_by: user,
+          decided_at: '2026-10-29T10:00:00+07:00',
+          decision_history: [
+            {
+              id: 10,
+              status: 'APPROVED',
+              recommended_restock_snapshot: 12,
+              final_restock_quantity: 6,
+              reason: 'Kapasitas rak terbatas.',
+              decided_by: user,
+              decided_at: '2026-10-29T10:00:00+07:00',
+            },
+          ],
+          order_by_date: '2026-10-29',
+          order_status: 'due_today',
+          mae: 2,
+          rmse: 3,
+          wape: 10,
+        },
+        onClose() {},
+        onSaved() {},
+      }),
+    )
+    assert.match(html, /Keputusan restock Produk Fixture/)
+    assert.match(html, /Jumlah restock final/)
+    assert.match(html, /Riwayat keputusan/)
+    assert.match(html, /Kapasitas rak terbatas/)
+  })
   check('Superadmin chooses transaction units from inline sidebar menus', () => {
     const html = render(h(Sidebar))
     assert.match(html, /POS, tampilkan pilihan unit/)

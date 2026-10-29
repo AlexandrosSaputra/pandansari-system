@@ -35,6 +35,7 @@ class DatabaseFoundationTest extends TestCase
             'historical_sales' => ['operational_unit_id', 'item_id', 'week_start', 'units_sold', 'source_file'],
             'forecast_runs' => ['requested_by', 'operational_unit_id', 'horizon', 'forecast_start', 'forecast_end', 'metrics', 'explanation'],
             'forecast_results' => ['forecast_run_id', 'item_id', 'predicted_units', 'available_quantity', 'safety_stock_mode', 'target_service_level', 'calculated_safety_stock', 'safety_stock', 'supplier_lead_time_days', 'order_pack_size', 'unrounded_restock', 'recommended_restock', 'order_by_date', 'wape'],
+            'forecast_result_decisions' => ['forecast_result_id', 'status', 'recommended_restock_snapshot', 'final_restock_quantity', 'reason', 'decided_by', 'decided_at'],
         ];
 
         foreach ($tables as $table => $columns) {
@@ -100,6 +101,7 @@ class DatabaseFoundationTest extends TestCase
             'historical_sales' => ['operational_unit_id' => ['operational_units', 'restrict'], 'item_id' => ['items', 'restrict']],
             'forecast_runs' => ['requested_by' => ['users', 'restrict'], 'operational_unit_id' => ['operational_units', 'restrict']],
             'forecast_results' => ['forecast_run_id' => ['forecast_runs', 'cascade'], 'operational_unit_id' => ['operational_units', 'restrict'], 'item_id' => ['items', 'restrict']],
+            'forecast_result_decisions' => ['forecast_result_id' => ['forecast_results', 'cascade'], 'decided_by' => ['users', 'restrict']],
         ];
 
         foreach ($relations as $table => $columns) {
@@ -129,6 +131,7 @@ class DatabaseFoundationTest extends TestCase
             'historical_sales' => [['operational_unit_id', 'week_start']],
             'forecast_runs' => [['operational_unit_id', 'created_at']],
             'forecast_results' => [['operational_unit_id', 'recommended_restock']],
+            'forecast_result_decisions' => [['forecast_result_id', 'decided_at']],
         ];
 
         foreach ($indexes as $table => $columnSets) {

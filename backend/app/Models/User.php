@@ -103,6 +103,11 @@ class User extends Authenticatable
         return $this->hasMany(ForecastRun::class, 'requested_by');
     }
 
+    public function forecastResultDecisions(): HasMany
+    {
+        return $this->hasMany(ForecastResultDecision::class, 'decided_by');
+    }
+
     public function hasPermission(string $permission): bool
     {
         $role = $this->activeRole();

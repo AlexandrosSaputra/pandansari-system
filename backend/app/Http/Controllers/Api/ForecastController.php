@@ -63,7 +63,7 @@ class ForecastController extends Controller
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
         ]);
         $runs = ForecastRun::query()
-            ->with(['requester', 'operationalUnit', 'results.item'])
+            ->with(['requester', 'operationalUnit', 'results.item', 'results.decisions.decisionMaker'])
             ->when($filters['operational_unit_id'] ?? null, fn ($query, int $unitId) => $query
                 ->where('operational_unit_id', $unitId))
             ->latest()
@@ -82,7 +82,12 @@ class ForecastController extends Controller
         $user = $request->user();
         abort_unless($user instanceof User, 401, 'Unauthenticated.');
         $run = $forecasts->generate($user, $request->validated());
-        $run = $explanations->explain($run)->load(['requester', 'operationalUnit', 'results.item']);
+        $run = $explanations->explain($run)->load([
+            'requester',
+            'operationalUnit',
+            'results.item',
+            'results.decisions.decisionMaker',
+        ]);
         $logger->log($user, 'FORECAST_GENERATED', $run, [
             'operational_unit_id' => $run->operational_unit_id,
             'horizon' => $run->horizon,
@@ -102,6 +107,7 @@ class ForecastController extends Controller
             'requester',
             'operationalUnit',
             'results.item',
+            'results.decisions.decisionMaker',
         ]));
     }
 }

@@ -88,6 +88,11 @@ class ForecastApiTest extends TestCase
         );
 
         $results = collect($response->json('data.results'));
+        $this->assertTrue($results->every(
+            fn (array $result): bool => $result['decision_status'] === 'PENDING'
+                && $result['final_restock_quantity'] === null
+                && $result['decision_history'] === [],
+        ));
         $this->assertTrue($results->every(function (array $result): bool {
             $unrounded = max(
                 0,

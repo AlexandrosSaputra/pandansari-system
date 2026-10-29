@@ -32,6 +32,7 @@ export const labels: Record<string, string> = {
   CART: 'Keranjang',
   PAID: 'Dibayar',
   PENDING: 'Menunggu',
+  APPROVED: 'Disetujui',
   ACCEPTED: 'Diterima',
   REJECTED: 'Ditolak',
   IN: 'Masuk',

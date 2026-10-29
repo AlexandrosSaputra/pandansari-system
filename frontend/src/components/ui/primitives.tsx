@@ -82,7 +82,7 @@ export function Card({
 export function Badge({ value }: { value: string | boolean }) {
   const text =
     typeof value === 'boolean' ? (value ? 'Aktif' : 'Nonaktif') : label(value)
-  const tone = [true, 'Aktif', 'PAID', 'ACCEPTED', 'Normal', 'IN'].includes(value)
+  const tone = [true, 'Aktif', 'PAID', 'ACCEPTED', 'APPROVED', 'Normal', 'IN'].includes(value)
     ? 'success'
     : value === 'REJECTED'
       ? 'danger'

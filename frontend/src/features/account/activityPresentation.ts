@@ -88,6 +88,32 @@ export function presentActivity(log: ActivityLog): ActivityPresentation {
           stringValue(detail.transfer_number) ?? subjectReference(log, 'Transfer'),
         tone: 'transfer',
       }
+    case 'FORECAST_GENERATED':
+      return {
+        title: 'Prediksi permintaan berhasil dibuat',
+        description: subjectReference(log, 'Prediksi'),
+        tone: 'system',
+      }
+    case 'FORECAST_RECOMMENDATION_APPROVED':
+    case 'FORECAST_RECOMMENDATION_REJECTED': {
+      const approved = log.action === 'FORECAST_RECOMMENDATION_APPROVED'
+      const quantity = numberValue(
+        approved
+          ? detail.final_restock_quantity
+          : detail.recommended_restock,
+      )
+
+      return {
+        title: approved
+          ? 'Rekomendasi restock disetujui'
+          : 'Rekomendasi restock ditolak',
+        description:
+          quantity === null
+            ? subjectReference(log, 'Keputusan forecast')
+            : `${formatNumber(quantity)} unit`,
+        tone: 'system',
+      }
+    }
     case 'AUTH_LOGIN_SUCCESS':
       return {
         title: 'Berhasil masuk ke sistem',

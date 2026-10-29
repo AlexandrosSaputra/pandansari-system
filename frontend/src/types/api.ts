@@ -217,6 +217,16 @@ export interface ForecastExplanation {
   risks: string[]
   actions: string[]
 }
+export type ForecastDecisionStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
+export interface ForecastDecision {
+  id: number
+  status: Exclude<ForecastDecisionStatus, 'PENDING'>
+  recommended_restock_snapshot: number
+  final_restock_quantity: number | null
+  reason: string | null
+  decided_by: Person
+  decided_at: string
+}
 export interface ForecastResult {
   id: number
   item: Pick<ItemSummary, 'id' | 'item_code' | 'name' | 'uom'>
@@ -238,6 +248,12 @@ export interface ForecastResult {
   incoming_quantity: number
   unrounded_restock: number
   recommended_restock: number
+  decision_status: ForecastDecisionStatus
+  final_restock_quantity: number | null
+  decision_reason: string | null
+  decided_by: Person | null
+  decided_at: string | null
+  decision_history: ForecastDecision[]
   order_by_date: string | null
   order_status: 'not_required' | 'overdue' | 'due_today' | 'planned' | 'unknown'
   mae: number

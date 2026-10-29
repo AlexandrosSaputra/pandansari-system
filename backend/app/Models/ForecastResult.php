@@ -7,6 +7,7 @@ use Database\Factories\ForecastResultFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ForecastResult extends Model
 {
@@ -50,6 +51,13 @@ class ForecastResult extends Model
     public function item(): BelongsTo
     {
         return $this->belongsTo(Item::class);
+    }
+
+    public function decisions(): HasMany
+    {
+        return $this->hasMany(ForecastResultDecision::class)
+            ->orderByDesc('decided_at')
+            ->orderByDesc('id');
     }
 
     protected function casts(): array

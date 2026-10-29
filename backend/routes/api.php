@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ForecastController;
+use App\Http\Controllers\Api\ForecastResultDecisionController;
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\InventoryController;
 use App\Http\Controllers\Api\ItemController;
@@ -76,6 +77,9 @@ Route::middleware('auth:sanctum')->name('api.')->group(function (): void {
         Route::get('options', [ForecastController::class, 'options'])->name('options');
         Route::get('/', [ForecastController::class, 'index'])->name('index');
         Route::post('/', [ForecastController::class, 'store'])->middleware('permission:ai.generate')->name('store');
+        Route::post('results/{forecastResult}/decisions', [ForecastResultDecisionController::class, 'store'])
+            ->middleware('permission:ai.generate')
+            ->name('result-decisions.store');
         Route::get('{forecastRun}', [ForecastController::class, 'show'])->name('show');
     });
 
