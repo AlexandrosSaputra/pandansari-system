@@ -56,7 +56,16 @@ php artisan forecast:import-sales
 
 Perintah tersebut idempoten dan memvalidasi pemetaan outlet/SKU, kelengkapan minggu Senin–Minggu, duplikasi, serta kesesuaian `unit × harga = nilai penjualan`. Untuk penjelasan hasil, biarkan `FORECAST_EXPLANATION_PROVIDER=none` agar memakai fallback lokal, atau pilih `openai`/`ollama`. API key OpenAI hanya disimpan pada `backend/.env`; jangan menaruhnya di frontend atau repositori.
 
-AI Insight menandai histori berumur paling lama 7 hari sebagai `fresh`, 8–28 hari sebagai `aging`, dan lebih dari 28 hari sebagai `stale`. Status `aging` dan `stale` memunculkan peringatan review manusia; prediksi tetap dapat dibuat agar tidak menghambat analisis, tetapi data penjualan sebaiknya diimpor ulang sebelum rekomendasi restock disetujui.
+Setelah dataset awal tersedia, transaksi aplikasi berstatus `PAID` dapat disinkronkan menjadi histori mingguan:
+
+```powershell
+php artisan forecast:sync-sales
+php artisan forecast:sync-sales --check-only
+```
+
+Sinkronisasi hanya mengelola minggu setelah data impor terakhir, mengagregasi snapshot `quantity` dan `subtotal` per outlet/SKU, serta mengisi observasi nol untuk produk tanpa penjualan. Mode `--check-only` mendeteksi minggu atau observasi yang hilang tanpa menulis data dan mengembalikan exit code gagal jika ditemukan celah. Jadwal `forecast:sync-sales` berjalan setiap hari pukul 00.15 zona `FORECAST_TIMEZONE` dan hanya memproses minggu yang sudah selesai. Pada pengembangan Windows, jalankan `php artisan schedule:work`; deployment perlu menjalankan `php artisan schedule:run` setiap menit melalui task scheduler/cron.
+
+AI Insight menandai histori berumur paling lama 7 hari sebagai `fresh`, 8–28 hari sebagai `aging`, dan lebih dari 28 hari sebagai `stale`. Status `aging` dan `stale` memunculkan peringatan review manusia; prediksi tetap dapat dibuat agar tidak menghambat analisis, tetapi scheduler dan hasil `forecast:sync-sales --check-only` perlu diperiksa sebelum rekomendasi restock disetujui.
 
 Atur `Safety stock`, `Lead time pemasok`, dan `Ukuran kemasan pemesanan` pada form item setiap outlet. Jumlah restock mentah memakai `prediksi + safety stock - stok tersedia`, kemudian dibulatkan ke atas sesuai ukuran kemasan. Tanggal pemesanan paling lambat adalah awal periode forecast dikurangi lead time; tanggal yang sudah terlewati ditandai sebagai terlambat. Default data lama adalah lead time 0 hari dan ukuran kemasan 1 unit.
 
