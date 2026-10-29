@@ -193,6 +193,44 @@ try {
     assert.match(html, /href="\/pos"/)
     assert.match(html, /href="\/ticketing"/)
   })
+  const { ForecastsPage } = await server.ssrLoadModule(
+    '/src/features/forecasts/ForecastsPage.tsx',
+  )
+  check('AI Insight distinguishes Ollama availability from a fallback explanation', () => {
+    const freshness = {
+      status: 'fresh',
+      age_days: 1,
+      gap_weeks: 0,
+      requires_warning: false,
+    }
+    queryClient.setQueryData(keys.detail('/forecasts/options'), {
+      units: [{ ...unit, history_start: '2022-09-01', history_end: '2026-10-28', history_weeks: 208, product_count: 1, data_freshness: freshness }],
+      explanation_provider: 'ollama',
+      explanation_runtime: { status: 'ready', model: 'qwen2.5:3b' },
+    })
+    queryClient.setQueryData(keys.list('/forecasts', { per_page: 10 }), {
+      data: [{
+        id: 1,
+        operational_unit: unit,
+        forecast_start: '2026-11-02',
+        forecast_end: '2026-11-08',
+        history_through: '2026-10-28',
+        created_at: '2026-10-29T10:00:00+07:00',
+        data_freshness: freshness,
+        metrics: { wape: 20 },
+        explanation_provider: 'ollama',
+        explanation_status: 'fallback',
+        explanation: { summary: 'Penjelasan sistem', risks: [], actions: [] },
+        results: [],
+      }],
+    })
+    const html = render(h(ForecastsPage))
+    assert.match(html, /terhubung, model tersedia/)
+    assert.match(html, /qwen2\.5:3b/)
+    assert.match(html, /sistem \(fallback ollama\)/)
+    assert.match(html, /Periksa ulang/)
+  })
+  session('superadmin', ['transaction.create'])
   const { ForecastDecisionModal } = await server.ssrLoadModule(
     '/src/features/forecasts/ForecastDecisionModal.tsx',
   )

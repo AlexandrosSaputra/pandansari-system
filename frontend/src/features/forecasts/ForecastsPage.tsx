@@ -226,6 +226,36 @@ export function ForecastsPage() {
   return (
     <div className="space-y-6">
       <Card className="p-5">
+        {options.data.explanation_provider === 'ollama' && (
+          <div
+            role="status"
+            className={`mb-4 rounded-lg border p-3 text-sm ${
+              options.data.explanation_runtime.status === 'ready'
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                : 'border-amber-200 bg-amber-50 text-amber-900'
+            }`}
+          >
+            <strong>
+              Ollama {options.data.explanation_runtime.status === 'ready'
+                ? 'terhubung, model tersedia'
+                : options.data.explanation_runtime.status === 'model_missing'
+                  ? 'model belum tersedia'
+                  : 'tidak terhubung'}
+            </strong>{' '}
+            {options.data.explanation_runtime.model &&
+              `(${options.data.explanation_runtime.model}).`}{' '}
+            {options.data.explanation_runtime.status !== 'ready' &&
+              'Jika belum tersedia saat prediksi dibuat, penjelasan sistem akan digunakan.'}{' '}
+            <Button
+              variant="ghost"
+              className="px-2 py-1 text-xs"
+              busy={options.isFetching}
+              onClick={() => void options.refetch()}
+            >
+              Periksa ulang
+            </Button>
+          </div>
+        )}
         <form
           className="grid gap-4 lg:grid-cols-[1.3fr_1fr_1fr_auto] lg:items-end"
           onSubmit={(event) => {
@@ -355,9 +385,11 @@ export function ForecastsPage() {
               </div>
               <span className="badge badge-neutral">
                 Penjelasan:{' '}
-                {activeRun.explanation_provider === 'none'
-                  ? 'sistem'
-                  : activeRun.explanation_provider}
+                {activeRun.explanation_status === 'fallback'
+                  ? `sistem (fallback ${activeRun.explanation_provider})`
+                  : activeRun.explanation_provider === 'none'
+                    ? 'sistem'
+                    : activeRun.explanation_provider}
               </span>
             </div>
             {Object.keys(activeRun.metrics.candidate_metrics ?? {}).length >

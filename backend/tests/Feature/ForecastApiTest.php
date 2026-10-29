@@ -154,6 +154,117 @@ class ForecastApiTest extends TestCase
         ])->assertForbidden();
     }
 
+    public function test_options_report_ollama_ready_only_when_the_configured_model_is_installed(): void
+    {
+        $superadmin = User::query()->where('username', 'admin')->firstOrFail();
+        config([
+            'forecast.explanation.provider' => 'ollama',
+            'forecast.explanation.ollama.base_url' => 'http://ollama.test',
+            'forecast.explanation.ollama.model' => 'llama3.2',
+        ]);
+        Http::preventStrayRequests();
+        Http::fake([
+            'http://ollama.test/api/tags' => Http::sequence()
+                ->push(['models' => [['name' => 'llama3.2:latest']]])
+                ->push(['models' => [['name' => 'other:latest']]])
+                ->push(['error' => 'unavailable'], 503),
+        ]);
+        $this->actingAs($superadmin, 'web');
+
+        $this->getJson('/api/forecasts/options')
+            ->assertOk()
+            ->assertJsonPath('data.explanation_runtime.status', 'ready')
+            ->assertJsonPath('data.explanation_runtime.model', 'llama3.2');
+        $this->getJson('/api/forecasts/options')
+            ->assertOk()
+            ->assertJsonPath('data.explanation_runtime.status', 'model_missing');
+        $this->getJson('/api/forecasts/options')
+            ->assertOk()
+            ->assertJsonPath('data.explanation_runtime.status', 'unavailable');
+        Http::assertSentCount(3);
+    }
+
+    public function test_options_report_ollama_unavailable_on_connection_failure(): void
+    {
+        $superadmin = User::query()->where('username', 'admin')->firstOrFail();
+        config([
+            'forecast.explanation.provider' => 'ollama',
+            'forecast.explanation.ollama.base_url' => 'http://ollama.test',
+            'forecast.explanation.ollama.model' => 'qwen2.5:3b',
+        ]);
+        Http::preventStrayRequests();
+        Http::fake(['http://ollama.test/api/tags' => Http::failedConnection()]);
+        $this->actingAs($superadmin, 'web');
+
+        $this->getJson('/api/forecasts/options')
+            ->assertOk()
+            ->assertJsonPath('data.explanation_runtime.status', 'unavailable')
+            ->assertJsonPath('data.explanation_runtime.model', 'qwen2.5:3b');
+    }
+
+    public function test_real_ollama_generates_a_forecast_explanation(): void
+    {
+        if (getenv('RUN_OLLAMA_INTEGRATION') !== '1') {
+            $this->markTestSkipped('Set RUN_OLLAMA_INTEGRATION=1 and start Ollama with qwen2.5:3b to run this test.');
+        }
+
+        $superadmin = User::query()->where('username', 'admin')->firstOrFail();
+        $unit = OperationalUnit::query()->where('name', 'Outlet 1')->firstOrFail();
+        config([
+            'forecast.explanation.provider' => 'ollama',
+            'forecast.explanation.ollama.base_url' => 'http://127.0.0.1:11434',
+            'forecast.explanation.ollama.model' => 'qwen2.5:3b',
+            'forecast.explanation.timeout' => 300,
+        ]);
+        $this->actingAs($superadmin, 'web');
+
+        $this->getJson('/api/forecasts/options')
+            ->assertOk()
+            ->assertJsonPath('data.explanation_runtime.status', 'ready')
+            ->assertJsonPath('data.explanation_runtime.model', 'qwen2.5:3b');
+
+        $response = $this->postJson('/api/forecasts', [
+            'operational_unit_id' => $unit->id,
+            'horizon' => 'next_week',
+        ])->assertCreated()
+            ->assertJsonPath('data.explanation_provider', 'ollama')
+            ->assertJsonPath('data.explanation_status', 'generated')
+            ->assertJsonCount(9, 'data.results');
+
+        $this->assertNotEmpty($response->json('data.explanation.summary'));
+        $this->assertIsArray($response->json('data.explanation.risks'));
+        $this->assertIsArray($response->json('data.explanation.actions'));
+    }
+
+    public function test_forecast_uses_system_explanation_when_ollama_fails(): void
+    {
+        $superadmin = User::query()->where('username', 'admin')->firstOrFail();
+        $unit = OperationalUnit::query()->where('name', 'Outlet 1')->firstOrFail();
+        config([
+            'forecast.explanation.provider' => 'ollama',
+            'forecast.explanation.ollama.base_url' => 'http://ollama.test',
+        ]);
+        Http::preventStrayRequests();
+        Http::fake(['http://ollama.test/api/chat' => Http::response(['error' => 'unavailable'], 503)]);
+        $this->actingAs($superadmin, 'web');
+
+        $response = $this->postJson('/api/forecasts', [
+            'operational_unit_id' => $unit->id,
+            'horizon' => 'next_week',
+        ])->assertCreated()
+            ->assertJsonPath('data.explanation_provider', 'ollama')
+            ->assertJsonPath('data.explanation_status', 'fallback')
+            ->assertJsonCount(9, 'data.results');
+
+        $this->assertNotEmpty($response->json('data.explanation.summary'));
+        $this->assertDatabaseHas('forecast_runs', [
+            'id' => $response->json('data.id'),
+            'explanation_provider' => 'ollama',
+            'explanation_status' => 'fallback',
+        ]);
+        Http::assertSentCount(1);
+    }
+
     public function test_ai_service_predictions_are_used_after_explicit_activation(): void
     {
         $superadmin = User::query()->where('username', 'admin')->firstOrFail();

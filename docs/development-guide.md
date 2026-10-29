@@ -56,6 +56,34 @@ php artisan forecast:import-sales
 
 Perintah tersebut idempoten dan memvalidasi pemetaan outlet/SKU, kelengkapan minggu Senin–Minggu, duplikasi, serta kesesuaian `unit × harga = nilai penjualan`. Untuk penjelasan hasil, biarkan `FORECAST_EXPLANATION_PROVIDER=none` agar memakai fallback lokal, atau pilih `openai`/`ollama`. API key OpenAI hanya disimpan pada `backend/.env`; jangan menaruhnya di frontend atau repositori.
 
+Untuk menjalankan penjelasan Ollama secara lokal, instal dan jalankan Ollama, lalu unduh model yang akan dipakai:
+
+```powershell
+ollama pull qwen2.5:3b
+ollama list
+```
+
+Setelah model tersedia, atur `backend/.env`:
+
+```dotenv
+FORECAST_EXPLANATION_PROVIDER=ollama
+FORECAST_EXPLANATION_TIMEOUT=300
+OLLAMA_BASE_URL=http://127.0.0.1:11434
+OLLAMA_FORECAST_MODEL=qwen2.5:3b
+```
+
+Jalankan `php artisan config:clear` jika konfigurasi Laravel sebelumnya di-cache, lalu restart proses backend yang berjalan lama. AI Insight menampilkan apakah Ollama dapat dihubungi dan model terpasang; status tersebut tidak menjamin generasi akan berhasil. Status pada ringkasan setiap forecast menunjukkan apakah penjelasan berasal dari Ollama atau fallback sistem. Pada perangkat uji lokal, permintaan pertama membutuhkan sekitar 170 detik karena pemuatan model; waktu dapat berbeda pada perangkat lain. Ollama hanya menjelaskan angka hasil forecast dan rekomendasi; periksa isi penjelasannya sebelum mengambil keputusan.
+
+Untuk uji integrasi nyata, pastikan MySQL database pengujian `pandansari_testing` tersedia, Ollama berjalan, dan model telah diunduh. Dari direktori `backend/`:
+
+```powershell
+$env:RUN_OLLAMA_INTEGRATION = '1'
+php artisan test --compact tests\Feature\ForecastApiTest.php --filter=test_real_ollama_generates_a_forecast_explanation
+Remove-Item Env:RUN_OLLAMA_INTEGRATION
+```
+
+Uji tersebut memakai database pengujian dan memanggil Ollama lokal; ia tidak menguji interaksi browser atau menjamin semua isi penjelasan akurat.
+
 Setelah dataset awal tersedia, transaksi aplikasi berstatus `PAID` dapat disinkronkan menjadi histori mingguan:
 
 ```powershell

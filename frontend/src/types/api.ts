@@ -211,6 +211,10 @@ export interface ForecastOptionUnit extends UnitSummary {
 export interface ForecastOptions {
   units: ForecastOptionUnit[]
   explanation_provider: 'none' | 'openai' | 'ollama'
+  explanation_runtime: {
+    status: 'disabled' | 'not_checked' | 'unavailable' | 'model_missing' | 'ready'
+    model: string | null
+  }
 }
 export interface ForecastExplanation {
   summary: string

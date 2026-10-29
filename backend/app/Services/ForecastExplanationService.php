@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\ForecastRun;
 use App\Support\ForecastDataFreshness;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -13,6 +14,40 @@ use Throwable;
 class ForecastExplanationService
 {
     public function __construct(private ForecastDataFreshness $freshness) {}
+
+    /** @return array{status: string, model: ?string} */
+    public function runtimeStatus(): array
+    {
+        $provider = (string) config('forecast.explanation.provider', 'none');
+
+        if ($provider !== 'ollama') {
+            return ['status' => $provider === 'none' ? 'disabled' : 'not_checked', 'model' => null];
+        }
+
+        $model = (string) config('forecast.explanation.ollama.model');
+
+        try {
+            $baseUrl = rtrim((string) config('forecast.explanation.ollama.base_url'), '/');
+            $response = Http::acceptJson()
+                ->connectTimeout(1)
+                ->timeout(2)
+                ->get($baseUrl.'/api/tags');
+
+            if (! $response->successful() || ! is_array($response->json('models'))) {
+                return ['status' => 'unavailable', 'model' => $model];
+            }
+
+            $expected = str_contains(basename($model), ':') ? $model : $model.':latest';
+            $installed = collect($response->json('models'))->contains(
+                fn (mixed $entry): bool => is_array($entry)
+                    && ($entry['name'] ?? $entry['model'] ?? null) === $expected,
+            );
+
+            return ['status' => $installed ? 'ready' : 'model_missing', 'model' => $model];
+        } catch (ConnectionException) {
+            return ['status' => 'unavailable', 'model' => $model];
+        }
+    }
 
     public function explain(ForecastRun $run): ForecastRun
     {

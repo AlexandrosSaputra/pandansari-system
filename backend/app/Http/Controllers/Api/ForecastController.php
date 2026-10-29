@@ -19,8 +19,10 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class ForecastController extends Controller
 {
-    public function options(ForecastDataFreshness $freshness): JsonResponse
-    {
+    public function options(
+        ForecastDataFreshness $freshness,
+        ForecastExplanationService $explanations,
+    ): JsonResponse {
         $units = HistoricalSale::query()
             ->join('operational_units', 'operational_units.id', '=', 'historical_sales.operational_unit_id')
             ->select('operational_units.id', 'operational_units.code', 'operational_units.name')
@@ -52,6 +54,7 @@ class ForecastController extends Controller
             'data' => [
                 'units' => $units,
                 'explanation_provider' => config('forecast.explanation.provider', 'none'),
+                'explanation_runtime' => $explanations->runtimeStatus(),
             ],
         ]);
     }
