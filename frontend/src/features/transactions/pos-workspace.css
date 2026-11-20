@@ -428,20 +428,12 @@
   text-align: center;
 }
 
-.pos-payment-success-icon {
-  display: grid;
-  width: 4rem;
-  height: 4rem;
-  place-items: center;
-  border: 1px solid #bbf7d0;
+.pos-payment-success-animation {
+  display: block;
+  width: 5rem;
+  height: 5rem;
   border-radius: 999px;
-  background: #f0fdf4;
-  color: #15803d;
-}
-
-.pos-payment-success-icon svg {
-  width: 2rem;
-  height: 2rem;
+  object-fit: contain;
 }
 
 .pos-payment-success p {
@@ -456,6 +448,48 @@
   font-size: 1.75rem;
   letter-spacing: -.035em;
   font-variant-numeric: tabular-nums;
+}
+
+.pos-payment-success-countdown {
+  display: grid;
+  gap: .5rem;
+  margin-top: .75rem;
+}
+
+.pos-payment-success-countdown small {
+  color: var(--color-text-muted);
+  font-size: .6875rem;
+  text-align: center;
+}
+
+.pos-payment-success-countdown-track {
+  display: block;
+  width: 100%;
+  height: .25rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--color-primary-soft);
+}
+
+.pos-payment-success-countdown-bar {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-primary);
+  transform-origin: left;
+  animation-name: pos-payment-success-countdown;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+@keyframes pos-payment-success-countdown {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pos-payment-success-countdown-bar { animation: none; }
 }
 
 /* Only the active transaction workspace occupies the viewport. Other routes

@@ -97,7 +97,7 @@ POS dan Ticketing memiliki menu, route, judul halaman, serta konteks unit terpis
 
 Pada outlet dengan scanner aktif, kartu barcode kontrol Code 128 di bawah keranjang dapat dipindai untuk menjalankan checkout yang sama dengan tombol konfirmasi pembayaran. Kode kontrol tidak tersedia ketika keranjang kosong, sedang diproses, atau sudah dibayar.
 
-Setelah pembayaran berhasil, POS mempertahankan transaksi yang sedang dipantau sampai status `PAID` diterima dan menampilkan modal sukses berisi total nominal pembayaran. Modal tidak menampilkan rincian item, subtotal, atau nomor transaksi.
+Setelah pembayaran berhasil, POS mempertahankan transaksi yang sedang dipantau sampai status `PAID` diterima dan menampilkan modal sukses berisi total nominal pembayaran. Modal tidak menampilkan rincian item, subtotal, atau nomor transaksi, memakai animasi checklist gratis [Free Success Animation karya Darius Afchar di LottieFiles](https://lottiefiles.com/free-animation/success-0u6rqMvimp) di bawah Lottie Simple License, menampilkan progress bar lima detik, lalu menutup otomatis.
 
 ## 17. Keranjang
 

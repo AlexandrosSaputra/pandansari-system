@@ -199,7 +199,7 @@ try {
   const { CheckoutBarcodeCard } = await server.ssrLoadModule(
     '/src/features/transactions/CheckoutBarcodeCard.tsx',
   )
-  const { PaymentSuccessDialog } = await server.ssrLoadModule(
+  const { PAYMENT_SUCCESS_DURATION_MS, PaymentSuccessDialog } = await server.ssrLoadModule(
     '/src/features/transactions/PaymentSuccessDialog.tsx',
   )
   const { CartPanel } = await server.ssrLoadModule(
@@ -238,6 +238,10 @@ try {
     assert.match(html, /Transaksi berhasil disimpan dan sudah dibayar/)
     assert.match(html, /Rp[^0-9]*10\.000/)
     assert.doesNotMatch(html, /Subtotal|TRX-/)
+    assert.equal(PAYMENT_SUCCESS_DURATION_MS, 5000)
+    assert.match(html, /data-duration="5000"/)
+    assert.match(html, /Menutup otomatis dalam 5 detik/)
+    assert.match(html, /payment-success-checkmark\.gif/)
   })
   check('Scanner-paid cart opens the payment success dialog', () => {
     const paidTransaction = {
