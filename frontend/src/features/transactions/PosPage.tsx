@@ -19,6 +19,7 @@ import { useAuth } from '../auth/useAuth'
 import { useTopbarOverride } from '../../components/common/topbarOverride'
 import { usePosCart } from './usePosCart'
 import { CartPanel } from './CartPanel'
+import { CheckoutBarcodeCard } from './CheckoutBarcodeCard'
 import { PosCatalogCard } from './PosCatalogCard'
 import { PosSectionHeader } from './PosSectionHeader'
 import { PosPagination } from './PosPagination'
@@ -125,7 +126,15 @@ function TransactionWorkspace({ unit }: { unit: UnitSummary }) {
           />
         </Card>
       </div>
-      <CartPanel pos={pos} />
+      <div className="pos-cart-column">
+        <CartPanel pos={pos} />
+        {unit.scanner_enabled === true && (
+          <CheckoutBarcodeCard
+            transaction={pos.cart.data}
+            busy={pos.action.isPending || pos.newCart.isPending}
+          />
+        )}
+      </div>
     </div>
   )
 }

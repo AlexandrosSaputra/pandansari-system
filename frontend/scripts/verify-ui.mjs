@@ -187,11 +187,37 @@ try {
   )
   const { CART_SYNC_INTERVAL_MS, getCartSyncInterval, usePosCart } =
     await server.ssrLoadModule('/src/features/transactions/usePosCart.ts')
+  const { encodeCode128B } = await server.ssrLoadModule(
+    '/src/features/transactions/code128.ts',
+  )
+  const { CheckoutBarcodeCard } = await server.ssrLoadModule(
+    '/src/features/transactions/CheckoutBarcodeCard.tsx',
+  )
   check('Scanner-enabled carts synchronize while they remain open', () => {
     assert.equal(getCartSyncInterval(true, 'CART', false), CART_SYNC_INTERVAL_MS)
     assert.equal(getCartSyncInterval(false, 'CART', false), false)
     assert.equal(getCartSyncInterval(true, 'PAID', false), false)
     assert.equal(getCartSyncInterval(true, 'CART', true), false)
+  })
+  check('Checkout scanner card renders a valid Code 128 control barcode', () => {
+    const encoded = encodeCode128B('PDS-PAY')
+    assert.equal(encoded.bars.length, 31)
+    assert.equal(encoded.width, 132)
+
+    const html = render(
+      h(CheckoutBarcodeCard, {
+        busy: false,
+        transaction: {
+          id: 12,
+          status: 'CART',
+          scanner_checkout_barcode: 'PDS-PAY',
+          items: [{ id: 1 }],
+        },
+      }),
+    )
+    assert.match(html, /Konfirmasi via Scanner/)
+    assert.match(html, /PDS-PAY/)
+    assert.match(html, /Barcode konfirmasi pembayaran PDS-PAY/)
   })
   session('admin', ['transaction.create'], {
     ...unit,
@@ -201,6 +227,7 @@ try {
   check('POS does not expose manual barcode input', () => {
     const html = render(h(PosPage))
     assert.match(html, /Katalog Item/)
+    assert.match(html, /Konfirmasi via Scanner/)
     assert.doesNotMatch(html, /Input Barcode|Masukkan barcode/)
   })
   session('superadmin', ['transaction.create'])

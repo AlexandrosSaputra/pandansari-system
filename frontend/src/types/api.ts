@@ -167,6 +167,7 @@ export interface Transaction {
   subtotal: Money
   total: Money
   visitor_count: number
+  scanner_checkout_barcode: string | null
   created_at: string | null
   paid_at: string | null
   items?: TransactionItem[]

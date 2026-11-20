@@ -95,6 +95,8 @@ Daftar, filter status/tujuan/pembuat/tanggal/nomor, pagination, detail, prefetch
 
 POS dan Ticketing memiliki menu, route, judul halaman, serta konteks unit terpisah, tetapi tetap memakai satu engine transaksi. Admin memakai unit sendiri tanpa mengirim `operational_unit_id` yang dilarang backend dan hanya melihat ruang transaksi sesuai tipe unitnya. Superadmin melihat kedua menu; klik pada menu POS atau Ticketing membuka submenu unit langsung di dalam sidebar. Parent transaksi aktif memakai latar jade solid dengan teks putih agar berbeda dari child unit aktif yang memakai highlight mint, titik hijau, dan label `Kasir Aktif` atau `Loket Aktif`; unit lain menjadi tautan langsung. ID unit disimpan sebagai segmen route agar konteks bertahan saat refresh atau tautan dibuka langsung. Halaman transaksi tidak lagi menampilkan pemilih unit. Ticketing memakai judul katalog layanan; katalog tetap mengikuti hasil backend. Halaman POS tidak menyediakan input barcode manual; scan barcode dikirim oleh perangkat ESP32 atau klien API seperti Postman melalui endpoint scan backend. Produk dengan available nol tidak dapat ditambahkan dari katalog.
 
+Pada outlet dengan scanner aktif, kartu barcode kontrol Code 128 di bawah keranjang dapat dipindai untuk menjalankan checkout yang sama dengan tombol konfirmasi pembayaran. Kode kontrol tidak tersedia ketika keranjang kosong, sedang diproses, atau sudah dibayar.
+
 ## 17. Keranjang
 
 Resolve/resume melalui `POST /transactions/cart`, dideduplikasi oleh query per user/unit; tidak dibuat setiap render. Baris katalog manual, quantity minus/input/plus, PATCH, DELETE. Total, subtotal, visitor_count, dan harga memakai respons server. Mutasi diserialkan per keranjang; tidak ada optimistic update. Transaksi PAID tidak dapat diubah.
