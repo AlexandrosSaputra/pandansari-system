@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\ScannerCommand;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -41,6 +42,9 @@ class TransactionResource extends JsonResource
             'subtotal' => $this->subtotal,
             'total' => $this->total,
             'visitor_count' => $this->visitor_count,
+            'scanner_checkout_barcode' => $unit->scanner_enabled
+                ? ScannerCommand::Checkout->value
+                : null,
             'created_at' => $this->created_at?->toIso8601String(),
             'paid_at' => $this->paid_at?->toIso8601String(),
             'items' => TransactionItemResource::collection($this->whenLoaded('transactionItems')),

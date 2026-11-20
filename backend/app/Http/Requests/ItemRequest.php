@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\ItemType;
+use App\Enums\ScannerCommand;
 use App\Models\Item;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -27,7 +28,14 @@ class ItemRequest extends FormRequest
 
         return [
             'item_code' => ['prohibited'],
-            'barcode' => ['sometimes', 'nullable', 'string', 'max:255', Rule::unique('items', 'barcode')->ignore($item instanceof Item ? $item->id : null)],
+            'barcode' => [
+                'sometimes',
+                'nullable',
+                'string',
+                'max:255',
+                Rule::notIn([ScannerCommand::Checkout->value]),
+                Rule::unique('items', 'barcode')->ignore($item instanceof Item ? $item->id : null),
+            ],
             'name' => [$creating ? 'required' : 'sometimes', 'string', 'max:255'],
             'type' => [$creating ? 'required' : 'sometimes', Rule::enum(ItemType::class)],
             'uom' => ['sometimes', 'nullable', 'string', 'max:255'],

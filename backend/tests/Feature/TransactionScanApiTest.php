@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\ItemType;
 use App\Enums\OperationalUnitType;
+use App\Enums\ScannerCommand;
 use App\Enums\TransactionStatus;
 use App\Models\Item;
 use App\Models\OperationalUnit;
@@ -45,6 +46,41 @@ class TransactionScanApiTest extends TestCase
             'item_id' => $item->id,
             'quantity' => 1,
             'input_method' => 'SCANNER',
+        ]);
+        $this->assertDatabaseCount('stock_movements', 0);
+    }
+
+    public function test_scanning_checkout_command_completes_payment_through_the_checkout_service(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $unit = $this->unit('OUT-A');
+        $item = $this->item('PARKING', 'SCAN-SERVICE', ItemType::Service);
+        $this->unitItem($unit, $item, '5000.00');
+        $admin = $this->account('admin', $unit);
+        $cart = $this->cart($unit, $admin);
+        $token = $admin->createToken('esp32-demo', ['transaction:scan'])->plainTextToken;
+
+        $this->withToken($token)->postJson('/api/transactions/'.$cart->id.'/scans', [
+            'barcode' => 'SCAN-SERVICE',
+        ])->assertOk();
+
+        $this->withToken($token)->postJson('/api/transactions/'.$cart->id.'/scans', [
+            'barcode' => ScannerCommand::Checkout->value,
+        ])->assertOk()
+            ->assertJsonPath('data.status', 'PAID')
+            ->assertJsonPath('data.payer.id', $admin->id)
+            ->assertJsonPath('data.total', '5000.00')
+            ->assertJsonPath('data.scanner_checkout_barcode', ScannerCommand::Checkout->value);
+
+        $this->assertDatabaseHas('transactions', [
+            'id' => $cart->id,
+            'status' => 'PAID',
+            'paid_by' => $admin->id,
+        ]);
+        $this->assertDatabaseHas('activity_logs', [
+            'action' => 'TRANSACTION_PAID',
+            'subject_id' => $cart->id,
+            'actor_id' => $admin->id,
         ]);
         $this->assertDatabaseCount('stock_movements', 0);
     }
@@ -158,13 +194,16 @@ class TransactionScanApiTest extends TestCase
         ]);
     }
 
-    private function item(string $code, string $barcode): Item
-    {
+    private function item(
+        string $code,
+        string $barcode,
+        ItemType $type = ItemType::Product,
+    ): Item {
         return Item::create([
             'item_code' => $code,
             'barcode' => $barcode,
             'name' => $code,
-            'type' => ItemType::Product,
+            'type' => $type,
             'is_active' => true,
         ]);
     }

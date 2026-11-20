@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\ScannerCommand;
 use App\Models\Item;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Tests\TestCase;
@@ -50,6 +51,11 @@ class ItemApiTest extends TestCase
         ])->assertUnprocessable()->assertJsonValidationErrors('item_code');
         $this->postJson('/api/items', [
             'barcode' => '123', 'name' => 'Duplicate barcode', 'type' => 'PRODUCT',
+        ])->assertUnprocessable()->assertJsonValidationErrors('barcode');
+        $this->postJson('/api/items', [
+            'barcode' => ScannerCommand::Checkout->value,
+            'name' => 'Reserved scanner command',
+            'type' => 'PRODUCT',
         ])->assertUnprocessable()->assertJsonValidationErrors('barcode');
         $this->postJson('/api/items', [
             'name' => 'Invalid', 'type' => 'STOCK',
