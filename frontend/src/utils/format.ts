@@ -7,6 +7,35 @@ export const formatCurrency = (value?: Money | null) =>
         currency: 'IDR',
         maximumFractionDigits: 2,
       }).format(Number(value))
+
+export const formatRupiahInput = (value: string) => {
+  if (!value) return ''
+
+  const [integerPart = '', decimalPart] = value.split('.')
+  const normalizedInteger = integerPart.replace(/^0+(?=\d)/, '') || '0'
+  const groupedInteger = normalizedInteger.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+
+  return decimalPart === undefined
+    ? groupedInteger
+    : `${groupedInteger},${decimalPart}`
+}
+
+export const parseRupiahInput = (value: string) => {
+  const sanitized = value.replace(/[^\d,]/g, '')
+  const commaIndex = sanitized.indexOf(',')
+  const integerDigits = (
+    commaIndex === -1 ? sanitized : sanitized.slice(0, commaIndex)
+  ).replace(/^0+(?=\d)/, '')
+
+  if (commaIndex === -1) return integerDigits
+
+  const decimalDigits = sanitized
+    .slice(commaIndex + 1)
+    .replace(/,/g, '')
+    .slice(0, 2)
+
+  return `${integerDigits || '0'}.${decimalDigits}`
+}
 export const formatNumber = (value?: number | null) =>
   value == null ? '—' : new Intl.NumberFormat('id-ID').format(value)
 export const formatDateTime = (value?: string | null) =>

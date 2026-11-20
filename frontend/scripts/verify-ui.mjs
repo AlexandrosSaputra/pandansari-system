@@ -38,7 +38,8 @@ try {
   const { ErrorState, ListContent } = await server.ssrLoadModule(
     '/src/components/ui/index.tsx',
   )
-  const { formatCurrency } = await server.ssrLoadModule('/src/utils/format.ts')
+  const { formatCurrency, formatRupiahInput, parseRupiahInput } =
+    await server.ssrLoadModule('/src/utils/format.ts')
   const { presentActivity } = await server.ssrLoadModule(
     '/src/features/account/activityPresentation.ts',
   )
@@ -98,6 +99,13 @@ try {
     checks += 1
     console.log(`PASS ${name}`)
   }
+  check('Rupiah input formats thousands and preserves decimal values', () => {
+    assert.equal(formatRupiahInput('7000'), '7.000')
+    assert.equal(formatRupiahInput('12500.50'), '12.500,50')
+    assert.equal(parseRupiahInput('7.000'), '7000')
+    assert.equal(parseRupiahInput('Rp 12.500,50'), '12500.50')
+    assert.equal(parseRupiahInput('1.234.567'), '1234567')
+  })
   const toastId = notifications.success('Perubahan berhasil disimpan.')
   check('Global toast renders a five-second dismissible status message', () => {
     const html = render(h(ToastNotifications))

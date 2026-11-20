@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useForm, useWatch } from 'react-hook-form'
+import { Controller, useForm, useWatch } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { FormField, Input, Modal, Select } from '../../components/ui'
@@ -7,6 +7,7 @@ import { SaveForm } from '../../components/ui/SaveForm'
 import { ResourcePicker } from '../../components/ui/ResourcePicker'
 import { useSave } from '../../lib/queries'
 import type { Item, UnitItem } from '../../types/api'
+import { formatRupiahInput, parseRupiahInput } from '../../utils/format'
 const schema = z.object({
   item_id: z.number().int().positive('Pilih item.'),
   selling_price: z
@@ -141,7 +142,31 @@ export function UnitItemForm({
           label="Harga jual (Rp)"
           error={form.formState.errors.selling_price?.message}
         >
-          <Input inputMode="decimal" {...form.register('selling_price')} />
+          <Controller
+            control={form.control}
+            name="selling_price"
+            render={({ field }) => (
+              <span className="currency-input">
+                <span className="currency-input-prefix" aria-hidden="true">
+                  Rp
+                </span>
+                <Input
+                  {...field}
+                  inputMode="decimal"
+                  value={formatRupiahInput(field.value)}
+                  onChange={(event) =>
+                    field.onChange(parseRupiahInput(event.target.value))
+                  }
+                  onBlur={() => {
+                    if (field.value.endsWith('.')) {
+                      field.onChange(field.value.slice(0, -1))
+                    }
+                    field.onBlur()
+                  }}
+                />
+              </span>
+            )}
+          />
         </FormField>
         <FormField
           label="Metode safety stock"
