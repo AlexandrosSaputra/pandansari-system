@@ -19,6 +19,8 @@ Pilih unit -> buka/lanjutkan CART -> tambah/ubah/hapus item
            -> checkout -> PAID + mutasi SALE untuk produk
 ```
 
+Pada outlet dengan scanner aktif, halaman POS menampilkan kartu barcode kontrol Code 128 di bawah keranjang. Pemindaian kode `PDS-PAY` ke endpoint scan menjalankan layanan checkout yang sama dengan tombol **Konfirmasi Pembayaran**. Kode kontrol ini dicadangkan dan tidak dapat digunakan sebagai barcode master item.
+
 - Keranjang menerima produk melalui pemilihan katalog di halaman POS atau barcode dari klien eksternal. Halaman POS tidak menyediakan input barcode manual. Perangkat ESP32 atau klien API seperti Postman mengirim nilai teks `barcode` melalui endpoint `POST /api/transactions/{transaction}/scans`; backend mencocokkannya dengan master item dan menambahkan satu unit ke keranjang.
 - Harga item dan total dihitung di backend. `visitor_count` dihitung dari `quantity × visitor_factor` pada item layanan, bukan dari penghitung pengunjung terpisah.
 - Stok produk tidak berkurang ketika item masuk keranjang. Pada checkout, backend memeriksa stok tersedia, mengubah transaksi menjadi `PAID`, mengurangi saldo outlet, dan menulis mutasi `SALE` dalam satu transaksi database.

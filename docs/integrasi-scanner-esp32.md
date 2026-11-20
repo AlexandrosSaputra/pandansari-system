@@ -166,6 +166,18 @@ Status: `200 OK`
 
 Memindai barcode yang sama lagi menaikkan `quantity` pada baris barang yang sama. Stok belum berubah pada tahap ini.
 
+### Barcode kontrol checkout
+
+Untuk outlet dengan scanner aktif, halaman POS menampilkan barcode Code 128 bernilai `PDS-PAY` di bawah kartu keranjang. Kirim nilai tersebut melalui endpoint scan yang sama untuk menjalankan checkout:
+
+```json
+{
+  "barcode": "PDS-PAY"
+}
+```
+
+Respons berhasil tetap memakai `200 OK`, tetapi `data.status` berubah menjadi `PAID`. Backend menjalankan layanan checkout yang sama dengan tombol **Konfirmasi Pembayaran**, termasuk pemeriksaan stok, pengurangan saldo, pencatatan mutasi `SALE`, dan penguncian transaksi selesai. Kode `PDS-PAY` dicadangkan sehingga tidak dapat disimpan sebagai barcode master item. Barcode kontrol hanya boleh dipindai setelah keranjang berisi item.
+
 ### Kode respons yang harus ditangani firmware
 
 | Status | Arti | Tindakan firmware |
