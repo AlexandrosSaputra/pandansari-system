@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\Api\ActivityLogController;
+use App\Http\Controllers\Api\AdminDashboardSalesController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ForecastController;
 use App\Http\Controllers\Api\ForecastResultDecisionController;
@@ -40,6 +41,8 @@ Route::prefix('auth')->name('api.auth.')->group(function (): void {
 });
 
 Route::middleware('auth:sanctum')->name('api.')->group(function (): void {
+    Route::get('dashboard/admin/sales', AdminDashboardSalesController::class)
+        ->middleware(['permission:dashboard.view', 'permission:transaction.view'])->name('dashboard.admin.sales');
     Route::get('users', [UserController::class, 'index'])->middleware('permission:user.view')->name('users.index');
     Route::get('users/{user}', [UserController::class, 'show'])->middleware('permission:user.view')->name('users.show');
     Route::post('users', [UserController::class, 'store'])->middleware(['permission:user.manage', 'superadmin'])->name('users.store');

@@ -232,6 +232,7 @@ class ForecastApiTest extends TestCase
             ->assertJsonCount(9, 'data.results');
 
         $this->assertNotEmpty($response->json('data.explanation.summary'));
+        $this->assertStringContainsString('rekomendasi restock total', $response->json('data.explanation.summary'));
         $this->assertIsArray($response->json('data.explanation.risks'));
         $this->assertIsArray($response->json('data.explanation.actions'));
     }
@@ -424,7 +425,10 @@ class ForecastApiTest extends TestCase
             'http://ollama.test/api/chat' => Http::response([
                 'message' => [
                     'role' => 'assistant',
-                    'content' => json_encode($structured, JSON_THROW_ON_ERROR),
+                    'content' => json_encode([
+                        'risk_codes' => ['stockouts'],
+                        'action_codes' => ['review_history'],
+                    ], JSON_THROW_ON_ERROR),
                 ],
             ]),
         ]);
@@ -440,6 +444,10 @@ class ForecastApiTest extends TestCase
             && $request['format']['type'] === 'object'
             && $request['options']['temperature'] === 0);
 
+        $this->assertStringContainsString('rekomendasi restock total', $ollama['explanation']['summary']);
+        $this->assertContains('Penjualan saat stok habis mungkin tidak mencerminkan seluruh permintaan.', $ollama['explanation']['risks']);
+        $this->assertContains('Periksa kelengkapan dan ketepatan data penjualan historis.', $ollama['explanation']['actions']);
+
         $this->assertSame(
             collect($openAi['results'])->pluck('predicted_units')->all(),
             collect($ollama['results'])->pluck('predicted_units')->all(),
@@ -448,5 +456,31 @@ class ForecastApiTest extends TestCase
             collect($openAi['results'])->pluck('recommended_restock')->all(),
             collect($ollama['results'])->pluck('recommended_restock')->all(),
         );
+    }
+
+    public function test_ollama_unknown_codes_use_safe_fallback(): void
+    {
+        $superadmin = User::query()->where('username', 'admin')->firstOrFail();
+        config([
+            'forecast.explanation.provider' => 'ollama',
+            'forecast.explanation.ollama.base_url' => 'http://ollama.test',
+        ]);
+        Http::preventStrayRequests();
+        Http::fake(['http://ollama.test/api/chat' => Http::response([
+            'message' => ['content' => json_encode([
+                'risk_codes' => ['WAPE tertinggi 22.3364'],
+                'action_codes' => ['review_history'],
+            ], JSON_THROW_ON_ERROR)],
+        ])]);
+        $this->actingAs($superadmin, 'web');
+
+        $response = $this->postJson('/api/forecasts', [
+            'operational_unit_id' => OperationalUnit::query()->where('name', 'Outlet 1')->value('id'),
+            'horizon' => 'next_week',
+        ])->assertCreated()->assertJsonPath('data.explanation_status', 'fallback');
+
+        $this->assertStringNotContainsString('WAPE tertinggi 22.3364', json_encode($response->json('data.explanation')));
+        $this->assertStringContainsString('rekomendasi restock total', $response->json('data.explanation.summary'));
+        Http::assertSentCount(1);
     }
 }

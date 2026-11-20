@@ -13,6 +13,18 @@ use Throwable;
 
 class ForecastExplanationService
 {
+    private const OLLAMA_RISKS = [
+        'weekly_data' => 'Data mingguan tidak menunjukkan variasi permintaan harian.',
+        'stockouts' => 'Penjualan saat stok habis mungkin tidak mencerminkan seluruh permintaan.',
+        'forecast_uncertainty' => 'Prediksi memiliki ketidakpastian dan perlu ditinjau sebelum pengadaan.',
+    ];
+
+    private const OLLAMA_ACTIONS = [
+        'check_stock' => 'Periksa stok fisik dan transfer yang sedang berjalan sebelum pengadaan.',
+        'review_products' => 'Tinjau rekomendasi tiap produk dan sesuaikan dengan kondisi operasional.',
+        'review_history' => 'Periksa kelengkapan dan ketepatan data penjualan historis.',
+    ];
+
     public function __construct(private ForecastDataFreshness $freshness) {}
 
     /** @return array{status: string, model: ?string} */
@@ -136,13 +148,17 @@ class ForecastExplanationService
         $response = $this->request()->post($baseUrl.'/api/chat', [
             'model' => config('forecast.explanation.ollama.model'),
             'stream' => false,
-            'format' => $this->schema(),
+            'format' => $this->ollamaSchema(),
             'options' => ['temperature' => 0],
             'messages' => [
-                ['role' => 'system', 'content' => $this->instructions()],
+                ['role' => 'system', 'content' => 'Pilih kode risiko dan tindakan yang relevan untuk forecast. Gunakan hanya kode yang tersedia dalam skema JSON; jangan membuat teks atau kode baru.'],
                 [
                     'role' => 'user',
-                    'content' => json_encode($this->payload($run), JSON_THROW_ON_ERROR),
+                    'content' => json_encode([
+                        'forecast' => $this->payload($run),
+                        'risk_options' => self::OLLAMA_RISKS,
+                        'action_options' => self::OLLAMA_ACTIONS,
+                    ], JSON_THROW_ON_ERROR),
                 ],
             ],
         ])->throw()->json();
@@ -152,7 +168,61 @@ class ForecastExplanationService
             throw new RuntimeException('Ollama response did not contain message content.');
         }
 
-        return json_decode($content, true, flags: JSON_THROW_ON_ERROR);
+        $selection = json_decode($content, true, flags: JSON_THROW_ON_ERROR);
+
+        if (! is_array($selection)) {
+            throw new RuntimeException('Ollama selection is not an object.');
+        }
+
+        $riskCodes = $this->validateCodes($selection['risk_codes'] ?? null, self::OLLAMA_RISKS);
+        $actionCodes = $this->validateCodes($selection['action_codes'] ?? null, self::OLLAMA_ACTIONS);
+        $explanation = $this->fallback($run);
+        $explanation['risks'] = array_values(array_filter(
+            $explanation['risks'],
+            fn (string $risk): bool => $risk !== 'Data historis mingguan tidak dapat menjelaskan permintaan harian atau penjualan yang hilang saat stok habis.',
+        ));
+        $explanation['actions'] = array_slice($explanation['actions'], 2);
+
+        foreach ($riskCodes as $code) {
+            $explanation['risks'][] = self::OLLAMA_RISKS[$code];
+        }
+        foreach ($actionCodes as $code) {
+            $explanation['actions'][] = self::OLLAMA_ACTIONS[$code];
+        }
+
+        return $explanation;
+    }
+
+    /** @param array<string, string> $allowed
+     * @return array<int, string>
+     */
+    private function validateCodes(mixed $codes, array $allowed): array
+    {
+        if (! is_array($codes) || ! array_is_list($codes) || count($codes) === 0 || count($codes) > count($allowed)) {
+            throw new RuntimeException('Ollama selection has an invalid list of codes.');
+        }
+
+        foreach ($codes as $code) {
+            if (! is_string($code) || ! array_key_exists($code, $allowed)) {
+                throw new RuntimeException('Ollama selection contains an unknown code.');
+            }
+        }
+
+        return array_values(array_unique($codes));
+    }
+
+    /** @return array<string, mixed> */
+    private function ollamaSchema(): array
+    {
+        return [
+            'type' => 'object',
+            'properties' => [
+                'risk_codes' => ['type' => 'array', 'minItems' => 1, 'items' => ['type' => 'string', 'enum' => array_keys(self::OLLAMA_RISKS)]],
+                'action_codes' => ['type' => 'array', 'minItems' => 1, 'items' => ['type' => 'string', 'enum' => array_keys(self::OLLAMA_ACTIONS)]],
+            ],
+            'required' => ['risk_codes', 'action_codes'],
+            'additionalProperties' => false,
+        ];
     }
 
     private function request(): PendingRequest
@@ -274,11 +344,12 @@ class ForecastExplanationService
 
         return [
             'summary' => sprintf(
-                '%s memerlukan estimasi total %d unit untuk periode %s sampai %s; %d produk memiliki rekomendasi restock.',
+                '%s diperkirakan membutuhkan %d unit untuk periode %s sampai %s; rekomendasi restock total %d unit untuk %d produk.',
                 $run->operationalUnit->name,
                 $run->results->sum('predicted_units'),
                 $run->forecast_start->translatedFormat('d F Y'),
                 $run->forecast_end->translatedFormat('d F Y'),
+                $run->results->sum('recommended_restock'),
                 $restockItems->count(),
             ),
             'risks' => $risks,
