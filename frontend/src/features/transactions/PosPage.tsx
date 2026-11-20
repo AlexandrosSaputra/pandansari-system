@@ -28,7 +28,7 @@ import './pos-workspace.css'
 function TransactionWorkspace({ unit }: { unit: UnitSummary }) {
   const auth = useAuth()
   const filters = useFilters()
-  const pos = usePosCart(unit.id)
+  const pos = usePosCart(unit.id, unit.scanner_enabled === true)
   const [activePanel, setActivePanel] = useState<'catalog' | 'cart'>('catalog')
   const cartQuantity =
     pos.cart.data?.items?.reduce((total, item) => total + item.quantity, 0) ?? 0

@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../lib/api'
 import { apiError } from '../../lib/errors'
@@ -11,28 +12,54 @@ type CartAction =
   | { type: 'remove'; id: number }
   | { type: 'clear' }
   | { type: 'checkout' }
-export function usePosCart(unitId: number) {
+
+export const CART_SYNC_INTERVAL_MS = 1_000
+
+export function getCartSyncInterval(
+  scannerEnabled: boolean,
+  status: Transaction['status'] | undefined,
+  actionPending: boolean,
+): number | false {
+  return scannerEnabled && status === 'CART' && !actionPending
+    ? CART_SYNC_INTERVAL_MS
+    : false
+}
+
+export function usePosCart(unitId: number, scannerEnabled = false) {
   const auth = useAuth()
   const client = useQueryClient()
   const invalidate = useInvalidate()
   const key = keys.cart(auth.user!.id, unitId)
   const revision = getSessionRevision()
+  const actionPending = useRef(false)
   const cart = useQuery({
     queryKey: key,
-    queryFn: async () =>
+    queryFn: async ({ signal }) =>
       (
         await api.post<Resource<Transaction>>(
           '/transactions/cart',
           auth.isSuperadmin ? { operational_unit_id: unitId } : {},
+          { signal },
         )
       ).data.data,
     enabled: unitId > 0,
     staleTime: Infinity,
     retry: false,
-    refetchOnReconnect: false,
+    refetchInterval: (query) =>
+      getCartSyncInterval(
+        scannerEnabled,
+        query.state.data?.status,
+        actionPending.current,
+      ),
+    refetchOnWindowFocus: scannerEnabled,
+    refetchOnReconnect: scannerEnabled,
   })
   const action = useMutation({
     scope: { id: `cart-${auth.user!.id}-${unitId}` },
+    onMutate: async () => {
+      actionPending.current = true
+      await client.cancelQueries({ queryKey: key, exact: true })
+    },
     mutationFn: async (operation: CartAction) => {
       const current = client.getQueryData<Transaction>(key)
       if (!current || current.status !== 'CART')
@@ -103,6 +130,9 @@ export function usePosCart(unitId: number) {
           /* Preserve the last confirmed cart when refresh fails. */
         }
       }
+    },
+    onSettled: () => {
+      actionPending.current = false
     },
   })
   const newCart = useMutation({

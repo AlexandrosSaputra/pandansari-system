@@ -177,6 +177,14 @@ try {
   const { PosPage } = await server.ssrLoadModule(
     '/src/features/transactions/PosPage.tsx',
   )
+  const { CART_SYNC_INTERVAL_MS, getCartSyncInterval, usePosCart } =
+    await server.ssrLoadModule('/src/features/transactions/usePosCart.ts')
+  check('Scanner-enabled carts synchronize while they remain open', () => {
+    assert.equal(getCartSyncInterval(true, 'CART', false), CART_SYNC_INTERVAL_MS)
+    assert.equal(getCartSyncInterval(false, 'CART', false), false)
+    assert.equal(getCartSyncInterval(true, 'PAID', false), false)
+    assert.equal(getCartSyncInterval(true, 'CART', true), false)
+  })
   session('admin', ['transaction.create'], {
     ...unit,
     type: 'OUTLET',
@@ -732,9 +740,6 @@ try {
     assert.match(html, /Jenis subjek/)
   })
   const { api, sessionApi } = await server.ssrLoadModule('/src/lib/api.ts')
-  const { usePosCart } = await server.ssrLoadModule(
-    '/src/features/transactions/usePosCart.ts',
-  )
   const originalAdapter = api.defaults.adapter
   const requests = []
   const cart = {
