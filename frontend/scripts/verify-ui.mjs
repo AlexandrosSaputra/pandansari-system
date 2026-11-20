@@ -185,7 +185,13 @@ try {
   const { PosPage } = await server.ssrLoadModule(
     '/src/features/transactions/PosPage.tsx',
   )
-  const { CART_SYNC_INTERVAL_MS, getCartSyncInterval, usePosCart } =
+  const {
+    CART_SYNC_INTERVAL_MS,
+    getCartSyncInterval,
+    getCurrentCartSyncPath,
+    isScannerCheckoutTransition,
+    usePosCart,
+  } =
     await server.ssrLoadModule('/src/features/transactions/usePosCart.ts')
   const { encodeCode128B } = await server.ssrLoadModule(
     '/src/features/transactions/code128.ts',
@@ -193,11 +199,75 @@ try {
   const { CheckoutBarcodeCard } = await server.ssrLoadModule(
     '/src/features/transactions/CheckoutBarcodeCard.tsx',
   )
+  const { PaymentSuccessDialog } = await server.ssrLoadModule(
+    '/src/features/transactions/PaymentSuccessDialog.tsx',
+  )
+  const { CartPanel } = await server.ssrLoadModule(
+    '/src/features/transactions/CartPanel.tsx',
+  )
   check('Scanner-enabled carts synchronize while they remain open', () => {
     assert.equal(getCartSyncInterval(true, 'CART', false), CART_SYNC_INTERVAL_MS)
     assert.equal(getCartSyncInterval(false, 'CART', false), false)
     assert.equal(getCartSyncInterval(true, 'PAID', false), false)
     assert.equal(getCartSyncInterval(true, 'CART', true), false)
+    assert.equal(
+      getCurrentCartSyncPath(true, { id: 88, status: 'CART' }),
+      '/transactions/88',
+    )
+    assert.equal(getCurrentCartSyncPath(true, { id: 88, status: 'PAID' }), null)
+    assert.equal(getCurrentCartSyncPath(false, { id: 88, status: 'CART' }), null)
+    assert.equal(
+      isScannerCheckoutTransition(
+        { id: 88, status: 'CART' },
+        { id: 88, status: 'PAID' },
+      ),
+      true,
+    )
+    assert.equal(
+      isScannerCheckoutTransition(
+        { id: 88, status: 'CART' },
+        { id: 89, status: 'PAID' },
+      ),
+      false,
+    )
+  })
+  check('Payment success dialog shows only the final total', () => {
+    const html = render(
+      h(PaymentSuccessDialog, { total: '10000.00', onClose() {} }),
+    )
+    assert.match(html, /Transaksi berhasil disimpan dan sudah dibayar/)
+    assert.match(html, /Rp[^0-9]*10\.000/)
+    assert.doesNotMatch(html, /Subtotal|TRX-/)
+  })
+  check('Scanner-paid cart opens the payment success dialog', () => {
+    const paidTransaction = {
+      id: 88,
+      transaction_number: 'TRX-FIXTURE',
+      operational_unit: { ...unit, type: 'OUTLET' },
+      status: 'PAID',
+      subtotal: '10000.00',
+      total: '10000.00',
+      visitor_count: 0,
+      items: [],
+    }
+    const html = render(
+      h(CartPanel, {
+        pos: {
+          cart: { data: paidTransaction, isPending: false, error: null },
+          action: {
+            isPending: false,
+            error: null,
+            submittedAt: 0,
+            reset() {},
+            mutate() {},
+          },
+          newCart: { isPending: false, mutate() {} },
+          scannerCheckoutTransactionId: paidTransaction.id,
+        },
+      }),
+    )
+    assert.match(html, /Pembayaran Berhasil/)
+    assert.match(html, /Rp[^0-9]*10\.000/)
   })
   check('Checkout scanner card renders a valid Code 128 control barcode', () => {
     const encoded = encodeCode128B('PDS-PAY')
@@ -822,11 +892,11 @@ try {
       config,
     }
   }
-  function captureCart() {
+  function captureCart(scannerEnabled = false) {
     let captured
     function Probe() {
       // eslint-disable-next-line react/globals -- SSR-only hook harness; no mounted UI or shared production state.
-      captured = usePosCart(unit.id)
+      captured = usePosCart(unit.id, scannerEnabled)
       return null
     }
     render(h(Probe))
@@ -835,6 +905,15 @@ try {
   try {
     session('admin', ['transaction.create', 'transaction.view'])
     queryClient.setQueryData(keys.cart(user.id, unit.id), cart)
+    const scannerPos = captureCart(true)
+    await scannerPos.cart.refetch()
+    check('Scanner polling follows the displayed transaction until it is paid', () =>
+      assert.deepEqual(requests.at(-1), {
+        method: 'get',
+        url: '/transactions/88',
+        data: undefined,
+      }),
+    )
     const pos = captureCart()
     await pos.newCart.mutateAsync()
     check('Admin cart resolution omits prohibited operational_unit_id', () =>

@@ -97,6 +97,8 @@ POS dan Ticketing memiliki menu, route, judul halaman, serta konteks unit terpis
 
 Pada outlet dengan scanner aktif, kartu barcode kontrol Code 128 di bawah keranjang dapat dipindai untuk menjalankan checkout yang sama dengan tombol konfirmasi pembayaran. Kode kontrol tidak tersedia ketika keranjang kosong, sedang diproses, atau sudah dibayar.
 
+Setelah pembayaran berhasil, POS mempertahankan transaksi yang sedang dipantau sampai status `PAID` diterima dan menampilkan modal sukses berisi total nominal pembayaran. Modal tidak menampilkan rincian item, subtotal, atau nomor transaksi.
+
 ## 17. Keranjang
 
 Resolve/resume melalui `POST /transactions/cart`, dideduplikasi oleh query per user/unit; tidak dibuat setiap render. Baris katalog manual, quantity minus/input/plus, PATCH, DELETE. Total, subtotal, visitor_count, dan harga memakai respons server. Mutasi diserialkan per keranjang; tidak ada optimistic update. Transaksi PAID tidak dapat diubah.

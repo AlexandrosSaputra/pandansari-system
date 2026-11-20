@@ -420,6 +420,44 @@
   background: var(--color-surface-subtle);
 }
 
+.pos-payment-success {
+  display: grid;
+  justify-items: center;
+  gap: .75rem;
+  padding: .5rem 0 .75rem;
+  text-align: center;
+}
+
+.pos-payment-success-icon {
+  display: grid;
+  width: 4rem;
+  height: 4rem;
+  place-items: center;
+  border: 1px solid #bbf7d0;
+  border-radius: 999px;
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.pos-payment-success-icon svg {
+  width: 2rem;
+  height: 2rem;
+}
+
+.pos-payment-success p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: .875rem;
+  line-height: 1.6;
+}
+
+.pos-payment-success strong {
+  color: var(--color-text);
+  font-size: 1.75rem;
+  letter-spacing: -.035em;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Only the active transaction workspace occupies the viewport. Other routes
    retain the application's normal document scrolling. */
 .app-shell:has(.pos-workspace) {

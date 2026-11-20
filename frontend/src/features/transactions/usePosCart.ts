@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../lib/api'
 import { apiError } from '../../lib/errors'
@@ -25,6 +25,24 @@ export function getCartSyncInterval(
     : false
 }
 
+export function getCurrentCartSyncPath(
+  scannerEnabled: boolean,
+  transaction: Transaction | undefined,
+): string | null {
+  return scannerEnabled && transaction?.status === 'CART'
+    ? `/transactions/${transaction.id}`
+    : null
+}
+
+export function isScannerCheckoutTransition(
+  current: Transaction,
+  refreshed: Transaction,
+): boolean {
+  return current.id === refreshed.id &&
+    current.status === 'CART' &&
+    refreshed.status === 'PAID'
+}
+
 export function usePosCart(unitId: number, scannerEnabled = false) {
   const auth = useAuth()
   const client = useQueryClient()
@@ -32,16 +50,38 @@ export function usePosCart(unitId: number, scannerEnabled = false) {
   const key = keys.cart(auth.user!.id, unitId)
   const revision = getSessionRevision()
   const actionPending = useRef(false)
+  const [scannerCheckoutTransactionId, setScannerCheckoutTransactionId] =
+    useState<number | null>(null)
+  const checkoutAffectedPaths = [
+    '/transactions',
+    '/transaction-catalog',
+    `/operational-units/${unitId}/inventory`,
+    '/inventory/movements',
+  ]
   const cart = useQuery({
     queryKey: key,
-    queryFn: async ({ signal }) =>
-      (
+    queryFn: async ({ signal }) => {
+      const current = client.getQueryData<Transaction>(key)
+      const syncPath = getCurrentCartSyncPath(scannerEnabled, current)
+
+      if (syncPath) {
+        const refreshed = await getResource<Transaction>(syncPath, signal)
+        if (isScannerCheckoutTransition(current!, refreshed)) {
+          setScannerCheckoutTransactionId(refreshed.id)
+          await invalidate(checkoutAffectedPaths)
+        }
+
+        return refreshed
+      }
+
+      return (
         await api.post<Resource<Transaction>>(
           '/transactions/cart',
           auth.isSuperadmin ? { operational_unit_id: unitId } : {},
           { signal },
         )
-      ).data.data,
+      ).data.data
+    },
     enabled: unitId > 0,
     staleTime: Infinity,
     retry: false,
@@ -56,8 +96,11 @@ export function usePosCart(unitId: number, scannerEnabled = false) {
   })
   const action = useMutation({
     scope: { id: `cart-${auth.user!.id}-${unitId}` },
-    onMutate: async () => {
+    onMutate: async (operation) => {
       actionPending.current = true
+      if (operation.type === 'checkout') {
+        setScannerCheckoutTransactionId(null)
+      }
       await client.cancelQueries({ queryKey: key, exact: true })
     },
     mutationFn: async (operation: CartAction) => {
@@ -102,12 +145,7 @@ export function usePosCart(unitId: number, scannerEnabled = false) {
         notifications.success(
           `Pembayaran dikonfirmasi. Transaksi ${transaction.transaction_number} selesai.`,
         )
-        await invalidate([
-          '/transactions',
-          '/transaction-catalog',
-          `/operational-units/${unitId}/inventory`,
-          '/inventory/movements',
-        ])
+        await invalidate(checkoutAffectedPaths)
       }
     },
     onError: async (error) => {
@@ -145,11 +183,17 @@ export function usePosCart(unitId: number, scannerEnabled = false) {
       ).data.data,
     onSuccess: (transaction) => {
       if (revision === getSessionRevision()) {
+        setScannerCheckoutTransactionId(null)
         action.reset()
         client.setQueryData(key, transaction)
       }
     },
     onError: (error) => notifications.error(apiError(error).message),
   })
-  return { cart, action, newCart }
+  return {
+    cart,
+    action,
+    newCart,
+    scannerCheckoutTransactionId,
+  }
 }

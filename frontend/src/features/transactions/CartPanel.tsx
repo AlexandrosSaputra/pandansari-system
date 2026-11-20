@@ -13,15 +13,23 @@ import { apiError } from '../../lib/errors'
 import { formatCurrency, formatNumber } from '../../utils/format'
 import type { usePosCart } from './usePosCart'
 import { CartLine } from './CartLine'
+import { PaymentSuccessDialog } from './PaymentSuccessDialog'
 import { PosSectionHeader } from './PosSectionHeader'
 
 export function CartPanel({ pos }: { pos: ReturnType<typeof usePosCart> }) {
   const [confirm, setConfirm] = useState(false)
   const [clearConfirm, setClearConfirm] = useState(false)
+  const [dismissedPaidTransactionId, setDismissedPaidTransactionId] =
+    useState<number | null>(null)
   const data = pos.cart.data
   const busy = pos.action.isPending || pos.newCart.isPending
   const itemCount =
     data?.items?.reduce((total, item) => total + item.quantity, 0) ?? 0
+  const showPaymentSuccess =
+    data?.status === 'PAID' &&
+    !confirm &&
+    pos.scannerCheckoutTransactionId === data.id &&
+    dismissedPaidTransactionId !== data.id
   return (
     <Card className="pos-cart">
       <PosSectionHeader
@@ -182,6 +190,12 @@ export function CartPanel({ pos }: { pos: ReturnType<typeof usePosCart> }) {
         >
           Semua barang pada keranjang akan dihapus. Tindakan ini tidak dapat dibatalkan.
         </ConfirmDialog>
+      )}
+      {showPaymentSuccess && (
+        <PaymentSuccessDialog
+          total={data.total}
+          onClose={() => setDismissedPaidTransactionId(data.id)}
+        />
       )}
     </Card>
   )
