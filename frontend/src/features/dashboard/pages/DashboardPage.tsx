@@ -18,7 +18,17 @@ import { useAuth } from '../../auth/useAuth'
 import { StockForm } from '../../inventory/StockForm'
 import { HealthStatusCard } from '../components/HealthStatusCard'
 import { useTopbarOverride } from '../../../components/common/topbarOverride'
+import { AdminDashboard } from './AdminDashboard'
 export function DashboardPage() {
+  const auth = useAuth()
+  return auth.user?.role?.slug === 'admin' ? (
+    <AdminDashboard />
+  ) : (
+    <OperationalDashboard />
+  )
+}
+
+function OperationalDashboard() {
   const auth = useAuth()
   const unit = auth.user?.operational_unit
   const canTransact = ['admin', 'superadmin'].includes(
@@ -90,14 +100,22 @@ export function DashboardPage() {
           </SummaryCard>
         )}
         {auth.hasPermission('transfer.view') && (
-          <SummaryCard title="Transfer menunggu respons" tone="attention" query={transfers}>
+          <SummaryCard
+            title="Transfer menunggu respons"
+            tone="attention"
+            query={transfers}
+          >
             <Link className="link" to="/stock-transfers?status=PENDING">
               Lihat transfer
             </Link>
           </SummaryCard>
         )}
         {canTransact && auth.hasPermission('transaction.view') && (
-          <SummaryCard title="Transaksi dibayar" tone="success" query={transactions}>
+          <SummaryCard
+            title="Transaksi dibayar"
+            tone="success"
+            query={transactions}
+          >
             Seluruh periode ? sesuai lingkup akses
           </SummaryCard>
         )}
